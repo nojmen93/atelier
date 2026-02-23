@@ -6,7 +6,7 @@ export default async function ProductsPage() {
 
   const { data: products } = await supabase
     .from('products')
-    .select('*, subcategories(name, categories(name))')
+    .select('*, subcategories(name, categories(name)), variants(id)')
     .eq('archived', false)
     .order('display_order', { ascending: true })
 
@@ -61,6 +61,11 @@ export default async function ProductsPage() {
               }`}>
                 {product.published ? 'Published' : 'Draft'}
               </span>
+              {(product.variants as { id: string }[])?.length > 0 && (
+                <span className="px-2 py-1 text-xs rounded bg-neutral-800 text-neutral-400">
+                  {(product.variants as { id: string }[]).length} variant{(product.variants as { id: string }[]).length !== 1 ? 's' : ''}
+                </span>
+              )}
             </div>
           </Link>
         ))}

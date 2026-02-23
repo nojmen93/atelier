@@ -23,7 +23,7 @@ export default async function EditProductPage({
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <ProductEditForm product={product} categories={categories || []} />
     </div>
   )

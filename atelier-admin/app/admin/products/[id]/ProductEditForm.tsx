@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '@/components/ImageUpload'
+import VariantTable from '@/components/VariantTable'
 
 interface Product {
   id: string
@@ -249,6 +250,8 @@ export default function ProductEditForm({
           )}
         </div>
       </form>
+
+      <VariantTable productId={product.id} productName={name} />
     </>
   )
 }
