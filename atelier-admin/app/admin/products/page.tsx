@@ -29,12 +29,20 @@ export default async function ProductsPage() {
             href={`/admin/products/${product.id}`}
             className="border border-neutral-800 rounded-lg p-6 hover:border-neutral-600 transition"
           >
-            {product.images?.[0] && (
+            {product.images?.[0] ? (
               <img
                 src={product.images[0]}
                 alt={product.name}
                 className="w-full h-48 object-cover rounded mb-4"
               />
+            ) : (
+              <div className="w-full h-48 bg-neutral-900 rounded mb-4 flex items-center justify-center">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-neutral-700">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+              </div>
             )}
             <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
             <p className="text-neutral-500 text-sm">{product.material}</p>

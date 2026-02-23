@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import ImageUpload from '@/components/ImageUpload'
 
 interface Category {
   id: string
@@ -17,6 +18,7 @@ export default function NewProductPage() {
   const [baseCost, setBaseCost] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [subcategoryId, setSubcategoryId] = useState('')
+  const [images, setImages] = useState<string[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -50,6 +52,7 @@ export default function NewProductPage() {
       material: material || null,
       base_cost: baseCost ? parseFloat(baseCost) : null,
       subcategory_id: subcategoryId,
+      images: images.length > 0 ? images : null,
     })
 
     if (error) {
@@ -113,6 +116,7 @@ export default function NewProductPage() {
             </select>
           </div>
         </div>
+        <ImageUpload images={images} onImagesChange={setImages} />
         <div>
           <label className="block text-sm font-medium mb-2">Description</label>
           <textarea

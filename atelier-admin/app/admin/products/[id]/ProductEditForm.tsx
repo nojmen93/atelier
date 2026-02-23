@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import ImageUpload from '@/components/ImageUpload'
 
 interface Product {
   id: string
@@ -12,6 +13,7 @@ interface Product {
   base_cost: number | null
   published: boolean
   subcategory_id: string | null
+  images: string[] | null
 }
 
 interface Category {
@@ -39,6 +41,7 @@ export default function ProductEditForm({
   const [published, setPublished] = useState(product.published)
   const [categoryId, setCategoryId] = useState(initialCategory?.id || '')
   const [subcategoryId, setSubcategoryId] = useState(product.subcategory_id || '')
+  const [images, setImages] = useState<string[]>(product.images || [])
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -66,6 +69,7 @@ export default function ProductEditForm({
         base_cost: baseCost ? parseFloat(baseCost) : null,
         published,
         subcategory_id: subcategoryId || null,
+        images: images.length > 0 ? images : null,
       })
       .eq('id', product.id)
 
@@ -176,6 +180,7 @@ export default function ProductEditForm({
             </select>
           </div>
         </div>
+        <ImageUpload images={images} onImagesChange={setImages} />
         <div>
           <label className="block text-sm font-medium mb-2">Description</label>
           <textarea
