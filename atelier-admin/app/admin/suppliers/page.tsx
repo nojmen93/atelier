@@ -23,9 +23,10 @@ export default async function SuppliersPage() {
 
       <div className="space-y-4">
         {suppliers?.map((supplier) => (
-          <div
+          <Link
             key={supplier.id}
-            className="block border border-neutral-800 rounded-lg p-6"
+            href={`/admin/suppliers/${supplier.id}`}
+            className="block border border-neutral-800 rounded-lg p-6 hover:border-neutral-600 transition"
           >
             <h3 className="text-xl font-semibold mb-2">{supplier.name}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-neutral-400">
@@ -46,7 +47,7 @@ export default async function SuppliersPage() {
                 {supplier.contact_email || 'N/A'}
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
