@@ -11,19 +11,47 @@ interface Product {
   material: string | null
   base_cost: number | null
   published: boolean
+  subcategory_id: string | null
 }
 
-export default function ProductEditForm({ product }: { product: Product }) {
+interface Category {
+  id: string
+  name: string
+  subcategories: { id: string; name: string }[]
+}
+
+export default function ProductEditForm({
+  product,
+  categories,
+}: {
+  product: Product
+  categories: Category[]
+}) {
+  // Find the initial category from the product's subcategory_id
+  const initialCategory = categories.find((c) =>
+    c.subcategories.some((s) => s.id === product.subcategory_id)
+  )
+
   const [name, setName] = useState(product.name)
   const [description, setDescription] = useState(product.description || '')
   const [material, setMaterial] = useState(product.material || '')
   const [baseCost, setBaseCost] = useState(product.base_cost?.toString() || '')
   const [published, setPublished] = useState(product.published)
+  const [categoryId, setCategoryId] = useState(initialCategory?.id || '')
+  const [subcategoryId, setSubcategoryId] = useState(product.subcategory_id || '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  const selectedCategory = categories.find((c) => c.id === categoryId)
+  const subcategories = selectedCategory?.subcategories || []
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryId(value)
+    setSubcategoryId('')
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +65,7 @@ export default function ProductEditForm({ product }: { product: Product }) {
         material: material || null,
         base_cost: baseCost ? parseFloat(baseCost) : null,
         published,
+        subcategory_id: subcategoryId || null,
       })
       .eq('id', product.id)
 
@@ -109,6 +138,43 @@ export default function ProductEditForm({ product }: { product: Product }) {
             className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
             required
           />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Category</label>
+            <select
+              value={categoryId}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+              required
+            >
+              <option value="">Select category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Subcategory</label>
+            <select
+              value={subcategoryId}
+              onChange={(e) => setSubcategoryId(e.target.value)}
+              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+              required
+              disabled={!categoryId}
+            >
+              <option value="">
+                {categoryId ? 'Select subcategory' : 'Select a category first'}
+              </option>
+              {subcategories.map((sub) => (
+                <option key={sub.id} value={sub.id}>
+                  {sub.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Description</label>

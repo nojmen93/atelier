@@ -6,7 +6,7 @@ export default async function ProductsPage() {
 
   const { data: products } = await supabase
     .from('products')
-    .select('*')
+    .select('*, subcategories(name, categories(name))')
     .eq('archived', false)
     .order('display_order', { ascending: true })
 
@@ -38,6 +38,13 @@ export default async function ProductsPage() {
             )}
             <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
             <p className="text-neutral-500 text-sm">{product.material}</p>
+            {product.subcategories && (
+              <p className="text-neutral-500 text-xs mt-1">
+                {(product.subcategories as { name: string; categories: { name: string } }).categories.name}
+                {' / '}
+                {(product.subcategories as { name: string; categories: { name: string } }).name}
+              </p>
+            )}
             <div className="mt-4 flex items-center gap-2">
               <span className={`px-2 py-1 text-xs rounded ${
                 product.published

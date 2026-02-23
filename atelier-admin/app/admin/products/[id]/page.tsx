@@ -10,11 +10,13 @@ export default async function EditProductPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: product } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const [{ data: product }, { data: categories }] = await Promise.all([
+    supabase.from('products').select('*').eq('id', id).single(),
+    supabase
+      .from('categories')
+      .select('id, name, subcategories(id, name)')
+      .order('display_order', { ascending: true }),
+  ])
 
   if (!product) {
     notFound()
@@ -22,7 +24,7 @@ export default async function EditProductPage({
 
   return (
     <div className="max-w-2xl">
-      <ProductEditForm product={product} />
+      <ProductEditForm product={product} categories={categories || []} />
     </div>
   )
 }
