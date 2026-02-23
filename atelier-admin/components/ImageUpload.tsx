@@ -1,9 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
-const BUCKET = 'product-images'
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
@@ -24,7 +22,6 @@ export default function ImageUpload({ images, onImagesChange }: ImageUploadProps
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
 
   const uploadFile = useCallback(async (file: File): Promise<string | null> => {
     const id = crypto.randomUUID()
@@ -32,32 +29,33 @@ export default function ImageUpload({ images, onImagesChange }: ImageUploadProps
 
     setUploading((prev) => [...prev, { id, name: file.name, progress: 0, preview }])
 
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const path = `${crypto.randomUUID()}.${ext}`
+    const formData = new FormData()
+    formData.append('file', file)
 
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-      cacheControl: '3600',
-      upsert: false,
-    })
+    setUploading((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, progress: 50 } : u))
+    )
 
-    // Simulate progress since supabase-js doesn't expose upload progress
+    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+
     setUploading((prev) =>
       prev.map((u) => (u.id === id ? { ...u, progress: 100 } : u))
     )
 
-    if (error) {
-      alert(`Upload failed: ${error.message}`)
+    if (!res.ok) {
+      const data = await res.json()
+      alert(`Upload failed: ${data.error}`)
       setUploading((prev) => prev.filter((u) => u.id !== id))
       URL.revokeObjectURL(preview)
       return null
     }
 
-    const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path)
+    const { url } = await res.json()
     setUploading((prev) => prev.filter((u) => u.id !== id))
     URL.revokeObjectURL(preview)
 
-    return urlData.publicUrl
-  }, [supabase])
+    return url
+  }, [])
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
