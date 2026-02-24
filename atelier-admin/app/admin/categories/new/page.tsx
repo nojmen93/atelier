@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import BackLink from '@/components/BackLink'
 
 export default function NewCategoryPage() {
   const [name, setName] = useState('')
@@ -49,6 +50,7 @@ export default function NewCategoryPage() {
 
   return (
     <div className="max-w-2xl">
+      <BackLink href="/admin/categories" label="Back to Categories" />
       <h1 className="text-3xl font-bold mb-8">New Category</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">

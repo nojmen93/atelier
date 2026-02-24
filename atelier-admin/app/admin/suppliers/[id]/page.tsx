@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import SupplierEditForm from './SupplierEditForm'
+import BackLink from '@/components/BackLink'
 
 export default async function EditSupplierPage({
   params,
@@ -22,6 +23,7 @@ export default async function EditSupplierPage({
 
   return (
     <div className="max-w-2xl">
+      <BackLink href="/admin/suppliers" label="Back to Suppliers" />
       <SupplierEditForm supplier={supplier} />
     </div>
   )

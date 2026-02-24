@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import CategoryEditForm from './CategoryEditForm'
+import BackLink from '@/components/BackLink'
 
 export default async function EditCategoryPage({
   params,
@@ -26,6 +27,7 @@ export default async function EditCategoryPage({
 
   return (
     <div className="max-w-2xl">
+      <BackLink href="/admin/categories" label="Back to Categories" />
       <CategoryEditForm category={category} subcategories={subcategories} />
     </div>
   )

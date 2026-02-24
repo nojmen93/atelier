@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ProductEditForm from './ProductEditForm'
+import BackLink from '@/components/BackLink'
 
 export default async function EditProductPage({
   params,
@@ -24,6 +25,7 @@ export default async function EditProductPage({
 
   return (
     <div className="max-w-4xl">
+      <BackLink href="/admin/products" label="Back to Products" />
       <ProductEditForm product={product} categories={categories || []} />
     </div>
   )

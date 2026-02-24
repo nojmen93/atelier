@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '@/components/ImageUpload'
+import BackLink from '@/components/BackLink'
 
 interface Category {
   id: string
@@ -66,6 +67,7 @@ export default function NewProductPage() {
 
   return (
     <div className="max-w-2xl">
+      <BackLink href="/admin/products" label="Back to Products" />
       <h1 className="text-3xl font-bold mb-8">New Product</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">

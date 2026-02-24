@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import BackLink from '@/components/BackLink'
 
 export default function NewSupplierPage() {
   const [name, setName] = useState('')
@@ -37,6 +38,7 @@ export default function NewSupplierPage() {
 
   return (
     <div className="max-w-2xl">
+      <BackLink href="/admin/suppliers" label="Back to Suppliers" />
       <h1 className="text-3xl font-bold mb-8">New Supplier</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">

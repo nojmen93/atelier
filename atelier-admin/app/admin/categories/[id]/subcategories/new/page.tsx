@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
+import BackLink from '@/components/BackLink'
 
 export default function NewSubcategoryPage() {
   const [name, setName] = useState('')
@@ -64,6 +65,7 @@ export default function NewSubcategoryPage() {
 
   return (
     <div className="max-w-2xl">
+      <BackLink href={`/admin/categories/${categoryId}`} label="Back to Category" />
       <h1 className="text-3xl font-bold mb-2">New Subcategory</h1>
       {categoryName && (
         <p className="text-neutral-400 mb-8">Under: {categoryName}</p>
