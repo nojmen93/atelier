@@ -7,14 +7,14 @@ const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 const PRESET_COLORS = ['Black', 'White', 'Navy', 'Grey', 'Red', 'Green', 'Blue', 'Beige']
 
 interface BulkVariantModalProps {
-  productId: string
-  productName: string
+  styleId: string
+  styleName: string
   onClose: () => void
   onCreated: () => void
 }
 
-function generateSku(productName: string, size: string, color: string): string {
-  const code = productName
+function generateSku(styleName: string, size: string, color: string): string {
+  const code = styleName
     .replace(/[^a-zA-Z0-9 ]/g, '')
     .split(' ')
     .map((w) => w.substring(0, 2).toUpperCase())
@@ -29,8 +29,8 @@ function generateSku(productName: string, size: string, color: string): string {
 }
 
 export default function BulkVariantModal({
-  productId,
-  productName,
+  styleId,
+  styleName,
   onClose,
   onCreated,
 }: BulkVariantModalProps) {
@@ -65,7 +65,7 @@ export default function BulkVariantModal({
     selectedColors.map((color) => ({
       size,
       color,
-      sku: generateSku(productName, size, color),
+      sku: generateSku(styleName, size, color),
     }))
   )
 
@@ -75,7 +75,7 @@ export default function BulkVariantModal({
 
     const stock = parseInt(defaultStock) || 0
     const rows = combinations.map((c) => ({
-      product_id: productId,
+      style_id: styleId,
       size: c.size,
       color: c.color,
       sku: c.sku,
@@ -158,7 +158,6 @@ export default function BulkVariantModal({
               Add
             </button>
           </div>
-          {/* Show custom selections that aren't presets */}
           {selectedColors.filter((c) => !PRESET_COLORS.includes(c)).length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {selectedColors

@@ -8,7 +8,7 @@ const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 
 export interface Variant {
   id: string
-  product_id: string
+  style_id: string
   size: string | null
   color: string | null
   sku: string | null
@@ -17,12 +17,12 @@ export interface Variant {
 }
 
 interface VariantTableProps {
-  productId: string
-  productName: string
+  styleId: string
+  styleName: string
 }
 
-function generateSku(productName: string, size: string, color: string): string {
-  const code = productName
+function generateSku(styleName: string, size: string, color: string): string {
+  const code = styleName
     .replace(/[^a-zA-Z0-9 ]/g, '')
     .split(' ')
     .map((w) => w.substring(0, 2).toUpperCase())
@@ -37,7 +37,7 @@ function generateSku(productName: string, size: string, color: string): string {
 }
 
 interface EditingState {
-  id: string | null // null = adding new
+  id: string | null
   size: string
   color: string
   sku: string
@@ -56,7 +56,7 @@ const emptyEdit: EditingState = {
   manualSku: false,
 }
 
-export default function VariantTable({ productId, productName }: VariantTableProps) {
+export default function VariantTable({ styleId, styleName }: VariantTableProps) {
   const [variants, setVariants] = useState<Variant[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<EditingState | null>(null)
@@ -69,22 +69,21 @@ export default function VariantTable({ productId, productName }: VariantTablePro
     const { data } = await supabase
       .from('variants')
       .select('*')
-      .eq('product_id', productId)
+      .eq('style_id', styleId)
       .order('size')
       .order('color')
     setVariants(data || [])
     setLoading(false)
-  }, [productId, supabase])
+  }, [styleId, supabase])
 
   useEffect(() => {
     fetchVariants()
   }, [fetchVariants])
 
-  // Auto-generate SKU when size/color change (unless manual override)
   const updateAutoSku = (edit: EditingState): EditingState => {
     if (edit.manualSku) return edit
     if (edit.size && edit.color) {
-      return { ...edit, sku: generateSku(productName, edit.size, edit.color) }
+      return { ...edit, sku: generateSku(styleName, edit.size, edit.color) }
     }
     return edit
   }
@@ -123,7 +122,7 @@ export default function VariantTable({ productId, productName }: VariantTablePro
     setSaving(true)
 
     const payload = {
-      product_id: productId,
+      style_id: styleId,
       size: editing.size || null,
       color: editing.color || null,
       sku: editing.sku || null,
@@ -351,7 +350,6 @@ export default function VariantTable({ productId, productName }: VariantTablePro
                 )
               )}
 
-              {/* Inline add row */}
               {editing && editing.id === null && (
                 <tr className="bg-neutral-900/50">
                   <td className="px-4 py-2">
@@ -429,8 +427,8 @@ export default function VariantTable({ productId, productName }: VariantTablePro
 
       {showBulk && (
         <BulkVariantModal
-          productId={productId}
-          productName={productName}
+          styleId={styleId}
+          styleName={styleName}
           onClose={() => setShowBulk(false)}
           onCreated={handleBulkCreated}
         />

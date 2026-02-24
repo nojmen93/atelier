@@ -20,8 +20,8 @@ export default async function AdminLayout({
           <h1 className="text-xl font-bold">Atelier Admin</h1>
           <div className="flex gap-6">
             <a href="/admin" className="hover:text-neutral-400">Dashboard</a>
-            <a href="/admin/products" className="hover:text-neutral-400">Products</a>
-            <a href="/admin/categories" className="hover:text-neutral-400">Categories</a>
+            <a href="/admin/styles" className="hover:text-neutral-400">Styles</a>
+            <a href="/admin/concepts" className="hover:text-neutral-400">Concepts</a>
             <a href="/admin/suppliers" className="hover:text-neutral-400">Suppliers</a>
           </div>
         </div>
