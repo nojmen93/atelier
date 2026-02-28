@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import BackLink from '@/components/BackLink'
 
 export default function NewConceptPage() {
@@ -38,8 +39,9 @@ export default function NewConceptPage() {
     })
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
+      toast.success("Concept created")
       router.push('/admin/concepts')
     }
 

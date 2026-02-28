@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { useKeyboardSave } from '@/lib/useKeyboardSave'
 
 interface Logo {
   id: string
@@ -22,6 +24,11 @@ export default function LogoDetailForm({ logo }: { logo: Logo }) {
   const router = useRouter()
   const supabase = createClient()
 
+  useKeyboardSave(useCallback(() => {
+    const form = document.querySelector('form')
+    form?.requestSubmit()
+  }, []))
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -32,9 +39,10 @@ export default function LogoDetailForm({ logo }: { logo: Logo }) {
       .eq('id', logo.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
-      router.push('/admin/logos')
+      toast.success("Changes saved")
+      router.push("/admin/logos")
       router.refresh()
     }
 
@@ -50,10 +58,11 @@ export default function LogoDetailForm({ logo }: { logo: Logo }) {
       .eq('id', logo.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
       setDeleting(false)
     } else {
-      router.push('/admin/logos')
+      toast.success("Logo deleted")
+      router.push("/admin/logos")
       router.refresh()
     }
   }

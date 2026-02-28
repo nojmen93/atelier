@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { toast } from 'sonner'
 
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -44,7 +45,7 @@ export default function ImageUpload({ images, onImagesChange }: ImageUploadProps
 
     if (!res.ok) {
       const data = await res.json()
-      alert(`Upload failed: ${data.error}`)
+      toast.error(`Upload failed: ${data.error}`)
       setUploading((prev) => prev.filter((u) => u.id !== id))
       URL.revokeObjectURL(preview)
       return null
@@ -65,9 +66,7 @@ export default function ImageUpload({ images, onImagesChange }: ImageUploadProps
       (f) => !ACCEPTED_TYPES.includes(f.type) || f.size > MAX_SIZE
     )
     if (invalid.length > 0) {
-      alert(
-        `Some files were skipped. Accepted: JPG, PNG, WebP under 5MB.\nSkipped: ${invalid.map((f) => f.name).join(', ')}`
-      )
+      toast.error(`Some files were skipped: ${invalid.map((f) => f.name).join(', ')}`)
     }
 
     const valid = files.filter(

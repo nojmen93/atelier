@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { useKeyboardSave } from '@/lib/useKeyboardSave'
 
 interface Supplier {
   id: string
@@ -25,6 +27,11 @@ export default function SupplierEditForm({ supplier }: { supplier: Supplier }) {
   const router = useRouter()
   const supabase = createClient()
 
+  useKeyboardSave(useCallback(() => {
+    const form = document.querySelector('form')
+    form?.requestSubmit()
+  }, []))
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -41,9 +48,10 @@ export default function SupplierEditForm({ supplier }: { supplier: Supplier }) {
       .eq('id', supplier.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
-      router.push('/admin/suppliers')
+      toast.success("Changes saved")
+      router.push("/admin/suppliers")
       router.refresh()
     }
 
@@ -59,10 +67,11 @@ export default function SupplierEditForm({ supplier }: { supplier: Supplier }) {
       .eq('id', supplier.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
       setDeleting(false)
     } else {
-      router.push('/admin/suppliers')
+      toast.success("Supplier deleted")
+      router.push("/admin/suppliers")
       router.refresh()
     }
   }

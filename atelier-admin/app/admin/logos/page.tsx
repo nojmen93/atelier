@@ -22,9 +22,20 @@ export default async function LogosPage() {
       </div>
 
       {(!logos || logos.length === 0) ? (
-        <div className="border border-neutral-800 rounded-lg p-12 text-center">
-          <p className="text-neutral-400 mb-2">No logos yet.</p>
-          <p className="text-neutral-500 text-sm">Upload your first logo to get started.</p>
+        <div className="border border-neutral-800 border-dashed rounded-lg p-16 text-center">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto mb-5 text-neutral-600">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+          <h3 className="text-lg font-semibold text-neutral-300 mb-2">No logos uploaded</h3>
+          <p className="text-neutral-500 text-sm mb-6 max-w-sm mx-auto">Upload client logos in SVG, AI, EPS, or PNG format for use in product customizations.</p>
+          <Link
+            href="/admin/logos/new"
+            className="inline-block px-6 py-3 bg-white text-black font-medium rounded hover:bg-neutral-200 transition"
+          >
+            Upload First Logo
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

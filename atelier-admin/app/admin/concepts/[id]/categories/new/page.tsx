@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
+import { toast } from 'sonner'
 import BackLink from '@/components/BackLink'
 
 export default function NewCategoryPage() {
@@ -55,8 +56,9 @@ export default function NewCategoryPage() {
     })
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
+      toast.success('Category created')
       router.push(`/admin/concepts/${conceptId}`)
     }
 

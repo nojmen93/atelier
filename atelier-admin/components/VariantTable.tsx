@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import BulkVariantModal from './BulkVariantModal'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
@@ -136,14 +137,14 @@ export default function VariantTable({ styleId, styleName }: VariantTableProps) 
         .update(payload)
         .eq('id', editing.id)
       if (error) {
-        alert(error.message)
+        toast.error(error.message)
         setSaving(false)
         return
       }
     } else {
       const { error } = await supabase.from('variants').insert(payload)
       if (error) {
-        alert(error.message)
+        toast.error(error.message)
         setSaving(false)
         return
       }
@@ -158,7 +159,7 @@ export default function VariantTable({ styleId, styleName }: VariantTableProps) 
     setDeletingId(id)
     const { error } = await supabase.from('variants').delete().eq('id', id)
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
       setVariants((prev) => prev.filter((v) => v.id !== id))
     }

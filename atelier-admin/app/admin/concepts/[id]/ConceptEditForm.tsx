@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { useKeyboardSave } from '@/lib/useKeyboardSave'
 import Link from 'next/link'
 
 interface Concept {
@@ -36,6 +38,11 @@ export default function ConceptEditForm({
   const router = useRouter()
   const supabase = createClient()
 
+  useKeyboardSave(useCallback(() => {
+    const form = document.querySelector('form')
+    form?.requestSubmit()
+  }, []))
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -50,9 +57,10 @@ export default function ConceptEditForm({
       .eq('id', concept.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
-      router.push('/admin/concepts')
+      toast.success("Changes saved")
+      router.push("/admin/concepts")
       router.refresh()
     }
 
@@ -68,10 +76,11 @@ export default function ConceptEditForm({
       .eq('id', concept.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
       setDeleting(false)
     } else {
-      router.push('/admin/concepts')
+      toast.success("Concept deleted")
+      router.push("/admin/concepts")
       router.refresh()
     }
   }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import BackLink from '@/components/BackLink'
 
 export default function NewSupplierPage() {
@@ -28,8 +29,9 @@ export default function NewSupplierPage() {
     })
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
+      toast.success("Supplier created")
       router.push('/admin/suppliers')
     }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import ImageUpload from '@/components/ImageUpload'
 import BackLink from '@/components/BackLink'
 
@@ -113,8 +114,9 @@ export default function NewStylePage() {
     })
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
+      toast.success("Style created")
       router.push('/admin/styles')
     }
 

@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { useKeyboardSave } from '@/lib/useKeyboardSave'
 import ImageUpload from '@/components/ImageUpload'
 import VariantTable from '@/components/VariantTable'
 import CustomizationTab from '@/components/CustomizationTab'
@@ -141,14 +143,24 @@ export default function StyleEditForm({
       .eq('id', style.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
+      toast.success('Changes saved')
       router.push('/admin/styles')
       router.refresh()
     }
 
     setSaving(false)
   }
+
+  const handleKeyboardSave = useCallback(() => {
+    if (activeTab === 'details') {
+      const form = document.querySelector('form')
+      form?.requestSubmit()
+    }
+  }, [activeTab])
+
+  useKeyboardSave(handleKeyboardSave)
 
   const handleDelete = async () => {
     setDeleting(true)
@@ -159,9 +171,10 @@ export default function StyleEditForm({
       .eq('id', style.id)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
       setDeleting(false)
     } else {
+      toast.success('Style archived')
       router.push('/admin/styles')
       router.refresh()
     }

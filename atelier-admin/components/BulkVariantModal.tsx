@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import { useEscapeClose } from '@/lib/useKeyboardSave'
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 const PRESET_COLORS = ['Black', 'White', 'Navy', 'Grey', 'Red', 'Green', 'Blue', 'Beige']
@@ -39,6 +41,8 @@ export default function BulkVariantModal({
   const [customColor, setCustomColor] = useState('')
   const [defaultStock, setDefaultStock] = useState('0')
   const [creating, setCreating] = useState(false)
+
+  useEscapeClose(onClose)
   const supabase = createClient()
 
   const toggleSize = (size: string) => {
@@ -86,11 +90,12 @@ export default function BulkVariantModal({
     const { error } = await supabase.from('variants').insert(rows)
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
       setCreating(false)
       return
     }
 
+    toast.success(`${combinations.length} variant${combinations.length !== 1 ? 's' : ''} created`)
     setCreating(false)
     onCreated()
   }

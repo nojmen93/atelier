@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   STYLE_ATTRIBUTES,
   DEFAULT_VIEW_CONFIG,
@@ -49,7 +50,7 @@ export default function ViewBuilder({
 
   const handleSave = async () => {
     if (!config.name.trim()) {
-      alert('Please enter a view name in the Settings tab.')
+      toast.error('Please enter a view name in the Settings tab.')
       setActiveTab('settings')
       return
     }
@@ -70,10 +71,10 @@ export default function ViewBuilder({
 
     if (isEdit) {
       const { error } = await supabase.from('views').update(payload).eq('id', viewId)
-      if (error) { alert(error.message); setSaving(false); return }
+      if (error) { toast.error(error.message); setSaving(false); return }
     } else {
       const { error } = await supabase.from('views').insert(payload)
-      if (error) { alert(error.message); setSaving(false); return }
+      if (error) { toast.error(error.message); setSaving(false); return }
     }
 
     router.push('/admin/views')
@@ -85,7 +86,7 @@ export default function ViewBuilder({
     if (!viewId) return
     setDeleting(true)
     const { error } = await supabase.from('views').delete().eq('id', viewId)
-    if (error) { alert(error.message); setDeleting(false); return }
+    if (error) { toast.error(error.message); setDeleting(false); return }
     router.push('/admin/views')
     router.refresh()
   }
