@@ -129,7 +129,7 @@ Powered by **Fabric.js v7** (`components/CustomizationTab.tsx`).
   - **Display Options**: Gallery vs Grid, items per row, image size, pagination
   - **View Settings**: Name, default flag, PDF export options (header, page size, images)
 - **View Renderer**: `/admin/views/[id]/render` — live rendering with runtime filters, pagination, and item selection
-- **PDF Export**: `/admin/views/[id]/export` — export selected styles to PDF
+- **Export Page**: `/admin/views/[id]/export` — shows export settings and selected styles (PDF generation not yet implemented)
 
 ### Image Upload System
 
@@ -148,7 +148,7 @@ Powered by **Fabric.js v7** (`components/CustomizationTab.tsx`).
 ### Variant Management
 
 - Individual add/edit/delete with inline table editing
-- Bulk creation modal: select sizes (XS-XXL) x colors (presets + custom)
+- Quick Add modal: select sizes (XS-XXL) x colors (presets + custom)
 - Auto-generated SKUs from style name + size + color
 - Stock tracking and price modifier per variant
 
@@ -255,10 +255,10 @@ All skeletons use `animate-pulse` for the shimmer effect.
 
 Defined in `lib/useKeyboardSave.ts`.
 
-| Shortcut         | Action           | Where                       |
-|------------------|------------------|-----------------------------|
-| `Cmd/Ctrl + S`   | Save form        | Style edit (Details tab), Logo detail |
-| `Escape`         | Close modal      | Bulk variant modal          |
+| Shortcut         | Action           | Where                                                                |
+|------------------|------------------|----------------------------------------------------------------------|
+| `Cmd/Ctrl + S`   | Save form        | Style edit (Details tab), Logo detail, Supplier edit, Concept edit, Category edit |
+| `Escape`         | Close modal      | Quick Add variant modal                                              |
 
 **How to Add Keyboard Save to a Form:**
 ```tsx
@@ -535,7 +535,7 @@ atelier/
 | `BackLink`             | Reusable back arrow navigation link             |
 | `ImageUpload`          | Multi-file upload with drag reorder             |
 | `VariantTable`         | CRUD table for product variants                 |
-| `BulkVariantModal`     | Size x color matrix variant generator           |
+| `BulkVariantModal`     | Quick Add: size x color matrix variant generator |
 | `CustomizationTab`     | Fabric.js interactive mockup editor             |
 | `Skeleton`             | Loading skeletons (card, row, logo, metric) + EmptyState |
 | `ViewBuilder`          | 4-tab view configuration interface              |

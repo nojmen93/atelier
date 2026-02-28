@@ -81,11 +81,11 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] "Add Variant" creates a new row in the table
 - [ ] Can edit: size, color, SKU, stock, price modifier
 - [ ] Can delete a variant (inline confirm)
-- [ ] "Bulk Add" opens the bulk creation modal
+- [ ] "Quick Add" opens the bulk creation modal
 - [ ] Bulk modal: checkboxes for sizes (XS through XXL)
 - [ ] Bulk modal: color presets + custom color input
 - [ ] SKUs auto-generated: `{STYLE-NAME}-{SIZE}-{COLOR}`
-- [ ] Pressing Escape closes the bulk modal
+- [ ] Pressing Escape closes the Quick Add modal
 - [ ] Generated variants appear in the table
 
 **Common issues:**
@@ -369,11 +369,12 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Checkbox selection per item
 - [ ] Select all checkbox
 
-### Export PDF
-- [ ] Export with selected items
-- [ ] PDF includes configured header
-- [ ] Images included if enabled
-- [ ] Page size respected (A4/Letter)
+### Export Page
+- [ ] Export page accessible from rendered view
+- [ ] Shows export settings: page size, header text, include images, include header
+- [ ] Shows selected style count or "all styles" message
+- [ ] Displays "PDF export is not yet available" placeholder message
+- [ ] Back link returns to rendered view
 
 ---
 
@@ -407,8 +408,11 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 ### Keyboard Shortcuts
 - [ ] `Cmd/Ctrl + S` saves form on style edit (Details tab only)
 - [ ] `Cmd/Ctrl + S` saves form on logo detail page
+- [ ] `Cmd/Ctrl + S` saves form on supplier edit page
+- [ ] `Cmd/Ctrl + S` saves form on concept edit page
+- [ ] `Cmd/Ctrl + S` saves form on category edit page
 - [ ] Browser save dialog is prevented (no browser save-as popup)
-- [ ] `Escape` closes bulk variant modal
+- [ ] `Escape` closes Quick Add variant modal
 - [ ] Shortcuts work on both Mac (metaKey) and Windows/Linux (ctrlKey)
 
 ### Error Handling

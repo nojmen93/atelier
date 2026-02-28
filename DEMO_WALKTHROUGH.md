@@ -111,12 +111,12 @@ The top nav bar includes links to:
 | Lead Time (days)     | "21"                           | No       |
 | Customization Mode   | "logo placement, embroidery"   | No       |
 
-4. Click **Save**
+4. Click **Create Style**
 
 **Expected behavior:**
 - Concept dropdown loads all concepts
 - Category dropdown is disabled until a concept is selected; then shows that concept's categories
-- Toast notification: "Changes saved" on success
+- Toast notification: "Style created" on success
 - Redirects back to styles list
 
 <!-- Screenshot: New Style form -->
@@ -154,8 +154,8 @@ The top nav bar includes links to:
 3. Enter size, color, SKU, stock, price modifier
 4. Click **Save**
 
-**Bulk:**
-1. Click **Bulk Add** button
+**Bulk (Quick Add):**
+1. Click **Quick Add** button
 2. Select sizes (checkboxes): XS, S, M, L, XL, XXL
 3. Select colors from presets or add custom colors
 4. Click **Generate**
@@ -544,14 +544,16 @@ The table below the editor shows all saved customizations:
 
 ### 8c. Export View
 
-1. From the rendered view, click the export option
-2. Export generates a formatted output of the view
+1. From the rendered view, navigate to the export page
+2. View the export settings configured in the view builder
 
 **Expected behavior:**
+- Export page shows configured settings: page size, header text, include images, include header
+- Shows count of selected styles
+- **Note:** PDF generation is not yet implemented — the page displays a placeholder message
 - Gallery views show large images with overlaid attributes
 - Grid views show tabular data
 - Filters narrow down which styles appear
-- PDF export available for sharing with clients
 
 > 📸 `[Screenshot: View rendered in gallery mode]`
 
@@ -612,10 +614,10 @@ Toast notifications appear for all user actions:
 
 ### 9d. Keyboard Shortcuts
 
-| Shortcut          | Action              | Where                        |
-|-------------------|---------------------|------------------------------|
-| `Cmd/Ctrl + S`    | Save current form   | Style edit, Logo detail       |
-| `Escape`          | Close modal/dialog  | Bulk variant modal            |
+| Shortcut          | Action              | Where                                                    |
+|-------------------|---------------------|----------------------------------------------------------|
+| `Cmd/Ctrl + S`    | Save current form   | Style edit, Logo detail, Supplier edit, Concept edit, Category edit |
+| `Escape`          | Close modal/dialog  | Quick Add variant modal                                  |
 
 **How to test:**
 1. Open a style edit page (Details tab)
