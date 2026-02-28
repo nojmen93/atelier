@@ -169,6 +169,30 @@ CREATE TABLE rules (
 );
 
 -- ============================================================
+-- VIEWS (Saved view configurations)
+-- Stores admin-created views for Style data in grid/gallery format.
+-- Each view saves: selected attributes, filters, sort, group,
+-- display options, and export options.
+-- ============================================================
+
+CREATE TABLE views (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'gallery' CHECK (type IN ('grid', 'gallery')),
+  entity TEXT NOT NULL DEFAULT 'styles',
+  selected_attributes TEXT[] NOT NULL DEFAULT '{}',
+  filters JSONB DEFAULT '[]',
+  sort JSONB DEFAULT '[]',
+  group_by TEXT[] DEFAULT '{}',
+  display_options JSONB DEFAULT '{}',
+  export_options JSONB DEFAULT '{}',
+  is_default BOOLEAN DEFAULT FALSE,
+  created_by UUID,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================================
 -- INDEXES
 -- ============================================================
 
@@ -208,6 +232,9 @@ CREATE TRIGGER update_suppliers_updated_at BEFORE UPDATE ON suppliers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_rules_updated_at BEFORE UPDATE ON rules
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_views_updated_at BEFORE UPDATE ON views
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
