@@ -11,7 +11,7 @@ export default async function EditStylePage({
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: style }, { data: concepts }, { data: suppliers }] = await Promise.all([
+  const [{ data: style }, { data: concepts }, { data: suppliers }, { data: logos }] = await Promise.all([
     supabase.from('styles').select('*').eq('id', id).single(),
     supabase
       .from('concepts')
@@ -21,6 +21,10 @@ export default async function EditStylePage({
       .from('suppliers')
       .select('id, name')
       .order('name'),
+    supabase
+      .from('logos')
+      .select('id, company_name, file_url, file_format')
+      .order('company_name'),
   ])
 
   if (!style) {
@@ -34,6 +38,7 @@ export default async function EditStylePage({
         style={style}
         concepts={concepts || []}
         suppliers={suppliers || []}
+        logos={logos || []}
       />
     </div>
   )
