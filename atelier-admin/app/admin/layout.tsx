@@ -24,6 +24,7 @@ export default async function AdminLayout({
             <a href="/admin/concepts" className="hover:text-neutral-400">Concepts</a>
             <a href="/admin/suppliers" className="hover:text-neutral-400">Suppliers</a>
             <a href="/admin/logos" className="hover:text-neutral-400">Logos</a>
+            <a href="/admin/quotes" className="hover:text-neutral-400">Quotes</a>
             <a href="/admin/views" className="hover:text-neutral-400">Views</a>
           </div>
         </div>
