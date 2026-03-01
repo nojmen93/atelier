@@ -31,12 +31,20 @@ interface Customization {
   mockup_url: string | null
   created_at: string
   logos: { company_name: string; file_url: string } | null
+  _logoSignedUrl?: string | null
 }
 
 interface CustomizationTabProps {
   styleId: string
   images: string[]
   logos: Logo[]
+}
+
+function extractStoragePath(fileUrl: string): string | null {
+  const marker = '/object/public/logos/'
+  const idx = fileUrl.indexOf(marker)
+  if (idx === -1) return null
+  return fileUrl.slice(idx + marker.length)
 }
 
 const CANVAS_WIDTH = 500
@@ -48,6 +56,9 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
   const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Signed URL cache: logo id -> signed URL
+  const [logoSignedUrls, setLogoSignedUrls] = useState<Record<string, string>>({})
 
   // Form state
   const [logoId, setLogoId] = useState('')
@@ -74,7 +85,29 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
       .select('*, logos(company_name, file_url)')
       .eq('style_id', styleId)
       .order('created_at', { ascending: false })
-    setCustomizations((data || []) as Customization[])
+
+    const rows = (data || []) as Customization[]
+
+    // Generate signed URLs for each customization's logo
+    const urlMap: Record<string, string> = { ...logoSignedUrls }
+    for (const c of rows) {
+      if (c.logos?.file_url && !urlMap[c.logo_id]) {
+        const path = extractStoragePath(c.logos.file_url)
+        if (path) {
+          const { data: signed } = await supabase.storage
+            .from('logos')
+            .createSignedUrl(path, 3600)
+          if (signed?.signedUrl) {
+            urlMap[c.logo_id] = signed.signedUrl
+            c._logoSignedUrl = signed.signedUrl
+          }
+        }
+      } else if (urlMap[c.logo_id]) {
+        c._logoSignedUrl = urlMap[c.logo_id]
+      }
+    }
+    setLogoSignedUrls(urlMap)
+    setCustomizations(rows)
     setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [styleId])
@@ -82,6 +115,25 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
   useEffect(() => {
     fetchCustomizations()
   }, [fetchCustomizations])
+
+  // Pre-generate signed URLs for all logos (used on canvas)
+  useEffect(() => {
+    async function generateLogoUrls() {
+      const urlMap: Record<string, string> = {}
+      for (const logo of logos) {
+        const path = extractStoragePath(logo.file_url)
+        if (path) {
+          const { data } = await supabase.storage
+            .from('logos')
+            .createSignedUrl(path, 3600)
+          if (data?.signedUrl) urlMap[logo.id] = data.signedUrl
+        }
+      }
+      setLogoSignedUrls((prev) => ({ ...prev, ...urlMap }))
+    }
+    if (logos.length > 0) generateLogoUrls()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logos])
 
   // Initialize Fabric.js canvas
   useEffect(() => {
@@ -233,7 +285,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
 
         canvas.renderAll()
       }
-      imgEl.src = selectedLogo.file_url
+      imgEl.src = logoSignedUrls[selectedLogo.id] || selectedLogo.file_url
     } else {
       // Non-previewable format — show labeled box
       const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * CANVAS_WIDTH))
@@ -270,7 +322,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
       logoObjectRef.current = group
       canvas.renderAll()
     }
-  }, [logoId, placement, technique, widthCm, heightCm, logos])
+  }, [logoId, placement, technique, widthCm, heightCm, logos, logoSignedUrls])
 
   const resetForm = () => {
     setLogoId('')
@@ -679,7 +731,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
                         <div className="flex items-center gap-2">
                           {c.logos?.file_url && (
                             <img
-                              src={c.logos.file_url}
+                              src={c._logoSignedUrl || logoSignedUrls[c.logo_id] || c.logos.file_url}
                               alt=""
                               className="w-6 h-6 object-contain rounded"
                             />
