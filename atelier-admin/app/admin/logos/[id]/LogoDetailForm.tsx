@@ -105,7 +105,7 @@ export default function LogoDetailForm({ logo }: { logo: Logo }) {
         </div>
         <div>
           <span className="block text-neutral-500 mb-1">Uploaded</span>
-          <span className="text-neutral-300">{new Date(logo.created_at).toLocaleDateString()}</span>
+          <span className="text-neutral-300">{new Date(logo.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
         <div>
           <span className="block text-neutral-500 mb-1">File URL</span>

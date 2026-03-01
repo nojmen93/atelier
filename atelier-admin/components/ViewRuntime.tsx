@@ -52,8 +52,8 @@ function formatValue(key: string, style: StyleRow): string {
     case 'category_name': return style.categories?.name || ''
     case 'supplier_name': return style.suppliers?.name || ''
     case 'variant_count': return style.variants?.length?.toString() || '0'
-    case 'created_at': return new Date(style.created_at).toLocaleDateString()
-    case 'updated_at': return new Date(style.updated_at).toLocaleDateString()
+    case 'created_at': return new Date(style.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    case 'updated_at': return new Date(style.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
     default: return ''
   }
 }
