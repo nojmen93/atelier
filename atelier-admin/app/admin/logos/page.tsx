@@ -1,6 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
+function extractStoragePath(fileUrl: string): string | null {
+  const marker = '/object/public/logos/'
+  const idx = fileUrl.indexOf(marker)
+  if (idx === -1) return null
+  return fileUrl.slice(idx + marker.length)
+}
+
 export default async function LogosPage() {
   const supabase = await createClient()
 
@@ -8,6 +15,20 @@ export default async function LogosPage() {
     .from('logos')
     .select('*')
     .order('created_at', { ascending: false })
+
+  // Generate signed URLs for all logos
+  const signedUrls: Record<string, string> = {}
+  if (logos) {
+    for (const logo of logos) {
+      const path = extractStoragePath(logo.file_url)
+      if (path) {
+        const { data } = await supabase.storage
+          .from('logos')
+          .createSignedUrl(path, 3600)
+        if (data?.signedUrl) signedUrls[logo.id] = data.signedUrl
+      }
+    }
+  }
 
   return (
     <div>
@@ -46,9 +67,9 @@ export default async function LogosPage() {
               className="border border-neutral-800 rounded-lg overflow-hidden hover:border-neutral-600 transition group"
             >
               <div className="aspect-square bg-neutral-900 flex items-center justify-center p-6">
-                {logo.file_format === 'PNG' || logo.file_format === 'SVG' ? (
+                {(logo.file_format === 'PNG' || logo.file_format === 'SVG') && signedUrls[logo.id] ? (
                   <img
-                    src={logo.file_url}
+                    src={signedUrls[logo.id]}
                     alt={logo.company_name}
                     className="max-w-full max-h-full object-contain"
                   />
