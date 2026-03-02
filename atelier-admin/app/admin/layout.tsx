@@ -1,5 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Sidebar from '@/components/Sidebar'
+
+async function logoutAction() {
+  'use server'
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/login')
+}
 
 export default async function AdminLayout({
   children,
@@ -15,21 +23,8 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <nav className="border-b border-neutral-800 px-8 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Atelier Admin</h1>
-          <div className="flex gap-6">
-            <a href="/admin" className="hover:text-neutral-400">Dashboard</a>
-            <a href="/admin/styles" className="hover:text-neutral-400">Styles</a>
-            <a href="/admin/concepts" className="hover:text-neutral-400">Concepts</a>
-            <a href="/admin/suppliers" className="hover:text-neutral-400">Suppliers</a>
-            <a href="/admin/logos" className="hover:text-neutral-400">Logos</a>
-            <a href="/admin/quotes" className="hover:text-neutral-400">Quotes</a>
-            <a href="/admin/views" className="hover:text-neutral-400">Views</a>
-          </div>
-        </div>
-      </nav>
-      <main className="p-8">{children}</main>
+      <Sidebar logoutAction={logoutAction} />
+      <main className="md:ml-[72px] p-8 pt-16 md:pt-8">{children}</main>
     </div>
   )
 }
