@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { Logo } from '@/app/admin/styles/[id]/StyleEditForm'
-import * as fabric from 'fabric'
 
 const PLACEMENTS = [
   { value: 'center_front', label: 'Center Front', x: 50, y: 20 },
@@ -39,9 +38,6 @@ interface CustomizationTabProps {
   logos: Logo[]
 }
 
-const CANVAS_MAX_WIDTH = 500
-const CANVAS_MAX_HEIGHT = 600
-
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new window.Image()
@@ -72,8 +68,9 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [zoom, setZoom] = useState(1)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const renderIdRef = useRef(0)
+  const [containerWidth, setContainerWidth] = useState(0)
 
   const supabase = createClient()
 
@@ -92,30 +89,30 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
     fetchCustomizations()
   }, [fetchCustomizations])
 
-  // Initialize Fabric.js canvas once
+  // Measure container width and track resizes
   useEffect(() => {
-    if (!canvasRef.current || images.length === 0) return
+    const container = containerRef.current
+    if (!container) return
 
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      width: CANVAS_MAX_WIDTH,
-      height: CANVAS_MAX_HEIGHT,
-      backgroundColor: '#0a0a0a',
-      selection: false,
-    })
-    fabricCanvasRef.current = canvas
-
-    return () => {
-      canvas.dispose()
-      fabricCanvasRef.current = null
+    const measure = () => {
+      const w = container.clientWidth
+      if (w > 0) setContainerWidth(w)
     }
-    // Only create/destroy canvas once when component mounts/unmounts or images appear
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images.length > 0])
 
-  // Single unified render: background + logo overlay
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
+
+  // Single unified render using native Canvas 2D — no Fabric.js wrapper issues
   const renderCanvas = useCallback(async () => {
-    const canvas = fabricCanvasRef.current
-    if (!canvas || images.length === 0) return
+    const canvas = canvasRef.current
+    if (!canvas || images.length === 0 || containerWidth === 0) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
     const renderId = ++renderIdRef.current
 
@@ -124,57 +121,41 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
     const selectedPlacement = PLACEMENTS.find((p) => p.value === placement) || PLACEMENTS[0]
 
     try {
-      // Load background image
       const imgEl = await loadImage(imgUrl)
-      if (renderIdRef.current !== renderId) return // stale render
+      if (renderIdRef.current !== renderId) return
 
-      const fabricImg = new fabric.FabricImage(imgEl)
-      const imgW = fabricImg.width || 1
-      const imgH = fabricImg.height || 1
-      const scale = Math.min(CANVAS_MAX_WIDTH / imgW, CANVAS_MAX_HEIGHT / imgH)
+      // Size canvas to fit container width, maintaining image aspect ratio
+      const imgW = imgEl.naturalWidth || imgEl.width
+      const imgH = imgEl.naturalHeight || imgEl.height
+      const scale = containerWidth / imgW
       const canvasW = Math.round(imgW * scale)
       const canvasH = Math.round(imgH * scale)
 
-      // Clear everything and resize
-      canvas.clear()
-      canvas.backgroundColor = '#0a0a0a'
-      canvas.setDimensions({ width: canvasW, height: canvasH })
+      canvas.width = canvasW
+      canvas.height = canvasH
+      canvas.style.width = canvasW + 'px'
+      canvas.style.height = canvasH + 'px'
 
-      fabricImg.set({
-        scaleX: scale,
-        scaleY: scale,
-        left: 0,
-        top: 0,
-        selectable: false,
-        evented: false,
-      })
-      canvas.add(fabricImg)
+      // Draw background
+      ctx.clearRect(0, 0, canvasW, canvasH)
+      ctx.drawImage(imgEl, 0, 0, canvasW, canvasH)
 
-      // Now add logo overlay
-      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * canvasW))
-      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * canvasH))
+      // Logo overlay
+      const logoWCm = parseFloat(widthCm) || 5
+      const logoHCm = parseFloat(heightCm) || 5
+      const logoW = Math.min(canvasW * 0.6, Math.max(30, (logoWCm / 50) * canvasW))
+      const logoH = Math.min(canvasH * 0.6, Math.max(30, (logoHCm / 70) * canvasH))
       const posX = (selectedPlacement.x / 100) * canvasW
       const posY = (selectedPlacement.y / 100) * canvasH
 
       if (!selectedLogo) {
-        // Placeholder rectangle
-        const placeholder = new fabric.Rect({
-          width: logoW,
-          height: logoH,
-          left: posX - logoW / 2,
-          top: posY - logoH / 2,
-          fill: 'transparent',
-          stroke: 'rgba(255,255,255,0.3)',
-          strokeWidth: 2,
-          strokeDashArray: [6, 4],
-          selectable: true,
-          hasControls: false,
-          hasBorders: true,
-          borderColor: '#fff',
-          cornerColor: '#fff',
-        })
-        canvas.add(placeholder)
-        canvas.renderAll()
+        // Dashed placeholder
+        ctx.save()
+        ctx.setLineDash([6, 4])
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+        ctx.lineWidth = 2
+        ctx.strokeRect(posX - logoW / 2, posY - logoH / 2, logoW, logoH)
+        ctx.restore()
         return
       }
 
@@ -184,85 +165,62 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
         const logoEl = await loadImage(selectedLogo.file_url)
         if (renderIdRef.current !== renderId) return
 
-        const fabricLogo = new fabric.FabricImage(logoEl)
-        const scaleX = logoW / (fabricLogo.width || 1)
-        const scaleY = logoH / (fabricLogo.height || 1)
+        const scaleX = logoW / (logoEl.width || 1)
+        const scaleY = logoH / (logoEl.height || 1)
         const logoScale = Math.min(scaleX, scaleY)
+        const drawW = logoEl.width * logoScale
+        const drawH = logoEl.height * logoScale
+        const drawX = posX - drawW / 2
+        const drawY = posY - drawH / 2
 
-        fabricLogo.set({
-          scaleX: logoScale,
-          scaleY: logoScale,
-          left: posX - (fabricLogo.width || 0) * logoScale / 2,
-          top: posY - (fabricLogo.height || 0) * logoScale / 2,
-          opacity: technique === 'embroidery' ? 0.85 : 0.95,
-          selectable: true,
-          hasControls: false,
-          hasBorders: true,
-          borderColor: '#fff',
-          cornerColor: '#fff',
-        })
+        // Main logo
+        ctx.save()
+        ctx.globalAlpha = technique === 'embroidery' ? 0.85 : 0.95
+        ctx.drawImage(logoEl, drawX, drawY, drawW, drawH)
+        ctx.restore()
 
-        canvas.add(fabricLogo)
-
+        // Embroidery effect: shadow + stitch border
         if (technique === 'embroidery') {
-          const stitchOverlay = new fabric.Rect({
-            width: (fabricLogo.width || 0) * logoScale,
-            height: (fabricLogo.height || 0) * logoScale,
-            left: fabricLogo.left,
-            top: fabricLogo.top,
-            fill: 'transparent',
-            stroke: 'rgba(255,255,255,0.15)',
-            strokeWidth: 1,
-            selectable: false,
-            evented: false,
-            shadow: new fabric.Shadow({
-              color: 'rgba(0,0,0,0.4)',
-              blur: 3,
-              offsetX: 1,
-              offsetY: 2,
-            }),
-          })
-          canvas.add(stitchOverlay)
+          ctx.save()
+          ctx.shadowColor = 'rgba(0,0,0,0.4)'
+          ctx.shadowBlur = 3
+          ctx.shadowOffsetX = 1
+          ctx.shadowOffsetY = 2
+          ctx.strokeStyle = 'rgba(255,255,255,0.15)'
+          ctx.lineWidth = 1
+          ctx.strokeRect(drawX, drawY, drawW, drawH)
+          ctx.restore()
         }
+
+        // Selection border
+        ctx.save()
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+        ctx.lineWidth = 1
+        ctx.setLineDash([4, 3])
+        ctx.strokeRect(drawX - 2, drawY - 2, drawW + 4, drawH + 4)
+        ctx.restore()
       } else {
         // Non-previewable format — labeled box
-        const group = new fabric.Group([
-          new fabric.Rect({
-            width: logoW,
-            height: logoH,
-            fill: 'rgba(255,255,255,0.05)',
-            stroke: 'rgba(255,255,255,0.3)',
-            strokeWidth: 2,
-            strokeDashArray: [6, 4],
-            rx: 4,
-            ry: 4,
-          }),
-          new fabric.FabricText(selectedLogo.file_format, {
-            fontSize: 12,
-            fill: 'rgba(255,255,255,0.4)',
-            originX: 'center',
-            originY: 'center',
-            top: 0,
-            left: 0,
-          }),
-        ], {
-          left: posX - logoW / 2,
-          top: posY - logoH / 2,
-          selectable: true,
-          hasControls: false,
-          hasBorders: true,
-          borderColor: '#fff',
-        })
-        canvas.add(group)
+        ctx.save()
+        ctx.setLineDash([6, 4])
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+        ctx.lineWidth = 2
+        ctx.fillStyle = 'rgba(255,255,255,0.05)'
+        ctx.fillRect(posX - logoW / 2, posY - logoH / 2, logoW, logoH)
+        ctx.strokeRect(posX - logoW / 2, posY - logoH / 2, logoW, logoH)
+        ctx.setLineDash([])
+        ctx.fillStyle = 'rgba(255,255,255,0.4)'
+        ctx.font = '12px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(selectedLogo.file_format, posX, posY)
+        ctx.restore()
       }
-
-      canvas.renderAll()
     } catch (err) {
       console.error('Canvas render error:', err)
     }
-  }, [activeImageIndex, images, logoId, logos, placement, technique, widthCm, heightCm])
+  }, [activeImageIndex, images, logoId, logos, placement, technique, widthCm, heightCm, containerWidth])
 
-  // Trigger render whenever any input changes
   useEffect(() => {
     renderCanvas()
   }, [renderCanvas])
@@ -337,20 +295,18 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
   }
 
   const handleExportMockup = async () => {
-    const canvas = fabricCanvasRef.current
+    const canvas = canvasRef.current
     if (!canvas) return
 
     setExporting(true)
     try {
-      const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 })
+      const dataUrl = canvas.toDataURL('image/png')
 
-      // Download
       const link = document.createElement('a')
       link.download = `mockup-${styleId}-${placement}.png`
       link.href = dataUrl
       link.click()
 
-      // Upload to Supabase Storage
       const blob = await (await fetch(dataUrl)).blob()
       const fileName = `mockups/${styleId}/${crypto.randomUUID()}.png`
       const { error: uploadError } = await supabase.storage
@@ -405,7 +361,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
     <div>
       {/* Customization Editor */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Left: Fabric.js Canvas */}
+        {/* Left: Canvas Preview */}
         <div>
           <h3 className="text-sm font-medium text-neutral-400 mb-3 uppercase tracking-wide">Preview</h3>
 
@@ -432,33 +388,33 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
             </div>
           )}
 
-          <div className="relative border border-neutral-800 rounded-lg overflow-hidden bg-neutral-950">
+          <div ref={containerRef} className="relative border border-neutral-800 rounded-lg bg-neutral-950">
             <div
               className="flex items-center justify-center"
               style={{
                 transform: `scale(${zoom})`,
-                transformOrigin: 'center center',
+                transformOrigin: 'top center',
                 transition: 'transform 0.2s',
               }}
             >
-              <canvas ref={canvasRef} />
+              <canvas ref={canvasRef} className="block w-full rounded-lg" />
             </div>
 
             {/* Zoom controls */}
-            <div className="absolute bottom-3 right-3 flex gap-1">
+            <div className="absolute bottom-3 right-3 flex gap-1 z-10">
               <button type="button" onClick={handleZoomOut} className="w-8 h-8 flex items-center justify-center bg-black/70 text-white rounded hover:bg-black/90 transition text-sm">-</button>
               <button type="button" onClick={handleZoomReset} className="h-8 px-2 flex items-center justify-center bg-black/70 text-neutral-400 rounded hover:bg-black/90 transition text-xs tabular-nums">{Math.round(zoom * 100)}%</button>
               <button type="button" onClick={handleZoomIn} className="w-8 h-8 flex items-center justify-center bg-black/70 text-white rounded hover:bg-black/90 transition text-sm">+</button>
             </div>
 
             {/* Placement label */}
-            <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/70 rounded text-xs text-neutral-300">
+            <div className="absolute bottom-3 left-3 px-2 py-1 bg-black/70 rounded text-xs text-neutral-300 z-10">
               {PLACEMENTS.find((p) => p.value === placement)?.label || placement}
             </div>
 
             {/* Embroidery indicator */}
             {technique === 'embroidery' && (
-              <div className="absolute top-3 left-3 px-2 py-1 bg-blue-900/70 border border-blue-700/50 rounded text-xs text-blue-300">
+              <div className="absolute top-3 left-3 px-2 py-1 bg-blue-900/70 border border-blue-700/50 rounded text-xs text-blue-300 z-10">
                 Embroidery texture
               </div>
             )}
