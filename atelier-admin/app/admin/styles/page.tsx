@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import SortableStyleList from '@/components/SortableStyleList'
+import StyleGalleryFilter from '@/components/StyleGalleryFilter'
 
 export default async function StylesPage() {
   const supabase = await createClient()
@@ -13,8 +14,8 @@ export default async function StylesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Styles</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">Style Gallery</h1>
         <Link
           href="/admin/styles/new"
           className="px-6 py-3 bg-white text-black font-medium rounded hover:bg-neutral-200"
@@ -22,6 +23,7 @@ export default async function StylesPage() {
           New Style
         </Link>
       </div>
+      <StyleGalleryFilter />
 
       {(!styles || styles.length === 0) ? (
         <div className="border border-neutral-800 border-dashed rounded-lg p-16 text-center">

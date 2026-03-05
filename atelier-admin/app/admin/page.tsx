@@ -13,6 +13,7 @@ export default async function AdminDashboard() {
     { count: totalQuotes },
     { count: acceptedQuotes },
     { count: quotedQuotes },
+    { count: activeOrders },
     { data: recentQuotes },
   ] = await Promise.all([
     supabase.from('styles').select('*', { count: 'exact', head: true }),
@@ -23,6 +24,7 @@ export default async function AdminDashboard() {
     supabase.from('quote_requests').select('*', { count: 'exact', head: true }),
     supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['accepted', 'converted']),
     supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['quoted', 'accepted', 'converted']),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['confirmed', 'in_production', 'shipped']),
     supabase.from('quote_requests').select('id, customer_name, customer_company, product_name, status, quantity, created_at, styles(name)').order('created_at', { ascending: false }).limit(5),
   ])
 
@@ -48,11 +50,13 @@ export default async function AdminDashboard() {
     <div>
       <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="border border-neutral-800 rounded-lg p-6">
+      {/* Styles Domain */}
+      <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">Styles</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link href="/admin/styles" className="border border-neutral-800 rounded-lg p-6 hover:border-neutral-600 transition">
           <div className="text-4xl font-bold mb-2">{stylesCount || 0}</div>
           <div className="text-neutral-400">Total Styles</div>
-        </div>
+        </Link>
         <div className="border border-neutral-800 rounded-lg p-6">
           <div className="text-4xl font-bold mb-2">{activeCount || 0}</div>
           <div className="text-neutral-400">Active Styles</div>
@@ -61,10 +65,23 @@ export default async function AdminDashboard() {
           <div className="text-4xl font-bold mb-2">{conceptsCount || 0}</div>
           <div className="text-neutral-400">Concepts</div>
         </div>
+      </div>
+
+      {/* Production Domain */}
+      <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mt-10 mb-4">Production</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="border border-neutral-800 rounded-lg p-6">
           <div className="text-4xl font-bold mb-2">{suppliersCount || 0}</div>
           <div className="text-neutral-400">Suppliers</div>
         </div>
+        <Link href="/admin/orders" className="border border-neutral-800 rounded-lg p-6 hover:border-neutral-600 transition">
+          <div className="text-4xl font-bold mb-2 text-blue-300">{activeOrders || 0}</div>
+          <div className="text-neutral-400">Active Orders</div>
+        </Link>
+        <Link href="/admin/quotes" className="border border-blue-900/50 rounded-lg p-6 hover:border-blue-700 transition">
+          <div className="text-4xl font-bold mb-2 text-blue-300">{pendingQuotes || 0}</div>
+          <div className="text-neutral-400">Pending Quotes</div>
+        </Link>
       </div>
 
       {/* Quote Metrics */}
