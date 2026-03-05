@@ -39,8 +39,8 @@ interface CustomizationTabProps {
   logos: Logo[]
 }
 
-const CANVAS_WIDTH = 500
-const CANVAS_HEIGHT = 600
+const CANVAS_MAX_WIDTH = 500
+const CANVAS_MAX_HEIGHT = 600
 
 export default function CustomizationTab({ styleId, images, logos }: CustomizationTabProps) {
   const [customizations, setCustomizations] = useState<Customization[]>([])
@@ -83,13 +83,15 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
     fetchCustomizations()
   }, [fetchCustomizations])
 
+  const canvasSizeRef = useRef({ width: CANVAS_MAX_WIDTH, height: CANVAS_MAX_HEIGHT })
+
   // Initialize Fabric.js canvas
   useEffect(() => {
     if (!canvasRef.current || images.length === 0) return
 
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: CANVAS_WIDTH,
-      height: CANVAS_HEIGHT,
+      width: CANVAS_MAX_WIDTH,
+      height: CANVAS_MAX_HEIGHT,
       backgroundColor: '#0a0a0a',
       selection: false,
     })
@@ -112,15 +114,21 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
     imgEl.crossOrigin = 'anonymous'
     imgEl.onload = () => {
       const fabricImg = new fabric.FabricImage(imgEl)
-      const scale = Math.min(
-        CANVAS_WIDTH / (fabricImg.width || 1),
-        CANVAS_HEIGHT / (fabricImg.height || 1)
-      )
+      const imgW = fabricImg.width || 1
+      const imgH = fabricImg.height || 1
+      const scale = Math.min(CANVAS_MAX_WIDTH / imgW, CANVAS_MAX_HEIGHT / imgH)
+      const canvasW = Math.round(imgW * scale)
+      const canvasH = Math.round(imgH * scale)
+
+      // Resize canvas to fit image exactly
+      canvas.setDimensions({ width: canvasW, height: canvasH })
+      canvasSizeRef.current = { width: canvasW, height: canvasH }
+
       fabricImg.set({
         scaleX: scale,
         scaleY: scale,
-        left: (CANVAS_WIDTH - (fabricImg.width || 0) * scale) / 2,
-        top: (CANVAS_HEIGHT - (fabricImg.height || 0) * scale) / 2,
+        left: 0,
+        top: 0,
         selectable: false,
         evented: false,
       })
@@ -154,15 +162,18 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
       embroideryOverlayRef.current = null
     }
 
+    const cw = canvasSizeRef.current.width
+    const ch = canvasSizeRef.current.height
+
     if (!selectedLogo) {
       // Show placeholder rectangle
-      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * CANVAS_WIDTH))
-      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * CANVAS_HEIGHT))
+      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * cw))
+      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * ch))
       const placeholder = new fabric.Rect({
         width: logoW,
         height: logoH,
-        left: (selectedPlacement.x / 100) * CANVAS_WIDTH - logoW / 2,
-        top: (selectedPlacement.y / 100) * CANVAS_HEIGHT - logoH / 2,
+        left: (selectedPlacement.x / 100) * cw - logoW / 2,
+        top: (selectedPlacement.y / 100) * ch - logoH / 2,
         fill: 'transparent',
         stroke: 'rgba(255,255,255,0.3)',
         strokeWidth: 2,
@@ -185,8 +196,8 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
       const imgEl = new Image()
       imgEl.crossOrigin = 'anonymous'
       imgEl.onload = () => {
-        const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * CANVAS_WIDTH))
-        const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * CANVAS_HEIGHT))
+        const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * cw))
+        const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * ch))
         const fabricLogo = new fabric.FabricImage(imgEl)
         const scaleX = logoW / (fabricLogo.width || 1)
         const scaleY = logoH / (fabricLogo.height || 1)
@@ -195,8 +206,8 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
         fabricLogo.set({
           scaleX: scale,
           scaleY: scale,
-          left: (selectedPlacement.x / 100) * CANVAS_WIDTH - (fabricLogo.width || 0) * scale / 2,
-          top: (selectedPlacement.y / 100) * CANVAS_HEIGHT - (fabricLogo.height || 0) * scale / 2,
+          left: (selectedPlacement.x / 100) * cw - (fabricLogo.width || 0) * scale / 2,
+          top: (selectedPlacement.y / 100) * ch - (fabricLogo.height || 0) * scale / 2,
           opacity: technique === 'embroidery' ? 0.85 : 0.95,
           selectable: true,
           hasControls: false,
@@ -236,8 +247,8 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
       imgEl.src = selectedLogo.file_url
     } else {
       // Non-previewable format — show labeled box
-      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * CANVAS_WIDTH))
-      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * CANVAS_HEIGHT))
+      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * cw))
+      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * ch))
       const group = new fabric.Group([
         new fabric.Rect({
           width: logoW,
@@ -258,8 +269,8 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
           left: 0,
         }),
       ], {
-        left: (selectedPlacement.x / 100) * CANVAS_WIDTH - logoW / 2,
-        top: (selectedPlacement.y / 100) * CANVAS_HEIGHT - logoH / 2,
+        left: (selectedPlacement.x / 100) * cw - logoW / 2,
+        top: (selectedPlacement.y / 100) * ch - logoH / 2,
         selectable: true,
         hasControls: false,
         hasBorders: true,
