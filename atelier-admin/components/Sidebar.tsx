@@ -87,6 +87,7 @@ const sections: NavSection[] = [
     items: [
       { label: 'Logo Library', href: '/admin/logos' },
       { label: 'Upload Logo', href: '/admin/logos/new' },
+      { label: 'Mockup Generator', href: '/admin/mockup' },
     ],
   },
   {

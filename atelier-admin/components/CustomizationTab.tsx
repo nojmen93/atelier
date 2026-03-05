@@ -42,6 +42,16 @@ interface CustomizationTabProps {
 const CANVAS_MAX_WIDTH = 500
 const CANVAS_MAX_HEIGHT = 600
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
+    img.src = src
+  })
+}
+
 export default function CustomizationTab({ styleId, images, logos }: CustomizationTabProps) {
   const [customizations, setCustomizations] = useState<Customization[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,8 +73,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
   const [zoom, setZoom] = useState(1)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null)
-  const logoObjectRef = useRef<fabric.FabricObject | null>(null)
-  const embroideryOverlayRef = useRef<fabric.Rect | null>(null)
+  const renderIdRef = useRef(0)
 
   const supabase = createClient()
 
@@ -83,9 +92,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
     fetchCustomizations()
   }, [fetchCustomizations])
 
-  const canvasSizeRef = useRef({ width: CANVAS_MAX_WIDTH, height: CANVAS_MAX_HEIGHT })
-
-  // Initialize Fabric.js canvas
+  // Initialize Fabric.js canvas once
   useEffect(() => {
     if (!canvasRef.current || images.length === 0) return
 
@@ -101,18 +108,26 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
       canvas.dispose()
       fabricCanvasRef.current = null
     }
-  }, [images.length])
+    // Only create/destroy canvas once when component mounts/unmounts or images appear
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images.length > 0])
 
-  // Load background image when activeImageIndex changes
-  useEffect(() => {
+  // Single unified render: background + logo overlay
+  const renderCanvas = useCallback(async () => {
     const canvas = fabricCanvasRef.current
     if (!canvas || images.length === 0) return
 
-    const imgUrl = images[activeImageIndex] || images[0]
+    const renderId = ++renderIdRef.current
 
-    const imgEl = new Image()
-    imgEl.crossOrigin = 'anonymous'
-    imgEl.onload = () => {
+    const imgUrl = images[activeImageIndex] || images[0]
+    const selectedLogo = logos.find((l) => l.id === logoId)
+    const selectedPlacement = PLACEMENTS.find((p) => p.value === placement) || PLACEMENTS[0]
+
+    try {
+      // Load background image
+      const imgEl = await loadImage(imgUrl)
+      if (renderIdRef.current !== renderId) return // stale render
+
       const fabricImg = new fabric.FabricImage(imgEl)
       const imgW = fabricImg.width || 1
       const imgH = fabricImg.height || 1
@@ -120,9 +135,10 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
       const canvasW = Math.round(imgW * scale)
       const canvasH = Math.round(imgH * scale)
 
-      // Resize canvas to fit image exactly
+      // Clear everything and resize
+      canvas.clear()
+      canvas.backgroundColor = '#0a0a0a'
       canvas.setDimensions({ width: canvasW, height: canvasH })
-      canvasSizeRef.current = { width: canvasW, height: canvasH }
 
       fabricImg.set({
         scaleX: scale,
@@ -132,82 +148,52 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
         selectable: false,
         evented: false,
       })
+      canvas.add(fabricImg)
 
-      // Remove old background (first object, if it's an image)
-      const objs = canvas.getObjects()
-      if (objs.length > 0 && objs[0] !== logoObjectRef.current && objs[0] !== embroideryOverlayRef.current) {
-        canvas.remove(objs[0])
+      // Now add logo overlay
+      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * canvasW))
+      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * canvasH))
+      const posX = (selectedPlacement.x / 100) * canvasW
+      const posY = (selectedPlacement.y / 100) * canvasH
+
+      if (!selectedLogo) {
+        // Placeholder rectangle
+        const placeholder = new fabric.Rect({
+          width: logoW,
+          height: logoH,
+          left: posX - logoW / 2,
+          top: posY - logoH / 2,
+          fill: 'transparent',
+          stroke: 'rgba(255,255,255,0.3)',
+          strokeWidth: 2,
+          strokeDashArray: [6, 4],
+          selectable: true,
+          hasControls: false,
+          hasBorders: true,
+          borderColor: '#fff',
+          cornerColor: '#fff',
+        })
+        canvas.add(placeholder)
+        canvas.renderAll()
+        return
       }
-      canvas.insertAt(0, fabricImg)
-      canvas.renderAll()
-    }
-    imgEl.src = imgUrl
-  }, [activeImageIndex, images])
 
-  // Update logo on canvas when form changes
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current
-    if (!canvas) return
+      const canPreview = selectedLogo.file_format === 'PNG' || selectedLogo.file_format === 'SVG'
 
-    const selectedLogo = logos.find((l) => l.id === logoId)
-    const selectedPlacement = PLACEMENTS.find((p) => p.value === placement) || PLACEMENTS[0]
+      if (canPreview) {
+        const logoEl = await loadImage(selectedLogo.file_url)
+        if (renderIdRef.current !== renderId) return
 
-    // Remove old logo and embroidery overlay
-    if (logoObjectRef.current) {
-      canvas.remove(logoObjectRef.current)
-      logoObjectRef.current = null
-    }
-    if (embroideryOverlayRef.current) {
-      canvas.remove(embroideryOverlayRef.current)
-      embroideryOverlayRef.current = null
-    }
-
-    const cw = canvasSizeRef.current.width
-    const ch = canvasSizeRef.current.height
-
-    if (!selectedLogo) {
-      // Show placeholder rectangle
-      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * cw))
-      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * ch))
-      const placeholder = new fabric.Rect({
-        width: logoW,
-        height: logoH,
-        left: (selectedPlacement.x / 100) * cw - logoW / 2,
-        top: (selectedPlacement.y / 100) * ch - logoH / 2,
-        fill: 'transparent',
-        stroke: 'rgba(255,255,255,0.3)',
-        strokeWidth: 2,
-        strokeDashArray: [6, 4],
-        selectable: true,
-        hasControls: false,
-        hasBorders: true,
-        borderColor: '#fff',
-        cornerColor: '#fff',
-      })
-      canvas.add(placeholder)
-      logoObjectRef.current = placeholder
-      canvas.renderAll()
-      return
-    }
-
-    const canPreview = selectedLogo.file_format === 'PNG' || selectedLogo.file_format === 'SVG'
-
-    if (canPreview) {
-      const imgEl = new Image()
-      imgEl.crossOrigin = 'anonymous'
-      imgEl.onload = () => {
-        const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * cw))
-        const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * ch))
-        const fabricLogo = new fabric.FabricImage(imgEl)
+        const fabricLogo = new fabric.FabricImage(logoEl)
         const scaleX = logoW / (fabricLogo.width || 1)
         const scaleY = logoH / (fabricLogo.height || 1)
-        const scale = Math.min(scaleX, scaleY)
+        const logoScale = Math.min(scaleX, scaleY)
 
         fabricLogo.set({
-          scaleX: scale,
-          scaleY: scale,
-          left: (selectedPlacement.x / 100) * cw - (fabricLogo.width || 0) * scale / 2,
-          top: (selectedPlacement.y / 100) * ch - (fabricLogo.height || 0) * scale / 2,
+          scaleX: logoScale,
+          scaleY: logoScale,
+          left: posX - (fabricLogo.width || 0) * logoScale / 2,
+          top: posY - (fabricLogo.height || 0) * logoScale / 2,
           opacity: technique === 'embroidery' ? 0.85 : 0.95,
           selectable: true,
           hasControls: false,
@@ -217,13 +203,11 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
         })
 
         canvas.add(fabricLogo)
-        logoObjectRef.current = fabricLogo
 
-        // Embroidery texture overlay
         if (technique === 'embroidery') {
           const stitchOverlay = new fabric.Rect({
-            width: (fabricLogo.width || 0) * scale,
-            height: (fabricLogo.height || 0) * scale,
+            width: (fabricLogo.width || 0) * logoScale,
+            height: (fabricLogo.height || 0) * logoScale,
             left: fabricLogo.left,
             top: fabricLogo.top,
             fill: 'transparent',
@@ -239,49 +223,49 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
             }),
           })
           canvas.add(stitchOverlay)
-          embroideryOverlayRef.current = stitchOverlay
         }
-
-        canvas.renderAll()
+      } else {
+        // Non-previewable format — labeled box
+        const group = new fabric.Group([
+          new fabric.Rect({
+            width: logoW,
+            height: logoH,
+            fill: 'rgba(255,255,255,0.05)',
+            stroke: 'rgba(255,255,255,0.3)',
+            strokeWidth: 2,
+            strokeDashArray: [6, 4],
+            rx: 4,
+            ry: 4,
+          }),
+          new fabric.FabricText(selectedLogo.file_format, {
+            fontSize: 12,
+            fill: 'rgba(255,255,255,0.4)',
+            originX: 'center',
+            originY: 'center',
+            top: 0,
+            left: 0,
+          }),
+        ], {
+          left: posX - logoW / 2,
+          top: posY - logoH / 2,
+          selectable: true,
+          hasControls: false,
+          hasBorders: true,
+          borderColor: '#fff',
+        })
+        canvas.add(group)
       }
-      imgEl.src = selectedLogo.file_url
-    } else {
-      // Non-previewable format — show labeled box
-      const logoW = Math.min(200, Math.max(30, (parseFloat(widthCm) || 5) / 50 * cw))
-      const logoH = Math.min(200, Math.max(30, (parseFloat(heightCm) || 5) / 70 * ch))
-      const group = new fabric.Group([
-        new fabric.Rect({
-          width: logoW,
-          height: logoH,
-          fill: 'rgba(255,255,255,0.05)',
-          stroke: 'rgba(255,255,255,0.3)',
-          strokeWidth: 2,
-          strokeDashArray: [6, 4],
-          rx: 4,
-          ry: 4,
-        }),
-        new fabric.FabricText(selectedLogo.file_format, {
-          fontSize: 12,
-          fill: 'rgba(255,255,255,0.4)',
-          originX: 'center',
-          originY: 'center',
-          top: 0,
-          left: 0,
-        }),
-      ], {
-        left: (selectedPlacement.x / 100) * cw - logoW / 2,
-        top: (selectedPlacement.y / 100) * ch - logoH / 2,
-        selectable: true,
-        hasControls: false,
-        hasBorders: true,
-        borderColor: '#fff',
-      })
 
-      canvas.add(group)
-      logoObjectRef.current = group
       canvas.renderAll()
+    } catch (err) {
+      console.error('Canvas render error:', err)
     }
-  }, [logoId, placement, technique, widthCm, heightCm, logos])
+  }, [activeImageIndex, images, logoId, logos, placement, technique, widthCm, heightCm])
+
+  // Trigger render whenever any input changes
+  useEffect(() => {
+    renderCanvas()
+  }, [renderCanvas])
 
   const resetForm = () => {
     setLogoId('')
@@ -358,13 +342,9 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
 
     setExporting(true)
     try {
-      // Generate PNG data URL from canvas
-      const dataUrl = canvas.toDataURL({
-        format: 'png',
-        multiplier: 2,
-      })
+      const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 })
 
-      // Download to user's computer
+      // Download
       const link = document.createElement('a')
       link.download = `mockup-${styleId}-${placement}.png`
       link.href = dataUrl
@@ -384,7 +364,6 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
           .from('product-images')
           .getPublicUrl(fileName)
 
-        // Save mockup_url to existing customization if editing
         if (editingId) {
           await supabase
             .from('customizations')
@@ -405,7 +384,6 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
   const handleZoomOut = () => setZoom((z) => Math.max(0.5, z - 0.1))
   const handleZoomReset = () => setZoom(1)
 
-  // No images — show message
   if (images.length === 0) {
     return (
       <div className="border border-neutral-800 rounded-lg p-12 text-center">
@@ -468,27 +446,9 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
 
             {/* Zoom controls */}
             <div className="absolute bottom-3 right-3 flex gap-1">
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                className="w-8 h-8 flex items-center justify-center bg-black/70 text-white rounded hover:bg-black/90 transition text-sm"
-              >
-                -
-              </button>
-              <button
-                type="button"
-                onClick={handleZoomReset}
-                className="h-8 px-2 flex items-center justify-center bg-black/70 text-neutral-400 rounded hover:bg-black/90 transition text-xs tabular-nums"
-              >
-                {Math.round(zoom * 100)}%
-              </button>
-              <button
-                type="button"
-                onClick={handleZoomIn}
-                className="w-8 h-8 flex items-center justify-center bg-black/70 text-white rounded hover:bg-black/90 transition text-sm"
-              >
-                +
-              </button>
+              <button type="button" onClick={handleZoomOut} className="w-8 h-8 flex items-center justify-center bg-black/70 text-white rounded hover:bg-black/90 transition text-sm">-</button>
+              <button type="button" onClick={handleZoomReset} className="h-8 px-2 flex items-center justify-center bg-black/70 text-neutral-400 rounded hover:bg-black/90 transition text-xs tabular-nums">{Math.round(zoom * 100)}%</button>
+              <button type="button" onClick={handleZoomIn} className="w-8 h-8 flex items-center justify-center bg-black/70 text-white rounded hover:bg-black/90 transition text-sm">+</button>
             </div>
 
             {/* Placement label */}
@@ -532,16 +492,10 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
                   <a href="/admin/logos/new" className="text-neutral-300 underline hover:text-white">Upload a logo</a>
                 </p>
               ) : (
-                <select
-                  value={logoId}
-                  onChange={(e) => setLogoId(e.target.value)}
-                  className={inputClass}
-                >
+                <select value={logoId} onChange={(e) => setLogoId(e.target.value)} className={inputClass}>
                   <option value="">Select a logo...</option>
                   {logos.map((logo) => (
-                    <option key={logo.id} value={logo.id}>
-                      {logo.company_name} ({logo.file_format})
-                    </option>
+                    <option key={logo.id} value={logo.id}>{logo.company_name} ({logo.file_format})</option>
                   ))}
                 </select>
               )}
@@ -550,11 +504,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
             {/* Placement */}
             <div>
               <label className="block text-sm font-medium mb-2">Placement <span className="text-red-400">*</span></label>
-              <select
-                value={placement}
-                onChange={(e) => setPlacement(e.target.value)}
-                className={inputClass}
-              >
+              <select value={placement} onChange={(e) => setPlacement(e.target.value)} className={inputClass}>
                 {PLACEMENTS.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
@@ -603,27 +553,11 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Width (cm)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.5"
-                  max="50"
-                  value={widthCm}
-                  onChange={(e) => setWidthCm(e.target.value)}
-                  className={smallInputClass}
-                />
+                <input type="number" step="0.1" min="0.5" max="50" value={widthCm} onChange={(e) => setWidthCm(e.target.value)} className={smallInputClass} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Height (cm)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.5"
-                  max="50"
-                  value={heightCm}
-                  onChange={(e) => setHeightCm(e.target.value)}
-                  className={smallInputClass}
-                />
+                <input type="number" step="0.1" min="0.5" max="50" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} className={smallInputClass} />
               </div>
             </div>
 
@@ -638,11 +572,7 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
                 {saving ? 'Saving...' : editingId ? 'Update Customization' : 'Save Customization'}
               </button>
               {editingId && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-3 text-sm text-neutral-400 hover:text-white transition"
-                >
+                <button type="button" onClick={resetForm} className="px-4 py-3 text-sm text-neutral-400 hover:text-white transition">
                   Cancel
                 </button>
               )}
@@ -689,13 +619,9 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {c.logos?.file_url && (
-                            <img
-                              src={c.logos.file_url}
-                              alt=""
-                              className="w-6 h-6 object-contain rounded"
-                            />
+                            <img src={c.logos.file_url} alt="" className="w-6 h-6 object-contain rounded" />
                           )}
-                          <span className="text-neutral-300">{c.logos?.company_name || '—'}</span>
+                          <span className="text-neutral-300">{c.logos?.company_name || '\u2014'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-neutral-300">{placementLabel}</td>
@@ -708,21 +634,15 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
                           {c.technique === 'embroidery' ? 'Embroidery' : 'Print'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-neutral-400">{c.pantone_color || '—'}</td>
+                      <td className="px-4 py-3 text-neutral-400">{c.pantone_color || '\u2014'}</td>
                       <td className="px-4 py-3 text-neutral-400 tabular-nums">
                         {c.width_cm && c.height_cm
                           ? `${Number(c.width_cm).toFixed(1)} x ${Number(c.height_cm).toFixed(1)} cm`
-                          : '—'}
+                          : '\u2014'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(c)}
-                            className="px-3 py-1 text-xs text-neutral-400 hover:text-white border border-neutral-700 rounded hover:border-neutral-500 transition"
-                          >
-                            Edit
-                          </button>
+                          <button type="button" onClick={() => handleEdit(c)} className="px-3 py-1 text-xs text-neutral-400 hover:text-white border border-neutral-700 rounded hover:border-neutral-500 transition">Edit</button>
                           <button
                             type="button"
                             onClick={() => handleDelete(c.id)}
