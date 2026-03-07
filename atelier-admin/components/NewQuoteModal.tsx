@@ -834,8 +834,7 @@ export default function NewQuoteModal({
         quantity: l.quantity ? parseInt(l.quantity) : null,
       }))
 
-    const { data: inserted, error } = await supabase.from('quote_requests').insert({
-      quote_number: quoteNumber,
+    const basePayload = {
       customer_name: customerData.customerName,
       customer_email: customerData.customerEmail,
       customer_company: customerData.customerCompany || null,
@@ -846,20 +845,46 @@ export default function NewQuoteModal({
       message: data.message || null,
       customization_preferences: Object.keys(customizationPreferences).length > 0 ? customizationPreferences : {},
       variant_preferences: variantPrefs.length > 0 ? variantPrefs : [],
+    }
+
+    // Try with quote_number column first; fall back without it if column doesn't exist yet
+    let inserted: { id: string; quote_number?: string | null } | null = null
+    let finalQuoteNumber: string | null = quoteNumber
+
+    const { data: result, error } = await supabase.from('quote_requests').insert({
+      ...basePayload,
+      quote_number: quoteNumber,
     }).select('id, quote_number').single()
 
     if (error) {
-      toast.error(error.message)
-      return
+      if (error.message.includes('quote_number')) {
+        // Column doesn't exist yet — insert without it
+        finalQuoteNumber = null
+        const { data: fallback, error: fallbackErr } = await supabase.from('quote_requests')
+          .insert(basePayload)
+          .select('id').single()
+        if (fallbackErr) {
+          toast.error(fallbackErr.message)
+          return
+        }
+        inserted = fallback
+      } else {
+        toast.error(error.message)
+        return
+      }
+    } else {
+      inserted = result
     }
 
+    if (!inserted) return
+
     setCreatedQuotes((prev) => [...prev, {
-      id: inserted.id,
-      quote_number: inserted.quote_number,
+      id: inserted!.id,
+      quote_number: finalQuoteNumber,
       styleName: data.styleName,
     }])
 
-    toast.success(`Quote ${quoteNumber} saved for ${data.styleName}`)
+    toast.success(`Quote ${finalQuoteNumber || ''} saved for ${data.styleName}`.trim())
 
     // Move to next style or finish
     const nextIndex = currentQuoteIndex + 1
