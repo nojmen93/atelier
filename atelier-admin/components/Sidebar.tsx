@@ -106,7 +106,7 @@ const sections: NavSection[] = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ logoutAction }: { logoutAction?: () => Promise<void> }) {
   const pathname = usePathname()
 
   // Determine which sections should be open based on current path
@@ -202,7 +202,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-neutral-800 px-5 py-3">
+      <div className="border-t border-neutral-800 px-5 py-3 space-y-2">
         <Link
           href="/admin/settings"
           className={`flex items-center gap-3 text-sm transition ${
@@ -217,6 +217,21 @@ export default function Sidebar() {
           </svg>
           Settings
         </Link>
+        {logoutAction && (
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex items-center gap-3 text-sm text-neutral-500 hover:text-white transition w-full"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign Out
+            </button>
+          </form>
+        )}
       </div>
     </aside>
   )

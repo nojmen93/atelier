@@ -3,6 +3,13 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { HierarchyProvider } from '@/lib/hierarchy-context'
 
+async function logoutAction() {
+  'use server'
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/login')
+}
+
 export default async function AdminLayout({
   children,
 }: {
@@ -18,7 +25,7 @@ export default async function AdminLayout({
   return (
     <HierarchyProvider>
       <div className="min-h-screen bg-black text-white flex">
-        <Sidebar />
+        <Sidebar logoutAction={logoutAction} />
         <main className="flex-1 overflow-y-auto p-8">{children}</main>
       </div>
     </HierarchyProvider>

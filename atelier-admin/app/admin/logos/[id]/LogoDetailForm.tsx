@@ -16,7 +16,7 @@ interface Logo {
   created_at: string
 }
 
-export default function LogoDetailForm({ logo }: { logo: Logo }) {
+export default function LogoDetailForm({ logo, signedUrl }: { logo: Logo; signedUrl: string | null }) {
   const [companyName, setCompanyName] = useState(logo.company_name)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -76,9 +76,9 @@ export default function LogoDetailForm({ logo }: { logo: Logo }) {
       {/* Logo preview */}
       <div className="border border-neutral-800 rounded-lg overflow-hidden mb-8">
         <div className="bg-neutral-900 p-12 flex items-center justify-center" style={{ minHeight: '300px' }}>
-          {canPreview ? (
+          {canPreview && signedUrl ? (
             <img
-              src={logo.file_url}
+              src={signedUrl}
               alt={logo.company_name}
               className="max-w-full max-h-64 object-contain"
             />
@@ -109,14 +109,18 @@ export default function LogoDetailForm({ logo }: { logo: Logo }) {
         </div>
         <div>
           <span className="block text-neutral-500 mb-1">File URL</span>
-          <a
-            href={logo.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-neutral-400 hover:text-white transition text-xs underline"
-          >
-            Open file
-          </a>
+          {signedUrl ? (
+            <a
+              href={signedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-400 hover:text-white transition text-xs underline"
+            >
+              Open file
+            </a>
+          ) : (
+            <span className="text-neutral-600 text-xs">Unavailable</span>
+          )}
         </div>
       </div>
 
