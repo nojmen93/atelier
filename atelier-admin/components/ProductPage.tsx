@@ -7,9 +7,10 @@ import { useHierarchy } from '@/lib/hierarchy-context'
 import { GENDER_LABELS, COLLECTION_TYPE_LABELS } from '@/lib/product-hierarchy'
 import {
   STYLE_ATTRIBUTES,
+  STATUS_LABELS,
   GENDER_LABELS as VIEW_GENDER_LABELS,
   COLLECTION_LABELS,
-  STATUS_LABELS,
+  CAPABILITY_LABELS,
   type ViewFilter,
 } from '@/lib/view-attributes'
 
@@ -17,11 +18,17 @@ interface Style {
   id: string
   name: string
   material: string | null
+  description: string | null
   images: string[] | null
   status: string
   gender: string
   collection_type: string
+  product_capability: string
+  base_cost: number | null
+  lead_time_days: number | null
   display_order: number
+  created_at: string
+  updated_at: string
   categories: { name: string; concepts: { name: string } } | null
   variants: { id: string }[]
 }
@@ -49,20 +56,45 @@ function getCategoryName(style: Style): string | null {
   return style.categories?.name || null
 }
 
+function formatValue(key: string, style: Style): string {
+  switch (key) {
+    case 'name': return style.name
+    case 'description': return style.description || ''
+    case 'material': return style.material || ''
+    case 'gender': return VIEW_GENDER_LABELS[style.gender] || style.gender
+    case 'collection_type': return COLLECTION_LABELS[style.collection_type] || style.collection_type
+    case 'product_capability': return CAPABILITY_LABELS[style.product_capability] || style.product_capability
+    case 'status': return STATUS_LABELS[style.status] || style.status
+    case 'base_cost': return style.base_cost != null ? `€${Number(style.base_cost).toFixed(2)}` : ''
+    case 'lead_time_days': return style.lead_time_days != null ? `${style.lead_time_days}d` : ''
+    case 'display_order': return style.display_order.toString()
+    case 'concept_name': return getConceptName(style) || ''
+    case 'category_name': return getCategoryName(style) || ''
+    case 'variant_count': return style.variants?.length?.toString() || '0'
+    case 'created_at': return new Date(style.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    case 'updated_at': return new Date(style.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    default: return ''
+  }
+}
+
 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
   active: { bg: 'bg-green-900', text: 'text-green-100', label: 'Active' },
   development: { bg: 'bg-yellow-900', text: 'text-yellow-100', label: 'Development' },
   archived: { bg: 'bg-neutral-800', text: 'text-neutral-400', label: 'Archived' },
 }
 
-// SVG Icons
+// Default columns for grid view
+const DEFAULT_GRID_COLUMNS = ['name', 'material', 'concept_name', 'gender', 'category_name', 'collection_type', 'status', 'variant_count', 'base_cost']
+
+// Icons
 function GridIcon({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={active ? 'white' : 'currentColor'} strokeWidth="1.5">
-      <rect x="1" y="1" width="6" height="6" rx="1" />
-      <rect x="9" y="1" width="6" height="6" rx="1" />
-      <rect x="1" y="9" width="6" height="6" rx="1" />
-      <rect x="9" y="9" width="6" height="6" rx="1" />
+      <rect x="1" y="1" width="14" height="3" rx="0.5" />
+      <rect x="1" y="6" width="14" height="3" rx="0.5" />
+      <rect x="1" y="11" width="14" height="3" rx="0.5" />
+      <line x1="6" y1="1" x2="6" y2="14" />
+      <line x1="11" y1="1" x2="11" y2="14" />
     </svg>
   )
 }
@@ -70,8 +102,10 @@ function GridIcon({ active }: { active: boolean }) {
 function GalleryIcon({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={active ? 'white' : 'currentColor'} strokeWidth="1.5">
-      <rect x="1" y="1" width="14" height="6" rx="1" />
-      <rect x="1" y="9" width="14" height="6" rx="1" />
+      <rect x="1" y="1" width="6" height="6" rx="1" />
+      <rect x="9" y="1" width="6" height="6" rx="1" />
+      <rect x="1" y="9" width="6" height="6" rx="1" />
+      <rect x="9" y="9" width="6" height="6" rx="1" />
     </svg>
   )
 }
@@ -92,6 +126,60 @@ function ChevronDownIcon() {
   )
 }
 
+function PdfIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+    </svg>
+  )
+}
+
+function ExcelIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="3" y1="15" x2="21" y2="15" />
+      <line x1="9" y1="3" x2="9" y2="21" />
+      <line x1="15" y1="3" x2="15" y2="21" />
+    </svg>
+  )
+}
+
+function exportToCsv(styles: Style[], columns: string[]) {
+  const headers = columns.map((key) => {
+    const attr = STYLE_ATTRIBUTES.find((a) => a.key === key)
+    return attr?.label || key
+  })
+
+  const rows = styles.map((style) =>
+    columns.map((key) => {
+      const val = formatValue(key, style)
+      // Escape CSV values
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return `"${val.replace(/"/g, '""')}"`
+      }
+      return val
+    })
+  )
+
+  const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `products_${new Date().toISOString().split('T')[0]}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportToPdfPrint() {
+  window.print()
+}
+
 export default function ProductPage({ initialStyles }: { initialStyles: Style[] }) {
   const { conceptId, categoryId, genderId, conceptName, genderName, categoryName, clearSelection, clearGender, clearCategory } = useHierarchy()
 
@@ -105,6 +193,7 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
   const [saveName, setSaveName] = useState('')
   const [saving, setSaving] = useState(false)
   const [editingViewId, setEditingViewId] = useState<string | null>(null)
+  const [gridColumns, setGridColumns] = useState<string[]>(DEFAULT_GRID_COLUMNS)
 
   // Fetch saved views
   const fetchViews = useCallback(async () => {
@@ -177,7 +266,7 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
       name: saveName.trim(),
       type: viewMode,
       entity: 'styles',
-      selected_attributes: ['name', 'images', 'gender', 'collection_type', 'category_name', 'status'],
+      selected_attributes: viewMode === 'grid' ? gridColumns : ['name', 'images', 'gender', 'collection_type', 'category_name', 'status'],
       filters,
       sort: [{ field: 'display_order', direction: 'asc' }],
       group_by: [],
@@ -301,7 +390,7 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
       )}
 
       {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-6 py-2 border-y border-neutral-800">
+      <div className="flex items-center gap-2 mb-6 py-2 border-y border-neutral-800 print:hidden">
         {/* Filter toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
@@ -419,11 +508,43 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
                   >
                     + Save current view
                   </button>
+                  <Link
+                    href="/admin/views/new"
+                    onClick={() => setViewsDropdownOpen(false)}
+                    className="block w-full text-left px-4 py-2.5 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                  >
+                    + New view
+                  </Link>
                 </div>
               </div>
             </>
           )}
         </div>
+
+        {/* Separator */}
+        <div className="w-px h-5 bg-neutral-800" />
+
+        {/* Export PDF */}
+        <button
+          onClick={exportToPdfPrint}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-900 rounded transition"
+          title="Export PDF"
+        >
+          <PdfIcon />
+          PDF
+        </button>
+
+        {/* Export CSV/Excel — grid view only */}
+        {viewMode === 'grid' && (
+          <button
+            onClick={() => exportToCsv(filtered, gridColumns)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-900 rounded transition"
+            title="Export Excel (CSV)"
+          >
+            <ExcelIcon />
+            Excel
+          </button>
+        )}
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -457,7 +578,7 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="mb-6 p-4 border border-neutral-800 rounded-lg">
+        <div className="mb-6 p-4 border border-neutral-800 rounded-lg print:hidden">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-neutral-500 uppercase tracking-wide">Filters</span>
             <div className="flex gap-2">
@@ -569,61 +690,72 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
           )}
         </div>
       ) : viewMode === 'grid' ? (
-        /* Grid View - Cards */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((style) => {
-            const s = statusConfig[style.status] || statusConfig.development
-            return (
-              <Link
-                key={style.id}
-                href={`/admin/styles/${style.id}`}
-                className="border border-neutral-800 rounded-lg overflow-hidden hover:border-neutral-600 transition group"
-              >
-                {style.images?.[0] ? (
-                  <img
-                    src={style.images[0]}
-                    alt={style.name}
-                    className="w-full h-48 object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-neutral-900 flex items-center justify-center">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-neutral-700">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <path d="M21 15l-5-5L5 21" />
-                    </svg>
-                  </div>
-                )}
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold mb-1 group-hover:text-white transition">
-                    {style.name}
-                  </h3>
-                  <p className="text-neutral-500 text-sm">{style.material}</p>
-                  {style.categories && (
-                    <p className="text-neutral-600 text-xs mt-1">
-                      {style.categories.concepts.name} / {GENDER_LABELS[style.gender] || style.gender} / {style.categories.name}
-                    </p>
-                  )}
-                  <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-                    <span className={`px-2 py-0.5 text-xs rounded ${s.bg} ${s.text}`}>
-                      {s.label}
-                    </span>
-                    <span className="px-2 py-0.5 text-xs rounded bg-neutral-800 text-neutral-400">
-                      {GENDER_LABELS[style.gender] || style.gender}
-                    </span>
-                    <span className="px-2 py-0.5 text-xs rounded bg-neutral-800 text-neutral-400">
-                      {COLLECTION_TYPE_LABELS[style.collection_type] || style.collection_type}
-                    </span>
-                    {style.variants?.length > 0 && (
-                      <span className="px-2 py-0.5 text-xs rounded bg-neutral-800 text-neutral-400">
-                        {style.variants.length} variant{style.variants.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
+        /* Grid View - Excel-like table */
+        <div className="border border-neutral-800 rounded-lg overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-neutral-800 text-neutral-500 text-xs uppercase tracking-wide">
+                {gridColumns.map((key) => {
+                  const attr = STYLE_ATTRIBUTES.find((a) => a.key === key)
+                  return (
+                    <th key={key} className="text-left px-4 py-3 font-medium whitespace-nowrap">
+                      {attr?.label || key}
+                    </th>
+                  )
+                })}
+                <th className="w-8" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((style) => {
+                const s = statusConfig[style.status] || statusConfig.development
+                return (
+                  <tr
+                    key={style.id}
+                    className="border-b border-neutral-800 last:border-b-0 hover:bg-neutral-900/50 transition"
+                  >
+                    {gridColumns.map((key) => {
+                      const val = formatValue(key, style)
+                      if (key === 'name') {
+                        return (
+                          <td key={key} className="px-4 py-3">
+                            <Link href={`/admin/styles/${style.id}`} className="text-white font-medium hover:underline">
+                              {val}
+                            </Link>
+                          </td>
+                        )
+                      }
+                      if (key === 'status') {
+                        return (
+                          <td key={key} className="px-4 py-3">
+                            <span className={`px-2 py-0.5 text-xs rounded ${s.bg} ${s.text}`}>
+                              {s.label}
+                            </span>
+                          </td>
+                        )
+                      }
+                      return (
+                        <td key={key} className="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                          {val}
+                        </td>
+                      )
+                    })}
+                    <td className="px-2 py-3">
+                      <Link
+                        href={`/admin/styles/${style.id}`}
+                        className="text-neutral-600 hover:text-white transition"
+                        title="Edit"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       ) : (
         /* Gallery View - large images, minimal info */
