@@ -9,29 +9,28 @@
 -- hierarchy specification.
 -- ============================================================
 
-BEGIN;
+-- ============================================================
+-- Step 0: Add new enum value (must be outside transaction)
+-- ============================================================
+ALTER TYPE collection_type ADD VALUE IF NOT EXISTS 'editorials';
 
 -- ============================================================
--- Step 0: Update enum types
--- Remove 'na' from gender_type, rename 'editorial' to 'editorials'
+-- Step 1: Data migrations and concept/category replacement
 -- ============================================================
+BEGIN;
 
 -- Update any styles using 'na' gender to 'unisex'
 UPDATE styles SET gender = 'unisex' WHERE gender = 'na';
 
--- Rename 'editorial' to 'editorials' in collection_type
--- (Postgres doesn't support renaming enum values directly pre-v10,
---  so we add the new value and migrate data)
-ALTER TYPE collection_type ADD VALUE IF NOT EXISTS 'editorials';
--- Migrate existing data
+-- Migrate existing 'editorial' data to 'editorials'
 UPDATE styles SET collection_type = 'editorials' WHERE collection_type = 'editorial';
 
 -- ============================================================
--- Step 1: Remove old categories and concepts
+-- Step 2: Remove old categories and concepts
 -- Must delete categories first (FK to concepts).
--- Styles referencing old categories will be orphaned —
--- use RESTRICT to catch this. If styles exist, they must be
--- re-assigned manually or this migration will fail safely.
+-- Styles referencing old categories use RESTRICT —
+-- if styles exist, they must be re-assigned manually
+-- or this migration will fail safely.
 -- ============================================================
 
 -- Delete categories that belong to old concepts
@@ -46,7 +45,7 @@ DELETE FROM concepts
 WHERE slug IN ('culture', 'collection', 'infrastructure');
 
 -- ============================================================
--- Step 2: Insert correct concepts
+-- Step 3: Insert correct concepts
 -- ============================================================
 
 INSERT INTO concepts (name, slug, display_order) VALUES
@@ -57,7 +56,7 @@ ON CONFLICT (slug) DO UPDATE SET
   display_order = EXCLUDED.display_order;
 
 -- ============================================================
--- Step 3: Insert RTW categories
+-- Step 4: Insert RTW categories
 -- ============================================================
 
 INSERT INTO categories (concept_id, name, slug, display_order) VALUES
@@ -78,7 +77,7 @@ ON CONFLICT (concept_id, slug) DO UPDATE SET
   display_order = EXCLUDED.display_order;
 
 -- ============================================================
--- Step 4: Insert Accessories and Objects categories
+-- Step 5: Insert Accessories and Objects categories
 -- ============================================================
 
 INSERT INTO categories (concept_id, name, slug, display_order) VALUES
