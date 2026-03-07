@@ -11,6 +11,13 @@ interface Category {
   display_order: number
 }
 
+interface StyleRef {
+  id: string
+  concept_id: string
+  gender: string
+  category_id: string
+}
+
 interface Concept {
   id: string
   name: string
@@ -19,7 +26,11 @@ interface Concept {
   categories: Category[]
 }
 
-export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) {
+function productLabel(count: number) {
+  return `${count} ${count === 1 ? 'product' : 'products'}`
+}
+
+export default function HierarchyBrowser({ concepts, styles }: { concepts: Concept[]; styles: StyleRef[] }) {
   const {
     conceptId,
     conceptName,
@@ -94,7 +105,7 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
       {!conceptId && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {concepts.map((concept) => {
-            const categories = (concept.categories || []).sort((a, b) => a.display_order - b.display_order)
+            const count = styles.filter((s) => s.concept_id === concept.id).length
 
             return (
               <button
@@ -106,7 +117,7 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
                   {concept.name}
                 </h2>
                 <div className="text-xs text-neutral-600 mt-2">
-                  {categories.length} {categories.length === 1 ? 'category' : 'categories'}
+                  {productLabel(count)}
                 </div>
               </button>
             )
@@ -121,16 +132,21 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
           <p className="text-neutral-500 text-sm mb-6">Select gender</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {GENDERS.map((g) => (
-              <button
-                key={g.value}
-                onClick={() => handleGenderClick(g.value)}
-                className="border border-neutral-800 rounded-lg p-5 text-left hover:border-neutral-600 transition"
-              >
-                <h3 className="font-medium">{g.label}</h3>
-                <p className="text-xs text-neutral-500 mt-1">View categories &rarr;</p>
-              </button>
-            ))}
+            {GENDERS.map((g) => {
+              const count = styles.filter(
+                (s) => s.concept_id === conceptId && s.gender === g.value
+              ).length
+              return (
+                <button
+                  key={g.value}
+                  onClick={() => handleGenderClick(g.value)}
+                  className="border border-neutral-800 rounded-lg p-5 text-left hover:border-neutral-600 transition"
+                >
+                  <h3 className="font-medium">{g.label}</h3>
+                  <p className="text-xs text-neutral-500 mt-1">{productLabel(count)}</p>
+                </button>
+              )
+            })}
           </div>
 
           <button
@@ -158,16 +174,21 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCategories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryClick(cat)}
-                  className="border border-neutral-800 rounded-lg p-5 text-left hover:border-neutral-600 transition"
-                >
-                  <h3 className="font-medium">{cat.name}</h3>
-                  <p className="text-xs text-neutral-500 mt-1">View products &rarr;</p>
-                </button>
-              ))}
+              {filteredCategories.map((cat) => {
+                const count = styles.filter(
+                  (s) => s.concept_id === conceptId && s.gender === genderId && s.category_id === cat.id
+                ).length
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategoryClick(cat)}
+                    className="border border-neutral-800 rounded-lg p-5 text-left hover:border-neutral-600 transition"
+                  >
+                    <h3 className="font-medium">{cat.name}</h3>
+                    <p className="text-xs text-neutral-500 mt-1">{productLabel(count)}</p>
+                  </button>
+                )
+              })}
             </div>
           )}
 
