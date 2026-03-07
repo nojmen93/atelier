@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import BackLink from '@/components/BackLink'
 import QuoteDetailView from './QuoteDetailView'
@@ -9,7 +9,7 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const [{ data: quote }, { data: styles }, { data: concepts }, { data: suppliers }, { data: logos }] = await Promise.all([
     supabase

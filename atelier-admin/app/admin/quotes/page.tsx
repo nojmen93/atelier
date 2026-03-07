@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import QuoteList from './QuoteList'
 import QuoteEmptyState from './QuoteEmptyState'
 
 export default async function QuotesPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: quotes } = await supabase
     .from('quote_requests')
