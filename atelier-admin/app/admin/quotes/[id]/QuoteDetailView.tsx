@@ -101,6 +101,7 @@ export default function QuoteDetailView({
   const [saving, setSaving] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
+  const [selectedVariants, setSelectedVariants] = useState<Set<number>>(new Set())
   const router = useRouter()
   const supabase = createClient()
 
@@ -148,9 +149,36 @@ export default function QuoteDetailView({
 
   useKeyboardSave(useCallback(() => { handleSave() }, [status, quotedPrice, customizationFee, internalNotes]))
 
+  // ─── Variant selection helpers ─────────────────────────────────────
+  const toggleVariant = (index: number) => {
+    setSelectedVariants((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
+    })
+  }
+
+  const selectAllVariants = () => {
+    if (selectedVariants.size === variantPrefs.length) {
+      setSelectedVariants(new Set())
+    } else {
+      setSelectedVariants(new Set(variantPrefs.map((_, i) => i)))
+    }
+  }
+
   // ─── SKU Generation ────────────────────────────────────────────────
   const handleCreateSKUs = async () => {
-    if (!quote.style_id || variantPrefs.length === 0) return
+    if (!quote.style_id) return
+
+    const targetVariants = selectedVariants.size > 0
+      ? variantPrefs.filter((_, i) => selectedVariants.has(i))
+      : variantPrefs
+
+    if (targetVariants.length === 0) {
+      toast.error('Select at least one variant to create SKUs')
+      return
+    }
 
     const styleName = quote.styles?.name || quote.product_name || 'STYLE'
     const code = styleName
@@ -160,7 +188,7 @@ export default function QuoteDetailView({
       .join('')
       .substring(0, 4)
 
-    const skuUpdates = variantPrefs
+    const skuUpdates = targetVariants
       .filter((v) => v.size || v.color)
       .map((v) => {
         const s = (v.size || 'OS').toUpperCase().substring(0, 3)
@@ -168,7 +196,6 @@ export default function QuoteDetailView({
         return { size: v.size, color: v.color, sku: `${code}-${s}-${c}` }
       })
 
-    // Create variants with SKUs for the linked style
     const rows = skuUpdates.map((u) => ({
       style_id: quote.style_id,
       size: u.size || null,
@@ -183,6 +210,7 @@ export default function QuoteDetailView({
       toast.error(`SKU creation failed: ${error.message}`)
     } else {
       toast.success(`${rows.length} SKU${rows.length !== 1 ? 's' : ''} created`)
+      setSelectedVariants(new Set())
     }
   }
 
@@ -369,20 +397,45 @@ export default function QuoteDetailView({
             </div>
           )}
 
-          {/* Variant Breakdown */}
+          {/* Variant Breakdown with selection */}
           {variantPrefs.length > 0 && (
             <div className="border border-neutral-800 rounded-lg p-6">
-              <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide mb-3">Variant Breakdown</h2>
-              <div className="space-y-1.5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">Variant Breakdown</h2>
+                <button
+                  type="button"
+                  onClick={selectAllVariants}
+                  className="text-[10px] text-neutral-500 hover:text-white transition"
+                >
+                  {selectedVariants.size === variantPrefs.length ? 'Deselect all' : 'Select all'}
+                </button>
+              </div>
+              <div className="space-y-1">
                 {variantPrefs.map((v, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-300">
+                  <label
+                    key={i}
+                    className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer transition text-sm ${
+                      selectedVariants.has(i) ? 'bg-neutral-800/50' : 'hover:bg-neutral-900/50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedVariants.has(i)}
+                      onChange={() => toggleVariant(i)}
+                      className="accent-white"
+                    />
+                    <span className="flex-1 text-neutral-300">
                       {[v.size, v.color].filter(Boolean).join(' / ') || 'Unspecified'}
                     </span>
-                    {v.quantity && <span className="text-neutral-400 tabular-nums">&times;{v.quantity}</span>}
-                  </div>
+                    {v.quantity && <span className="text-neutral-400 tabular-nums text-xs">&times;{v.quantity}</span>}
+                  </label>
                 ))}
               </div>
+              {selectedVariants.size > 0 && (
+                <p className="text-[10px] text-neutral-500 mt-2">
+                  {selectedVariants.size} selected — actions below will apply to these variants
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -662,7 +715,7 @@ export default function QuoteDetailView({
                 className="w-full py-2.5 text-sm font-medium border border-neutral-700 text-neutral-300 rounded hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-                Create SKUs
+                Create SKUs{selectedVariants.size > 0 ? ` (${selectedVariants.size})` : ''}
               </button>
               <button
                 type="button"

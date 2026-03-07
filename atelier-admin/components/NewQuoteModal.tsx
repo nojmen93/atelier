@@ -313,36 +313,51 @@ function StyleSelector({
         </div>
       )}
 
-      {/* Grid view */}
+      {/* Grid view — matches Product/Views grid style */}
       {viewMode === 'grid' && (
-        <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-80 overflow-y-auto">
           {filtered.map((s) => (
-            <label
+            <div
               key={s.id}
-              className={`relative flex flex-col items-center p-3 rounded-lg border cursor-pointer transition ${
+              onClick={() => onToggle(s.id)}
+              className={`relative border rounded-lg overflow-hidden cursor-pointer transition ${
                 selectedIds.has(s.id)
-                  ? 'border-white bg-neutral-800/50'
-                  : 'border-neutral-800 hover:border-neutral-700'
+                  ? 'border-white ring-1 ring-white/20'
+                  : 'border-neutral-800 hover:border-neutral-600'
               }`}
             >
               <input
                 type="checkbox"
                 checked={selectedIds.has(s.id)}
                 onChange={() => onToggle(s.id)}
-                className="absolute top-2 right-2 accent-white"
+                className="absolute top-2 right-2 z-10 accent-white"
               />
               {s.images?.[0] ? (
-                <img src={s.images[0]} alt="" className="w-16 h-16 rounded object-cover bg-neutral-800 mb-2" />
+                <img src={s.images[0]} alt="" className="w-full aspect-[3/4] object-cover bg-neutral-800" />
               ) : (
-                <div className="w-16 h-16 rounded bg-neutral-800 mb-2 flex items-center justify-center text-neutral-600 text-xs">
-                  No img
+                <div className="w-full aspect-[3/4] bg-neutral-900 flex items-center justify-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-neutral-700">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
                 </div>
               )}
-              <div className="text-xs font-medium text-white text-center truncate w-full">{s.name}</div>
-              <div className="text-[10px] text-neutral-500 truncate w-full text-center">
-                {s.categories?.name || ''}
+              <div className="p-3">
+                <div className="text-sm font-medium text-white truncate">{s.name}</div>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {s.categories?.name && (
+                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded">{s.categories.name}</span>
+                  )}
+                  {s.base_cost && (
+                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded">€{Number(s.base_cost).toFixed(2)}</span>
+                  )}
+                  {s.material && (
+                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-500 rounded">{s.material}</span>
+                  )}
+                </div>
               </div>
-            </label>
+            </div>
           ))}
         </div>
       )}
@@ -567,7 +582,7 @@ function QuoteForm({
             />
             <div>
               <div className="text-sm font-medium">DTM</div>
-              <div className="text-[10px] text-neutral-500">Dye To Match</div>
+              <div className="text-[10px] text-neutral-500">Dye To Match (Pantone)</div>
             </div>
           </label>
           <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition ${
@@ -583,11 +598,11 @@ function QuoteForm({
             />
             <div>
               <div className="text-sm font-medium">Colour Card</div>
-              <div className="text-[10px] text-neutral-500">Select from palette</div>
+              <div className="text-[10px] text-neutral-500">From supplier card</div>
             </div>
           </label>
         </div>
-        {data.colourMode === 'colour_card' && (
+        {data.colourMode === 'dtm' && (
           <input
             type="text"
             value={data.colourValue}
@@ -596,8 +611,8 @@ function QuoteForm({
             className={inputClass}
           />
         )}
-        {data.colourMode === 'dtm' && (
-          <p className="text-xs text-neutral-500">Thread/ink colour will match the garment fabric colour.</p>
+        {data.colourMode === 'colour_card' && (
+          <p className="text-xs text-neutral-500">Colour will be selected from the supplier&apos;s standard colour card.</p>
         )}
       </div>
 

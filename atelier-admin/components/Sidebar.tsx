@@ -68,7 +68,7 @@ const sections: NavSection[] = [
       </svg>
     ),
     items: [
-      { label: 'Quotes', href: '/admin/quotes' },
+      { label: 'Quote Requests', href: '/admin/quotes' },
       { label: 'Orders', href: '/admin/orders' },
       { label: 'Suppliers', href: '/admin/suppliers' },
       { label: 'Factories', href: '/admin/factories' },
