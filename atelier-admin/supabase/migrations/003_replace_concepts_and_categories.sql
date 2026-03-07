@@ -5,49 +5,21 @@
 -- Old concepts (Culture, Collection, Infrastructure) are replaced
 -- with the correct ones: RTW, Accessories and Objects.
 --
--- Categories are seeded per concept as defined in the product
--- hierarchy specification.
+-- Existing styles are reassigned to the new hierarchy before
+-- old data is deleted.
 -- ============================================================
 
--- ============================================================
 -- Step 0: Add new enum value (must be outside transaction)
--- ============================================================
 ALTER TYPE collection_type ADD VALUE IF NOT EXISTS 'editorials';
 
 -- ============================================================
--- Step 1: Data migrations and concept/category replacement
--- ============================================================
 BEGIN;
 
--- Update any styles using 'na' gender to 'unisex'
+-- Step 1: Enum data migrations
 UPDATE styles SET gender = 'unisex' WHERE gender = 'na';
-
--- Migrate existing 'editorial' data to 'editorials'
 UPDATE styles SET collection_type = 'editorials' WHERE collection_type = 'editorial';
 
--- ============================================================
--- Step 2: Remove old categories and concepts
--- Must delete categories first (FK to concepts).
--- Styles referencing old categories use RESTRICT —
--- if styles exist, they must be re-assigned manually
--- or this migration will fail safely.
--- ============================================================
-
--- Delete categories that belong to old concepts
-DELETE FROM categories
-WHERE concept_id IN (
-  SELECT id FROM concepts
-  WHERE slug IN ('culture', 'collection', 'infrastructure')
-);
-
--- Delete old concepts
-DELETE FROM concepts
-WHERE slug IN ('culture', 'collection', 'infrastructure');
-
--- ============================================================
--- Step 3: Insert correct concepts
--- ============================================================
-
+-- Step 2: Insert new concepts first (so we can reference them)
 INSERT INTO concepts (name, slug, display_order) VALUES
   ('RTW', 'rtw', 0),
   ('Accessories and Objects', 'accessories-and-objects', 1)
@@ -55,10 +27,7 @@ ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
   display_order = EXCLUDED.display_order;
 
--- ============================================================
--- Step 4: Insert RTW categories
--- ============================================================
-
+-- Step 3: Insert new categories
 INSERT INTO categories (concept_id, name, slug, display_order) VALUES
   ((SELECT id FROM concepts WHERE slug = 'rtw'), 'Knitwear', 'knitwear', 0),
   ((SELECT id FROM concepts WHERE slug = 'rtw'), 'Leather', 'leather', 1),
@@ -76,10 +45,6 @@ ON CONFLICT (concept_id, slug) DO UPDATE SET
   name = EXCLUDED.name,
   display_order = EXCLUDED.display_order;
 
--- ============================================================
--- Step 5: Insert Accessories and Objects categories
--- ============================================================
-
 INSERT INTO categories (concept_id, name, slug, display_order) VALUES
   ((SELECT id FROM concepts WHERE slug = 'accessories-and-objects'), 'Bags', 'bags', 0),
   ((SELECT id FROM concepts WHERE slug = 'accessories-and-objects'), 'SLG', 'slg', 1),
@@ -93,5 +58,26 @@ INSERT INTO categories (concept_id, name, slug, display_order) VALUES
 ON CONFLICT (concept_id, slug) DO UPDATE SET
   name = EXCLUDED.name,
   display_order = EXCLUDED.display_order;
+
+-- Step 4: Reassign existing styles from old concepts to RTW / T-shirts
+-- (all existing test/demo styles default to RTW > T-shirts as a safe fallback)
+UPDATE styles
+SET concept_id = (SELECT id FROM concepts WHERE slug = 'rtw'),
+    category_id = (SELECT id FROM categories WHERE slug = 't-shirts'
+                   AND concept_id = (SELECT id FROM concepts WHERE slug = 'rtw'))
+WHERE concept_id IN (
+  SELECT id FROM concepts WHERE slug IN ('culture', 'collection', 'infrastructure')
+);
+
+-- Step 5: Now safe to delete old categories (no more FK references)
+DELETE FROM categories
+WHERE concept_id IN (
+  SELECT id FROM concepts
+  WHERE slug IN ('culture', 'collection', 'infrastructure')
+);
+
+-- Step 6: Delete old concepts
+DELETE FROM concepts
+WHERE slug IN ('culture', 'collection', 'infrastructure');
 
 COMMIT;
