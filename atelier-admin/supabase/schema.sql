@@ -12,7 +12,7 @@ CREATE TYPE style_status AS ENUM ('active', 'development', 'archived');
 
 -- ============================================================
 -- LEVEL 1 — CONCEPTS (Permanent Top Level)
--- Values: RTW, Accessories and Objects
+-- Values: RTW, Accessories, Objects
 -- Permanent structure, NOT seasonal
 -- ============================================================
 

@@ -48,7 +48,8 @@ export const STATUSES = [
 
 // Categories per concept
 // RTW: Ready-to-Wear garments
-// Accessories and Objects: non-garment products
+// Accessories: non-garment wearable products
+// Objects: non-wearable products
 export const RTW_CATEGORIES = [
   'Knitwear',
   'Leather',
@@ -61,19 +62,18 @@ export const RTW_CATEGORIES = [
   'Shirts',
   'Shorts',
   'Skirts',
-  '5-pocket denim',
 ] as const
 
 export const ACCESSORIES_CATEGORIES = [
   'Bags',
-  'SLG',
-  'Scarves',
   'Shoes',
   'Hats',
-  'Eyewear',
-  'Jewellery',
   'Other accessories',
   'Socks',
+] as const
+
+export const OBJECTS_CATEGORIES = [
+  'Other',
 ] as const
 
 // Gender-category filtering for RTW
@@ -95,6 +95,6 @@ export function getCategoriesForGender<T extends { id: string; name: string }>(
     }
   }
 
-  // Women, Unisex, and Accessories: show all categories under that concept
+  // Women, Unisex, Accessories, Objects: show all categories under that concept
   return allCategories
 }
