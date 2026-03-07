@@ -5,29 +5,47 @@ import { createContext, useContext, useState, useCallback } from 'react'
 interface HierarchySelection {
   conceptId: string | null
   conceptName: string | null
+  genderId: string | null
+  genderName: string | null
   categoryId: string | null
   categoryName: string | null
 }
 
 interface HierarchyContextValue extends HierarchySelection {
   selectConcept: (id: string, name: string) => void
+  selectGender: (id: string, name: string) => void
   selectCategory: (id: string, name: string) => void
   clearSelection: () => void
+  clearGender: () => void
   clearCategory: () => void
+}
+
+const EMPTY: HierarchySelection = {
+  conceptId: null,
+  conceptName: null,
+  genderId: null,
+  genderName: null,
+  categoryId: null,
+  categoryName: null,
 }
 
 const HierarchyContext = createContext<HierarchyContextValue | null>(null)
 
 export function HierarchyProvider({ children }: { children: React.ReactNode }) {
-  const [selection, setSelection] = useState<HierarchySelection>({
-    conceptId: null,
-    conceptName: null,
-    categoryId: null,
-    categoryName: null,
-  })
+  const [selection, setSelection] = useState<HierarchySelection>(EMPTY)
 
   const selectConcept = useCallback((id: string, name: string) => {
-    setSelection({ conceptId: id, conceptName: name, categoryId: null, categoryName: null })
+    setSelection({ ...EMPTY, conceptId: id, conceptName: name })
+  }, [])
+
+  const selectGender = useCallback((id: string, name: string) => {
+    setSelection((prev) => ({
+      ...prev,
+      genderId: id,
+      genderName: name,
+      categoryId: null,
+      categoryName: null,
+    }))
   }, [])
 
   const selectCategory = useCallback((id: string, name: string) => {
@@ -35,7 +53,17 @@ export function HierarchyProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const clearSelection = useCallback(() => {
-    setSelection({ conceptId: null, conceptName: null, categoryId: null, categoryName: null })
+    setSelection(EMPTY)
+  }, [])
+
+  const clearGender = useCallback(() => {
+    setSelection((prev) => ({
+      ...prev,
+      genderId: null,
+      genderName: null,
+      categoryId: null,
+      categoryName: null,
+    }))
   }, [])
 
   const clearCategory = useCallback(() => {
@@ -43,7 +71,17 @@ export function HierarchyProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <HierarchyContext.Provider value={{ ...selection, selectConcept, selectCategory, clearSelection, clearCategory }}>
+    <HierarchyContext.Provider
+      value={{
+        ...selection,
+        selectConcept,
+        selectGender,
+        selectCategory,
+        clearSelection,
+        clearGender,
+        clearCategory,
+      }}
+    >
       {children}
     </HierarchyContext.Provider>
   )

@@ -47,7 +47,7 @@ const sections: NavSection[] = [
     items: [],
   },
   {
-    label: 'Styles',
+    label: 'Product',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20.38 3.46L16 2 12 3.46 8 2 3.62 3.46a2 2 0 00-1.34 1.89v13.3a2 2 0 001.34 1.89L8 22l4-1.46L16 22l4.38-1.46a2 2 0 001.34-1.89V5.35a2 2 0 00-1.34-1.89z" />
@@ -56,9 +56,8 @@ const sections: NavSection[] = [
     ),
     items: [
       { label: 'Hierarchy', href: '/admin/styles/hierarchy' },
-      { label: 'Style Gallery', href: '/admin/styles' },
-      { label: 'New Style', href: '/admin/styles/new' },
-      { label: 'Categories', href: '/admin/concepts' },
+      { label: 'Product Gallery', href: '/admin/styles' },
+      { label: 'New Product', href: '/admin/styles/new' },
       { label: 'Specification', href: '/admin/styles/specification' },
     ],
   },

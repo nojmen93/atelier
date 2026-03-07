@@ -22,20 +22,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-const GENDER_LABELS: Record<string, string> = {
-  mens: "Men's",
-  womens: "Women's",
-  unisex: 'Unisex',
-  na: 'N/A',
-}
-
-const COLLECTION_LABELS: Record<string, string> = {
-  editorial: 'Editorial',
-  signature: 'Signature',
-  foundation: 'Foundation',
-  special_projects: 'Special Projects',
-}
+import { GENDER_LABELS, COLLECTION_TYPE_LABELS } from '@/lib/product-hierarchy'
 
 interface Style {
   id: string
@@ -129,6 +116,8 @@ function SortableStyleCard({ style, isDragging }: { style: Style; isDragging?: b
             <p className="text-neutral-500 text-xs mt-1">
               {style.categories.concepts.name}
               {' / '}
+              {GENDER_LABELS[style.gender] || style.gender}
+              {' / '}
               {style.categories.name}
             </p>
           )}
@@ -140,7 +129,7 @@ function SortableStyleCard({ style, isDragging }: { style: Style; isDragging?: b
               {GENDER_LABELS[style.gender] || style.gender}
             </span>
             <span className="px-2 py-1 text-xs rounded bg-neutral-800 text-neutral-400">
-              {COLLECTION_LABELS[style.collection_type] || style.collection_type}
+              {COLLECTION_TYPE_LABELS[style.collection_type] || style.collection_type}
             </span>
             {style.variants?.length > 0 && (
               <span className="px-2 py-1 text-xs rounded bg-neutral-800 text-neutral-400">

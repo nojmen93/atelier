@@ -14,7 +14,7 @@ export default async function SpecificationPage() {
     <div>
       <h1 className="text-3xl font-bold mb-2">Specification</h1>
       <p className="text-neutral-500 text-sm mb-8">
-        Technical specifications, measurements, and construction details for all styles.
+        Technical specifications, measurements, and construction details for all products.
       </p>
       <SpecificationView styles={styles || []} />
     </div>

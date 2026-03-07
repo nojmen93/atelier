@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -8,33 +8,13 @@ import { useKeyboardSave } from '@/lib/useKeyboardSave'
 import ImageUpload from '@/components/ImageUpload'
 import VariantTable from '@/components/VariantTable'
 import CustomizationTab from '@/components/CustomizationTab'
-
-const GENDERS = [
-  { value: 'mens', label: "Men's" },
-  { value: 'womens', label: "Women's" },
-  { value: 'unisex', label: 'Unisex' },
-  { value: 'na', label: 'N/A' },
-]
-
-const COLLECTION_TYPES = [
-  { value: 'editorial', label: 'Editorial' },
-  { value: 'signature', label: 'Signature' },
-  { value: 'foundation', label: 'Foundation' },
-  { value: 'special_projects', label: 'Special Projects' },
-]
-
-const PRODUCT_CAPABILITIES = [
-  { value: 'none', label: 'None' },
-  { value: 'simple_customizable', label: 'Simple Customizable' },
-  { value: 'quote_only', label: 'Quote Only' },
-  { value: 'both', label: 'Both' },
-]
-
-const STATUSES = [
-  { value: 'development', label: 'Development' },
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
-]
+import {
+  GENDER_LABELS,
+  COLLECTION_TYPES,
+  COLLECTION_TYPE_LABELS,
+  PRODUCT_CAPABILITIES,
+  STATUSES,
+} from '@/lib/product-hierarchy'
 
 const TABS = [
   { key: 'details', label: 'Details' },
@@ -95,10 +75,7 @@ export default function StyleEditForm({
   const [material, setMaterial] = useState(style.material || '')
   const [baseCost, setBaseCost] = useState(style.base_cost?.toString() || '')
   const [leadTimeDays, setLeadTimeDays] = useState(style.lead_time_days?.toString() || '')
-  const [conceptId, setConceptId] = useState(style.concept_id)
-  const [categoryId, setCategoryId] = useState(style.category_id)
   const [supplierId, setSupplierId] = useState(style.supplier_id || '')
-  const [gender, setGender] = useState(style.gender)
   const [collectionType, setCollectionType] = useState(style.collection_type)
   const [productCapability, setProductCapability] = useState(style.product_capability)
   const [status, setStatus] = useState(style.status)
@@ -110,13 +87,12 @@ export default function StyleEditForm({
   const router = useRouter()
   const supabase = createClient()
 
-  const selectedConcept = concepts.find((c) => c.id === conceptId)
-  const categories = selectedConcept?.categories || []
-
-  const handleConceptChange = (value: string) => {
-    setConceptId(value)
-    setCategoryId('')
-  }
+  // Resolve hierarchy names for read-only display
+  const conceptName = concepts.find((c) => c.id === style.concept_id)?.name || '—'
+  const categoryName = concepts
+    .find((c) => c.id === style.concept_id)
+    ?.categories.find((cat) => cat.id === style.category_id)?.name || '—'
+  const genderLabel = GENDER_LABELS[style.gender] || style.gender
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -126,9 +102,6 @@ export default function StyleEditForm({
       .from('styles')
       .update({
         name,
-        concept_id: conceptId,
-        gender,
-        category_id: categoryId,
         supplier_id: supplierId || null,
         base_cost: baseCost ? parseFloat(baseCost) : null,
         lead_time_days: leadTimeDays ? parseInt(leadTimeDays) : null,
@@ -174,7 +147,7 @@ export default function StyleEditForm({
       toast.error(error.message)
       setDeleting(false)
     } else {
-      toast.success('Style archived')
+      toast.success('Product archived')
       router.push('/admin/styles')
       router.refresh()
     }
@@ -191,7 +164,7 @@ export default function StyleEditForm({
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Edit Style</h1>
+        <h1 className="text-3xl font-bold">Edit Product</h1>
         <div className="flex items-center gap-3">
           <select
             value={status}
@@ -227,7 +200,7 @@ export default function StyleEditForm({
       {activeTab === 'details' && (
         <form onSubmit={handleSave} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Style Name</label>
+            <label className="block text-sm font-medium mb-2">Product Name</label>
             <input
               type="text"
               value={name}
@@ -237,69 +210,42 @@ export default function StyleEditForm({
             />
           </div>
 
-          {/* Hierarchy: Concept > Category */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Concept</label>
-              <select
-                value={conceptId}
-                onChange={(e) => handleConceptChange(e.target.value)}
-                className={inputClass}
-                required
-              >
-                <option value="">Select concept</option>
-                {concepts.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+          {/* Hierarchy: Read-only display */}
+          <div className="border border-neutral-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <h3 className="text-sm font-medium text-neutral-300">Product Hierarchy</h3>
+              <span className="text-xs text-neutral-600">(set at creation, read-only)</span>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Category</label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className={inputClass}
-                required
-                disabled={!conceptId}
-              >
-                <option value="">
-                  {conceptId ? 'Select category' : 'Select a concept first'}
-                </option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <span className="block text-xs text-neutral-500 mb-1">Concept</span>
+                <span className="text-sm text-white">{conceptName}</span>
+              </div>
+              <div>
+                <span className="block text-xs text-neutral-500 mb-1">Gender</span>
+                <span className="text-sm text-white">{genderLabel}</span>
+              </div>
+              <div>
+                <span className="block text-xs text-neutral-500 mb-1">Category</span>
+                <span className="text-sm text-white">{categoryName}</span>
+              </div>
             </div>
           </div>
 
-          {/* Gender + Collection Type */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Gender</label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className={inputClass}
-                required
-              >
-                {GENDERS.map((g) => (
-                  <option key={g.value} value={g.value}>{g.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Collection Type</label>
-              <select
-                value={collectionType}
-                onChange={(e) => setCollectionType(e.target.value)}
-                className={inputClass}
-                required
-              >
-                {COLLECTION_TYPES.map((ct) => (
-                  <option key={ct.value} value={ct.value}>{ct.label}</option>
-                ))}
-              </select>
-            </div>
+          {/* Collection Type (editable — separate from hierarchy) */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Collection Type</label>
+            <select
+              value={collectionType}
+              onChange={(e) => setCollectionType(e.target.value)}
+              className={inputClass}
+              required
+            >
+              {COLLECTION_TYPES.map((ct) => (
+                <option key={ct.value} value={ct.value}>{ct.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-neutral-500 mt-1">Strategic attribute — determines why this product exists</p>
           </div>
 
           {/* Product Capability */}
@@ -405,7 +351,7 @@ export default function StyleEditForm({
               </button>
             ) : (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-red-400">Archive this style?</span>
+                <span className="text-sm text-red-400">Archive this product?</span>
                 <button
                   type="button"
                   onClick={handleDelete}

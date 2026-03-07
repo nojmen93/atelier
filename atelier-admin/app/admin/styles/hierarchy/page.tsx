@@ -11,9 +11,9 @@ export default async function HierarchyPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2">Hierarchy</h1>
+      <h1 className="text-3xl font-bold mb-2">Product Hierarchy</h1>
       <p className="text-neutral-500 text-sm mb-8">
-        Select a concept and category to filter the Style Gallery.
+        Navigate: Concept &rarr; Gender &rarr; Category to filter the Product Gallery.
       </p>
       <HierarchyBrowser concepts={concepts || []} />
     </div>

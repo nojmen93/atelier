@@ -6,27 +6,13 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import ImageUpload from '@/components/ImageUpload'
 import BackLink from '@/components/BackLink'
-
-const GENDERS = [
-  { value: 'mens', label: "Men's" },
-  { value: 'womens', label: "Women's" },
-  { value: 'unisex', label: 'Unisex' },
-  { value: 'na', label: 'N/A' },
-]
-
-const COLLECTION_TYPES = [
-  { value: 'editorial', label: 'Editorial' },
-  { value: 'signature', label: 'Signature' },
-  { value: 'foundation', label: 'Foundation' },
-  { value: 'special_projects', label: 'Special Projects' },
-]
-
-const PRODUCT_CAPABILITIES = [
-  { value: 'none', label: 'None' },
-  { value: 'simple_customizable', label: 'Simple Customizable' },
-  { value: 'quote_only', label: 'Quote Only' },
-  { value: 'both', label: 'Both' },
-]
+import { useHierarchy } from '@/lib/hierarchy-context'
+import {
+  GENDERS,
+  COLLECTION_TYPES,
+  PRODUCT_CAPABILITIES,
+  getCategoriesForGender,
+} from '@/lib/product-hierarchy'
 
 interface Concept {
   id: string
@@ -39,16 +25,17 @@ interface Supplier {
   name: string
 }
 
-export default function NewStylePage() {
+export default function NewProductPage() {
+  const hierarchy = useHierarchy()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [material, setMaterial] = useState('')
   const [baseCost, setBaseCost] = useState('')
   const [leadTimeDays, setLeadTimeDays] = useState('')
-  const [conceptId, setConceptId] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [conceptId, setConceptId] = useState(hierarchy.conceptId || '')
+  const [gender, setGender] = useState(hierarchy.genderId || 'unisex')
+  const [categoryId, setCategoryId] = useState(hierarchy.categoryId || '')
   const [supplierId, setSupplierId] = useState('')
-  const [gender, setGender] = useState('unisex')
   const [collectionType, setCollectionType] = useState('foundation')
   const [productCapability, setProductCapability] = useState('none')
   const [customizationMode, setCustomizationMode] = useState('')
@@ -76,17 +63,25 @@ export default function NewStylePage() {
   }, [supabase])
 
   const selectedConcept = concepts.find((c) => c.id === conceptId)
-  const categories = selectedConcept?.categories || []
+  const allCategories = selectedConcept?.categories || []
+  const filteredCategories = selectedConcept && gender
+    ? getCategoriesForGender(selectedConcept.name, gender, allCategories)
+    : allCategories
 
   const handleConceptChange = (value: string) => {
     setConceptId(value)
+    setGender('unisex')
     setCategoryId('')
   }
 
-  // Apply category defaults when category changes
+  const handleGenderChange = (value: string) => {
+    setGender(value)
+    setCategoryId('')
+  }
+
   const handleCategoryChange = (value: string) => {
     setCategoryId(value)
-    const cat = categories.find((c) => c.id === value)
+    const cat = allCategories.find((c) => c.id === value)
     if (cat) {
       if (cat.default_supplier_id && !supplierId) setSupplierId(cat.default_supplier_id)
       if (cat.default_lead_time_days && !leadTimeDays) setLeadTimeDays(cat.default_lead_time_days.toString())
@@ -116,93 +111,102 @@ export default function NewStylePage() {
     if (error) {
       toast.error(error.message)
     } else {
-      toast.success("Style created")
+      toast.success('Product created')
       router.push('/admin/styles')
     }
 
     setLoading(false)
   }
 
+  const inputClass = 'w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none'
+
   return (
     <div className="max-w-2xl">
-      <BackLink href="/admin/styles" label="Back to Styles" />
-      <h1 className="text-3xl font-bold mb-8">New Style</h1>
+      <BackLink href="/admin/styles" label="Back to Products" />
+      <h1 className="text-3xl font-bold mb-8">New Product</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-2">Style Name</label>
+          <label className="block text-sm font-medium mb-2">Product Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+            className={inputClass}
             required
           />
         </div>
 
-        {/* Hierarchy: Concept > Category */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Concept</label>
-            <select
-              value={conceptId}
-              onChange={(e) => handleConceptChange(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
-              required
-            >
-              <option value="">Select concept</option>
-              {concepts.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+        {/* Hierarchy: Concept > Gender > Category (locked after creation) */}
+        <div className="border border-neutral-800 rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-sm font-medium text-neutral-300">Product Hierarchy</h3>
+            <span className="text-xs text-neutral-600">(cannot be changed after creation)</span>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Category</label>
-            <select
-              value={categoryId}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
-              required
-              disabled={!conceptId}
-            >
-              <option value="">
-                {conceptId ? 'Select category' : 'Select a concept first'}
-              </option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Concept</label>
+              <select
+                value={conceptId}
+                onChange={(e) => handleConceptChange(e.target.value)}
+                className={inputClass}
+                required
+              >
+                <option value="">Select concept</option>
+                {concepts.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Gender</label>
+              <select
+                value={gender}
+                onChange={(e) => handleGenderChange(e.target.value)}
+                className={inputClass}
+                required
+                disabled={!conceptId}
+              >
+                {GENDERS.map((g) => (
+                  <option key={g.value} value={g.value}>{g.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Category</label>
+              <select
+                value={categoryId}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className={inputClass}
+                required
+                disabled={!conceptId}
+              >
+                <option value="">
+                  {conceptId ? 'Select category' : 'Select concept first'}
+                </option>
+                {filteredCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Gender + Collection Type */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Gender</label>
-            <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
-              required
-            >
-              {GENDERS.map((g) => (
-                <option key={g.value} value={g.value}>{g.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Collection Type</label>
-            <select
-              value={collectionType}
-              onChange={(e) => setCollectionType(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
-              required
-            >
-              {COLLECTION_TYPES.map((ct) => (
-                <option key={ct.value} value={ct.value}>{ct.label}</option>
-              ))}
-            </select>
-          </div>
+        {/* Collection Type (separate from hierarchy — can be changed later) */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Collection Type</label>
+          <select
+            value={collectionType}
+            onChange={(e) => setCollectionType(e.target.value)}
+            className={inputClass}
+            required
+          >
+            {COLLECTION_TYPES.map((ct) => (
+              <option key={ct.value} value={ct.value}>{ct.label}</option>
+            ))}
+          </select>
+          <p className="text-xs text-neutral-500 mt-1">Strategic attribute — can be changed after creation</p>
         </div>
 
         {/* Product Capability */}
@@ -211,7 +215,7 @@ export default function NewStylePage() {
           <select
             value={productCapability}
             onChange={(e) => setProductCapability(e.target.value)}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+            className={inputClass}
             required
           >
             {PRODUCT_CAPABILITIES.map((pc) => (
@@ -229,7 +233,7 @@ export default function NewStylePage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+            className={inputClass}
           />
         </div>
         <div>
@@ -238,7 +242,7 @@ export default function NewStylePage() {
             type="text"
             value={material}
             onChange={(e) => setMaterial(e.target.value)}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+            className={inputClass}
           />
         </div>
 
@@ -248,7 +252,7 @@ export default function NewStylePage() {
           <select
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+            className={inputClass}
           >
             <option value="">None</option>
             {suppliers.map((s) => (
@@ -258,13 +262,13 @@ export default function NewStylePage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Base Cost (€)</label>
+            <label className="block text-sm font-medium mb-2">Base Cost (&euro;)</label>
             <input
               type="number"
               step="0.01"
               value={baseCost}
               onChange={(e) => setBaseCost(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+              className={inputClass}
             />
           </div>
           <div>
@@ -273,7 +277,7 @@ export default function NewStylePage() {
               type="number"
               value={leadTimeDays}
               onChange={(e) => setLeadTimeDays(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+              className={inputClass}
             />
           </div>
         </div>
@@ -284,7 +288,7 @@ export default function NewStylePage() {
             type="text"
             value={customizationMode}
             onChange={(e) => setCustomizationMode(e.target.value)}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none"
+            className={inputClass}
             placeholder="e.g. logo placement, embroidery"
           />
         </div>
@@ -294,7 +298,7 @@ export default function NewStylePage() {
           disabled={loading}
           className="px-6 py-3 bg-white text-black font-medium rounded hover:bg-neutral-200 transition"
         >
-          {loading ? 'Creating...' : 'Create Style'}
+          {loading ? 'Creating...' : 'Create Product'}
         </button>
       </form>
     </div>

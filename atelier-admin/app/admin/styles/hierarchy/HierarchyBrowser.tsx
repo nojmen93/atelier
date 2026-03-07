@@ -2,6 +2,7 @@
 
 import { useHierarchy } from '@/lib/hierarchy-context'
 import { useRouter } from 'next/navigation'
+import { GENDERS, GENDER_LABELS, getCategoriesForGender } from '@/lib/product-hierarchy'
 
 interface Category {
   id: string
@@ -18,14 +19,20 @@ interface Concept {
   categories: Category[]
 }
 
-const CONCEPT_DESCRIPTIONS: Record<string, string> = {
-  culture: 'Creative, limited drops — Atelier originals',
-  collection: 'Structured teamwear for tech companies',
-  infrastructure: 'Operational garments for warehousing & logistics',
-}
-
 export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) {
-  const { conceptId, categoryId, selectConcept, selectCategory, clearSelection, clearCategory } = useHierarchy()
+  const {
+    conceptId,
+    conceptName,
+    genderId,
+    genderName,
+    categoryId,
+    selectConcept,
+    selectGender,
+    selectCategory,
+    clearSelection,
+    clearGender,
+    clearCategory,
+  } = useHierarchy()
   const router = useRouter()
 
   const selectedConcept = concepts.find((c) => c.id === conceptId)
@@ -34,6 +41,19 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
     selectCategory(cat.id, cat.name)
     router.push('/admin/styles')
   }
+
+  const handleGenderClick = (genderValue: string) => {
+    selectGender(genderValue, GENDER_LABELS[genderValue] || genderValue)
+  }
+
+  // Get filtered categories based on selected concept and gender
+  const filteredCategories = selectedConcept && genderId
+    ? getCategoriesForGender(
+        selectedConcept.name,
+        genderId,
+        selectedConcept.categories
+      ).sort((a, b) => a.display_order - b.display_order)
+    : []
 
   return (
     <div>
@@ -44,27 +64,36 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
             All Concepts
           </button>
           <span className="text-neutral-600">/</span>
-          {categoryId ? (
+          {genderId ? (
             <>
-              <button onClick={clearCategory} className="text-neutral-400 hover:text-white transition">
-                {selectedConcept?.name}
+              <button onClick={clearGender} className="text-neutral-400 hover:text-white transition">
+                {conceptName}
               </button>
               <span className="text-neutral-600">/</span>
-              <span className="text-white font-medium">
-                {selectedConcept?.categories.find((c) => c.id === categoryId)?.name}
-              </span>
+              {categoryId ? (
+                <>
+                  <button onClick={clearCategory} className="text-neutral-400 hover:text-white transition">
+                    {genderName}
+                  </button>
+                  <span className="text-neutral-600">/</span>
+                  <span className="text-white font-medium">
+                    {selectedConcept?.categories.find((c) => c.id === categoryId)?.name}
+                  </span>
+                </>
+              ) : (
+                <span className="text-white font-medium">{genderName}</span>
+              )}
             </>
           ) : (
-            <span className="text-white font-medium">{selectedConcept?.name}</span>
+            <span className="text-white font-medium">{conceptName}</span>
           )}
         </div>
       )}
 
-      {/* Concept Grid */}
+      {/* Level 1: Concept Grid */}
       {!conceptId && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {concepts.map((concept) => {
-            const desc = CONCEPT_DESCRIPTIONS[concept.slug] || ''
             const categories = (concept.categories || []).sort((a, b) => a.display_order - b.display_order)
 
             return (
@@ -76,8 +105,7 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
                 <h2 className="text-xl font-semibold mb-1 group-hover:text-white transition">
                   {concept.name}
                 </h2>
-                {desc && <p className="text-neutral-500 text-sm mb-4">{desc}</p>}
-                <div className="text-xs text-neutral-600">
+                <div className="text-xs text-neutral-600 mt-2">
                   {categories.length} {categories.length === 1 ? 'category' : 'categories'}
                 </div>
               </button>
@@ -86,43 +114,70 @@ export default function HierarchyBrowser({ concepts }: { concepts: Concept[] }) 
         </div>
       )}
 
-      {/* Category List */}
-      {conceptId && !categoryId && selectedConcept && (
+      {/* Level 2: Gender Selection */}
+      {conceptId && !genderId && selectedConcept && (
         <div>
           <h2 className="text-xl font-semibold mb-4">{selectedConcept.name}</h2>
-          <p className="text-neutral-500 text-sm mb-6">
-            {CONCEPT_DESCRIPTIONS[selectedConcept.slug] || ''}
-          </p>
+          <p className="text-neutral-500 text-sm mb-6">Select gender</p>
 
-          {selectedConcept.categories.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {GENDERS.map((g) => (
+              <button
+                key={g.value}
+                onClick={() => handleGenderClick(g.value)}
+                className="border border-neutral-800 rounded-lg p-5 text-left hover:border-neutral-600 transition"
+              >
+                <h3 className="font-medium">{g.label}</h3>
+                <p className="text-xs text-neutral-500 mt-1">View categories &rarr;</p>
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => {
+              router.push('/admin/styles')
+            }}
+            className="mt-6 text-sm text-neutral-400 hover:text-white transition"
+          >
+            View all {selectedConcept.name} products &rarr;
+          </button>
+        </div>
+      )}
+
+      {/* Level 3: Category List */}
+      {conceptId && genderId && !categoryId && selectedConcept && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">
+            {selectedConcept.name} &mdash; {genderName}
+          </h2>
+          <p className="text-neutral-500 text-sm mb-6">Select category</p>
+
+          {filteredCategories.length === 0 ? (
             <div className="border border-neutral-800 border-dashed rounded-lg p-12 text-center">
-              <p className="text-neutral-500 text-sm">No categories yet.</p>
+              <p className="text-neutral-500 text-sm">No categories available.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedConcept.categories
-                .sort((a, b) => a.display_order - b.display_order)
-                .map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleCategoryClick(cat)}
-                    className="border border-neutral-800 rounded-lg p-5 text-left hover:border-neutral-600 transition"
-                  >
-                    <h3 className="font-medium">{cat.name}</h3>
-                    <p className="text-xs text-neutral-500 mt-1">View styles &rarr;</p>
-                  </button>
-                ))}
+              {filteredCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategoryClick(cat)}
+                  className="border border-neutral-800 rounded-lg p-5 text-left hover:border-neutral-600 transition"
+                >
+                  <h3 className="font-medium">{cat.name}</h3>
+                  <p className="text-xs text-neutral-500 mt-1">View products &rarr;</p>
+                </button>
+              ))}
             </div>
           )}
 
           <button
             onClick={() => {
-              selectConcept(selectedConcept.id, selectedConcept.name)
               router.push('/admin/styles')
             }}
             className="mt-6 text-sm text-neutral-400 hover:text-white transition"
           >
-            View all {selectedConcept.name} styles &rarr;
+            View all {selectedConcept.name} / {genderName} products &rarr;
           </button>
         </div>
       )}
