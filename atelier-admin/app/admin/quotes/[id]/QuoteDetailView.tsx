@@ -147,6 +147,149 @@ export default function QuoteDetailView({
 
   useKeyboardSave(useCallback(() => { handleSave() }, [status, quotedPrice, customizationFee, internalNotes]))
 
+  // ─── SKU Generation ────────────────────────────────────────────────
+  const handleCreateSKUs = async () => {
+    if (!quote.style_id || variantPrefs.length === 0) return
+
+    const styleName = quote.styles?.name || quote.product_name || 'STYLE'
+    const code = styleName
+      .replace(/[^a-zA-Z0-9 ]/g, '')
+      .split(' ')
+      .map((w: string) => w.substring(0, 2).toUpperCase())
+      .join('')
+      .substring(0, 4)
+
+    const skuUpdates = variantPrefs
+      .filter((v) => v.size || v.color)
+      .map((v) => {
+        const s = (v.size || 'OS').toUpperCase().substring(0, 3)
+        const c = (v.color || 'STD').replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase()
+        return { size: v.size, color: v.color, sku: `${code}-${s}-${c}` }
+      })
+
+    // Create variants with SKUs for the linked style
+    const rows = skuUpdates.map((u) => ({
+      style_id: quote.style_id,
+      size: u.size || null,
+      color: u.color || null,
+      sku: u.sku,
+      stock: 0,
+      price_modifier: 0,
+    }))
+
+    const { error } = await supabase.from('variants').insert(rows)
+    if (error) {
+      toast.error(`SKU creation failed: ${error.message}`)
+    } else {
+      toast.success(`${rows.length} SKU${rows.length !== 1 ? 's' : ''} created`)
+    }
+  }
+
+  // ─── PDF Offer ─────────────────────────────────────────────────────
+  const handleMakePDF = () => {
+    const productLabel = quote.styles?.name || quote.product_name || 'Custom Product'
+    const lines = [
+      `QUOTE OFFER`,
+      ``,
+      `Date: ${new Date().toLocaleDateString('en-GB')}`,
+      `Customer: ${quote.customer_name}`,
+      quote.customer_company ? `Company: ${quote.customer_company}` : '',
+      `Email: ${quote.customer_email}`,
+      ``,
+      `Product: ${productLabel}`,
+      `Quantity: ${quote.quantity}`,
+      `Total Price: €${Number(quotedPrice).toFixed(2)}`,
+      ``,
+    ].filter(Boolean)
+
+    if (variantPrefs.length > 0) {
+      lines.push(`Variant Breakdown:`)
+      variantPrefs.forEach((v) => {
+        const label = [v.size, v.color].filter(Boolean).join(' / ') || 'Standard'
+        lines.push(`  - ${label}${v.quantity ? ` × ${v.quantity}` : ''}`)
+      })
+      lines.push(``)
+    }
+
+    if (Object.keys(custPrefs).length > 0) {
+      lines.push(`Customization:`)
+      if (custPrefs.placement) lines.push(`  Placement: ${PLACEMENT_LABELS[custPrefs.placement] || custPrefs.placement}`)
+      if (custPrefs.technique) lines.push(`  Technique: ${TECHNIQUE_LABELS[custPrefs.technique] || custPrefs.technique}`)
+      if (custPrefs.pantone_color) lines.push(`  Colour: ${custPrefs.pantone_color}`)
+      if (custPrefs.colour_mode) lines.push(`  Colour Mode: ${custPrefs.colour_mode === 'dtm' ? 'Dye To Match' : 'Colour Card'}`)
+      if (custPrefs.colour_value) lines.push(`  Colour Value: ${custPrefs.colour_value}`)
+      lines.push(``)
+    }
+
+    lines.push(`Lead time: Approximately 3-4 weeks from order confirmation.`)
+
+    // Create a printable window
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(`
+        <html><head><title>Quote - ${productLabel}</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #111; line-height: 1.6; max-width: 700px; margin: 0 auto; }
+          h1 { font-size: 24px; margin-bottom: 8px; }
+          .meta { color: #666; font-size: 14px; margin-bottom: 24px; }
+          pre { white-space: pre-wrap; font-family: inherit; font-size: 14px; }
+        </style></head>
+        <body><pre>${lines.join('\n')}</pre>
+        <script>window.print()</script>
+        </body></html>
+      `)
+      printWindow.document.close()
+    }
+    toast.success('PDF offer opened for printing')
+  }
+
+  // ─── Excel Offer ───────────────────────────────────────────────────
+  const handleMakeExcel = () => {
+    const productLabel = quote.styles?.name || quote.product_name || 'Custom Product'
+
+    // Build CSV content
+    const csvRows: string[][] = [
+      ['Quote Offer'],
+      [],
+      ['Date', new Date().toLocaleDateString('en-GB')],
+      ['Customer', quote.customer_name],
+      ['Company', quote.customer_company || ''],
+      ['Email', quote.customer_email],
+      [],
+      ['Product', productLabel],
+      ['Quantity', String(quote.quantity)],
+      ['Total Price (EUR)', Number(quotedPrice).toFixed(2)],
+      [],
+    ]
+
+    if (variantPrefs.length > 0) {
+      csvRows.push(['Variant Breakdown'])
+      csvRows.push(['Size', 'Color', 'Quantity'])
+      variantPrefs.forEach((v) => {
+        csvRows.push([v.size || '', v.color || '', v.quantity ? String(v.quantity) : ''])
+      })
+      csvRows.push([])
+    }
+
+    if (Object.keys(custPrefs).length > 0) {
+      csvRows.push(['Customization'])
+      if (custPrefs.placement) csvRows.push(['Placement', PLACEMENT_LABELS[custPrefs.placement] || custPrefs.placement])
+      if (custPrefs.technique) csvRows.push(['Technique', TECHNIQUE_LABELS[custPrefs.technique] || custPrefs.technique])
+      if (custPrefs.pantone_color) csvRows.push(['Colour', custPrefs.pantone_color])
+      if (custPrefs.colour_mode) csvRows.push(['Colour Mode', custPrefs.colour_mode === 'dtm' ? 'Dye To Match' : 'Colour Card'])
+    }
+
+    const csvContent = csvRows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `quote-${quote.customer_company || quote.customer_name}-${productLabel}.csv`.replace(/\s+/g, '-').toLowerCase()
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Excel offer downloaded')
+  }
+
   const statusColor = STATUS_BADGES[status] || 'border-neutral-700 bg-neutral-800 text-neutral-300'
   const custPrefs = quote.customization_preferences || {}
   const variantPrefs = quote.variant_preferences || []
@@ -326,6 +469,44 @@ export default function QuoteDetailView({
               <img src={quote.logo_file_url} alt="Customer logo" className="max-w-full max-h-32 object-contain bg-neutral-900 rounded p-4" />
             </div>
           )}
+
+          {/* Placement Preview — style image with logo overlay */}
+          {quote.styles?.images?.[0] && custPrefs.placement && (
+            <div className="border border-neutral-800 rounded-lg p-6">
+              <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide mb-3">Placement Preview</h2>
+              <div className="relative bg-neutral-900 rounded overflow-hidden">
+                <img
+                  src={quote.styles.images[0]}
+                  alt="Style preview"
+                  className="w-full aspect-[3/4] object-cover"
+                />
+                {/* Logo placement indicator */}
+                <div
+                  className="absolute flex items-center justify-center"
+                  style={{
+                    ...(custPrefs.placement === 'center_front' ? { top: '30%', left: '50%', transform: 'translate(-50%, -50%)' } :
+                      custPrefs.placement === 'center_back' ? { top: '35%', left: '50%', transform: 'translate(-50%, -50%)' } :
+                      custPrefs.placement === 'hsp' ? { top: '15%', left: '50%', transform: 'translate(-50%, 0)' } :
+                      custPrefs.placement === 'wrs' ? { top: '35%', right: '15%', transform: 'translate(0, -50%)' } :
+                      custPrefs.placement === 'wls' ? { top: '35%', left: '15%', transform: 'translate(0, -50%)' } :
+                      { top: '30%', left: '50%', transform: 'translate(-50%, -50%)' }),
+                  }}
+                >
+                  {quote.logo_file_url ? (
+                    <img src={quote.logo_file_url} alt="Logo" className="w-16 h-16 object-contain opacity-70" />
+                  ) : (
+                    <div className="w-20 h-10 border-2 border-dashed border-white/40 rounded flex items-center justify-center">
+                      <span className="text-[9px] text-white/50 font-medium">LOGO</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-neutral-500 mt-2 text-center">
+                {PLACEMENT_LABELS[custPrefs.placement] || custPrefs.placement}
+                {custPrefs.technique && ` · ${TECHNIQUE_LABELS[custPrefs.technique] || custPrefs.technique}`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* RIGHT — Quote Response + Actions */}
@@ -460,6 +641,50 @@ export default function QuoteDetailView({
                 Create Style from Quote
               </button>
             )}
+          </div>
+
+          {/* Final Actions */}
+          <div className="border border-neutral-800 rounded-lg p-6">
+            <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide mb-4">Actions</h2>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleCreateSKUs}
+                disabled={!quote.style_id || variantPrefs.length === 0}
+                className="w-full py-2.5 text-sm font-medium border border-neutral-700 text-neutral-300 rounded hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                Create SKUs
+              </button>
+              <button
+                type="button"
+                onClick={handleMakePDF}
+                disabled={!quotedPrice}
+                className="w-full py-2.5 text-sm font-medium border border-neutral-700 text-neutral-300 rounded hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                Make PDF Offer
+              </button>
+              <button
+                type="button"
+                onClick={handleMakeExcel}
+                disabled={!quotedPrice}
+                className="w-full py-2.5 text-sm font-medium border border-neutral-700 text-neutral-300 rounded hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="16" y2="17" /></svg>
+                Make Excel Offer
+              </button>
+              <button
+                type="button"
+                disabled
+                className="w-full py-2.5 text-sm font-medium border border-neutral-700 text-neutral-500 rounded cursor-not-allowed flex items-center justify-center gap-2 opacity-50"
+                title="Customer portal not yet available"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                Push Offer
+                <span className="text-[10px] text-neutral-600 ml-1">Coming soon</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

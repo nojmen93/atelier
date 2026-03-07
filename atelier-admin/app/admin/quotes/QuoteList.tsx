@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import NewQuoteModal from '@/components/NewQuoteModal'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -44,9 +46,11 @@ interface Quote {
   styles: { name: string; images: string[] | null } | null
 }
 
-export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] }) {
+export default function QuoteList({ initialQuotes, showNewButton = true }: { initialQuotes: Quote[]; showNewButton?: boolean }) {
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
+  const [showNewQuoteModal, setShowNewQuoteModal] = useState(false)
+  const router = useRouter()
 
   const filtered = initialQuotes.filter((q) => {
     if (statusFilter && q.status !== statusFilter) return false
@@ -60,8 +64,30 @@ export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] })
     return true
   })
 
+  const handleQuoteCreated = () => {
+    router.refresh()
+  }
+
+  const handleModalClose = () => {
+    setShowNewQuoteModal(false)
+    router.refresh()
+  }
+
   return (
     <div>
+      {/* Header with New Quote button */}
+      {showNewButton && (
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Quote Requests</h1>
+          <button
+            onClick={() => setShowNewQuoteModal(true)}
+            className="px-6 py-3 bg-white text-black font-medium rounded hover:bg-neutral-200 transition"
+          >
+            New Quote
+          </button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex gap-4 mb-6">
         <input
@@ -152,6 +178,14 @@ export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] })
           </tbody>
         </table>
       </div>
+
+      {/* New Quote Modal */}
+      {showNewQuoteModal && (
+        <NewQuoteModal
+          onClose={handleModalClose}
+          onQuoteCreated={handleQuoteCreated}
+        />
+      )}
     </div>
   )
 }
