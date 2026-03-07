@@ -52,6 +52,7 @@ interface QuoteStyle {
 
 interface Quote {
   id: string
+  quote_number: string | null
   customer_name: string
   customer_email: string
   customer_company: string | null
@@ -299,7 +300,14 @@ export default function QuoteDetailView({
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Quote Request</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">Quote Request</h1>
+            {quote.quote_number && (
+              <span className="px-2.5 py-1 text-xs font-mono bg-neutral-900 border border-neutral-800 rounded text-neutral-400">
+                {quote.quote_number}
+              </span>
+            )}
+          </div>
           <p className="text-neutral-500 text-sm mt-1">
             Submitted {new Date(quote.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>

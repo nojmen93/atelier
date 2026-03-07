@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useEscapeClose } from '@/lib/useKeyboardSave'
 
@@ -34,6 +35,13 @@ interface VariantLine {
   quantity: string
 }
 
+interface CustomerData {
+  customerName: string
+  customerEmail: string
+  customerCompany: string
+  customerPhone: string
+}
+
 interface QuoteFormData {
   styleId: string
   styleName: string
@@ -51,10 +59,119 @@ interface QuoteFormData {
   variantLines: VariantLine[]
 }
 
-type ModalStep = 'select_styles' | 'fill_quote' | 'done'
+interface CreatedQuote {
+  id: string
+  quote_number: string | null
+  styleName: string
+}
+
+type ModalStep = 'customer_info' | 'select_styles' | 'fill_quote' | 'done'
 type StyleViewMode = 'dropdown' | 'grid' | 'gallery'
 
-// ─── Style Selector (Step 1) ─────────────────────────────────────────
+// ─── Common Sizes for Quick-Add ──────────────────────────────────────
+
+const COMMON_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']
+
+// ─── Quote Number Generation ─────────────────────────────────────────
+
+function generateQuoteNumber(): string {
+  const now = new Date()
+  const yy = now.getFullYear().toString().slice(-2)
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const rand = String(Math.floor(Math.random() * 10000)).padStart(4, '0')
+  return `QR-${yy}${mm}-${rand}`
+}
+
+// ─── Customer Info Form (Step 1) ─────────────────────────────────────
+
+function CustomerInfoForm({
+  data,
+  onChange,
+  onConfirm,
+  onCancel,
+}: {
+  data: CustomerData
+  onChange: (data: CustomerData) => void
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  const inputClass = 'w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none'
+
+  const canContinue = data.customerName.trim() && data.customerEmail.trim()
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-lg font-semibold">Customer Information</h3>
+        <p className="text-sm text-neutral-500 mt-1">Enter customer details before selecting products.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs text-neutral-500 mb-1">Customer Name *</label>
+          <input
+            type="text"
+            value={data.customerName}
+            onChange={(e) => onChange({ ...data, customerName: e.target.value })}
+            className={inputClass}
+            placeholder="Full name"
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-neutral-500 mb-1">Email *</label>
+          <input
+            type="email"
+            value={data.customerEmail}
+            onChange={(e) => onChange({ ...data, customerEmail: e.target.value })}
+            className={inputClass}
+            placeholder="email@example.com"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-neutral-500 mb-1">Company</label>
+          <input
+            type="text"
+            value={data.customerCompany}
+            onChange={(e) => onChange({ ...data, customerCompany: e.target.value })}
+            className={inputClass}
+            placeholder="Company name"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-neutral-500 mb-1">Phone</label>
+          <input
+            type="tel"
+            value={data.customerPhone}
+            onChange={(e) => onChange({ ...data, customerPhone: e.target.value })}
+            className={inputClass}
+            placeholder="+31 ..."
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={!canContinue}
+          className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Continue to Product Selection
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Style Selector (Step 2) ─────────────────────────────────────────
 
 function StyleSelector({
   styles,
@@ -275,7 +392,7 @@ function StyleSelector({
           onClick={onCancel}
           className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition"
         >
-          Cancel
+          Back
         </button>
         <button
           type="button"
@@ -290,12 +407,13 @@ function StyleSelector({
   )
 }
 
-// ─── Per-Style Quote Form (Step 2) ───────────────────────────────────
+// ─── Per-Style Quote Form (Step 3) ───────────────────────────────────
 
 function QuoteForm({
   style,
   logos,
   formData,
+  customerData,
   currentIndex,
   totalCount,
   onSave,
@@ -304,6 +422,7 @@ function QuoteForm({
   style: Style
   logos: Logo[]
   formData: QuoteFormData
+  customerData: CustomerData
   currentIndex: number
   totalCount: number
   onSave: (data: QuoteFormData) => void
@@ -311,6 +430,7 @@ function QuoteForm({
 }) {
   const [data, setData] = useState<QuoteFormData>(formData)
   const [saving, setSaving] = useState(false)
+  const [quickAddSizes, setQuickAddSizes] = useState<Set<string>>(new Set())
 
   const update = <K extends keyof QuoteFormData>(key: K, value: QuoteFormData[K]) => {
     setData((prev) => ({ ...prev, [key]: value }))
@@ -339,16 +459,36 @@ function QuoteForm({
     }))
   }
 
+  // Quick-add size toggle
+  const toggleQuickSize = (size: string) => {
+    setQuickAddSizes((prev) => {
+      const next = new Set(prev)
+      if (next.has(size)) {
+        next.delete(size)
+        // Remove the variant line for this size
+        setData((prevData) => ({
+          ...prevData,
+          variantLines: prevData.variantLines.filter((l) => l.size !== size),
+        }))
+      } else {
+        next.add(size)
+        // Add a variant line for this size
+        setData((prevData) => ({
+          ...prevData,
+          variantLines: [...prevData.variantLines.filter((l) => l.size || l.color || l.quantity), { size, color: '', quantity: '' }],
+        }))
+      }
+      return next
+    })
+  }
+
   const handleSave = () => {
-    if (!data.customerName || !data.customerEmail) {
-      toast.error('Customer name and email are required')
-      return
-    }
     setSaving(true)
     onSave(data)
   }
 
   const inputClass = 'w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none'
+  const readOnlyClass = 'w-full px-3 py-2 bg-neutral-900/50 border border-neutral-800/50 rounded text-neutral-500 text-sm cursor-not-allowed'
 
   return (
     <div className="space-y-5">
@@ -381,25 +521,25 @@ function QuoteForm({
         </div>
       </div>
 
-      {/* Customer Info — shared across quotes, pre-filled from first */}
+      {/* Customer Info — read-only, greyed out */}
       <div>
         <h4 className="text-sm font-semibold text-neutral-400 mb-3">Customer</h4>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Name *</label>
-            <input type="text" value={data.customerName} onChange={(e) => update('customerName', e.target.value)} className={inputClass} required />
+            <label className="block text-xs text-neutral-600 mb-1">Name</label>
+            <input type="text" value={customerData.customerName} readOnly className={readOnlyClass} tabIndex={-1} />
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Email *</label>
-            <input type="email" value={data.customerEmail} onChange={(e) => update('customerEmail', e.target.value)} className={inputClass} required />
+            <label className="block text-xs text-neutral-600 mb-1">Email</label>
+            <input type="text" value={customerData.customerEmail} readOnly className={readOnlyClass} tabIndex={-1} />
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Company</label>
-            <input type="text" value={data.customerCompany} onChange={(e) => update('customerCompany', e.target.value)} className={inputClass} />
+            <label className="block text-xs text-neutral-600 mb-1">Company</label>
+            <input type="text" value={customerData.customerCompany || '—'} readOnly className={readOnlyClass} tabIndex={-1} />
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Phone</label>
-            <input type="tel" value={data.customerPhone} onChange={(e) => update('customerPhone', e.target.value)} className={inputClass} />
+            <label className="block text-xs text-neutral-600 mb-1">Phone</label>
+            <input type="text" value={customerData.customerPhone || '—'} readOnly className={readOnlyClass} tabIndex={-1} />
           </div>
         </div>
       </div>
@@ -508,9 +648,32 @@ function QuoteForm({
         )}
       </div>
 
-      {/* Variant Breakdown */}
+      {/* Variant Breakdown with Quick-Add */}
       <div>
         <h4 className="text-sm font-semibold text-neutral-400 mb-2">Variant Breakdown</h4>
+
+        {/* Quick-add sizes */}
+        <div className="mb-3">
+          <label className="block text-xs text-neutral-500 mb-2">Quick add sizes</label>
+          <div className="flex flex-wrap gap-1.5">
+            {COMMON_SIZES.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => toggleQuickSize(size)}
+                className={`px-3 py-1.5 text-xs font-medium rounded border transition ${
+                  quickAddSizes.has(size)
+                    ? 'bg-white text-black border-white'
+                    : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Manual variant lines */}
         <div className="space-y-2">
           {data.variantLines.map((line, i) => (
             <div key={i} className="flex gap-2 items-center">
@@ -565,15 +728,16 @@ export default function NewQuoteModal({
   onClose: () => void
   onQuoteCreated: () => void
 }) {
-  const [step, setStep] = useState<ModalStep>('select_styles')
+  const [step, setStep] = useState<ModalStep>('customer_info')
   const [styles, setStyles] = useState<Style[]>([])
   const [logos, setLogos] = useState<Logo[]>([])
   const [selectedStyleIds, setSelectedStyleIds] = useState<Set<string>>(new Set())
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [createdQuotes, setCreatedQuotes] = useState<CreatedQuote[]>([])
 
-  // Shared customer data carried across quote iterations
-  const [sharedCustomer, setSharedCustomer] = useState({
+  // Customer data collected in step 1
+  const [customerData, setCustomerData] = useState<CustomerData>({
     customerName: '',
     customerEmail: '',
     customerCompany: '',
@@ -581,6 +745,7 @@ export default function NewQuoteModal({
   })
 
   const supabase = createClient()
+  const router = useRouter()
 
   useEscapeClose(onClose)
 
@@ -598,7 +763,6 @@ export default function NewQuoteModal({
         .order('company_name'),
     ]).then(([stylesRes, logosRes]) => {
       if (stylesRes.data) {
-        // Supabase returns joined relations; normalize single-record joins
         const normalized = (stylesRes.data as Record<string, unknown>[]).map((s) => ({
           ...s,
           categories: Array.isArray(s.categories) ? s.categories[0] || null : s.categories,
@@ -624,6 +788,14 @@ export default function NewQuoteModal({
     })
   }
 
+  const handleCustomerConfirm = () => {
+    if (!customerData.customerName.trim() || !customerData.customerEmail.trim()) {
+      toast.error('Customer name and email are required')
+      return
+    }
+    setStep('select_styles')
+  }
+
   const handleConfirmSelection = () => {
     if (selectedStyleIds.size === 0) return
     setCurrentQuoteIndex(0)
@@ -633,7 +805,7 @@ export default function NewQuoteModal({
   const makeDefaultFormData = (style: Style): QuoteFormData => ({
     styleId: style.id,
     styleName: style.name,
-    ...sharedCustomer,
+    ...customerData,
     quantity: '1',
     message: '',
     colourMode: '',
@@ -645,6 +817,8 @@ export default function NewQuoteModal({
   })
 
   const handleSaveQuote = async (data: QuoteFormData) => {
+    const quoteNumber = generateQuoteNumber()
+
     const customizationPreferences: Record<string, string> = {}
     if (data.placement) customizationPreferences.placement = data.placement
     if (data.technique) customizationPreferences.technique = data.technique
@@ -660,41 +834,53 @@ export default function NewQuoteModal({
         quantity: l.quantity ? parseInt(l.quantity) : null,
       }))
 
-    const { error } = await supabase.from('quote_requests').insert({
-      customer_name: data.customerName,
-      customer_email: data.customerEmail,
-      customer_company: data.customerCompany || null,
-      customer_phone: data.customerPhone || null,
+    const { data: inserted, error } = await supabase.from('quote_requests').insert({
+      quote_number: quoteNumber,
+      customer_name: customerData.customerName,
+      customer_email: customerData.customerEmail,
+      customer_company: customerData.customerCompany || null,
+      customer_phone: customerData.customerPhone || null,
       style_id: data.styleId,
       product_name: data.styleName,
       quantity: parseInt(data.quantity) || 1,
       message: data.message || null,
       customization_preferences: Object.keys(customizationPreferences).length > 0 ? customizationPreferences : {},
       variant_preferences: variantPrefs.length > 0 ? variantPrefs : [],
-    })
+    }).select('id, quote_number').single()
 
     if (error) {
       toast.error(error.message)
       return
     }
 
-    // Persist customer data for next iterations
-    setSharedCustomer({
-      customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      customerCompany: data.customerCompany,
-      customerPhone: data.customerPhone,
-    })
+    setCreatedQuotes((prev) => [...prev, {
+      id: inserted.id,
+      quote_number: inserted.quote_number,
+      styleName: data.styleName,
+    }])
 
-    toast.success(`Quote saved for ${data.styleName}`)
-    onQuoteCreated() // Refresh the parent grid
+    toast.success(`Quote ${quoteNumber} saved for ${data.styleName}`)
 
     // Move to next style or finish
     const nextIndex = currentQuoteIndex + 1
     if (nextIndex < selectedStylesList.length) {
       setCurrentQuoteIndex(nextIndex)
     } else {
+      onQuoteCreated()
       setStep('done')
+    }
+  }
+
+  const handleViewQuote = (quoteId: string) => {
+    onClose()
+    router.push(`/admin/quotes/${quoteId}`)
+  }
+
+  const handleDone = () => {
+    onClose()
+    // Navigate to the last created quote
+    if (createdQuotes.length > 0) {
+      router.push(`/admin/quotes/${createdQuotes[createdQuotes.length - 1].id}`)
     }
   }
 
@@ -705,15 +891,22 @@ export default function NewQuoteModal({
       <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="text-neutral-500 text-sm">Loading styles...</div>
+            <div className="text-neutral-500 text-sm">Loading...</div>
           </div>
+        ) : step === 'customer_info' ? (
+          <CustomerInfoForm
+            data={customerData}
+            onChange={setCustomerData}
+            onConfirm={handleCustomerConfirm}
+            onCancel={onClose}
+          />
         ) : step === 'select_styles' ? (
           <StyleSelector
             styles={styles}
             selectedIds={selectedStyleIds}
             onToggle={toggleStyle}
             onConfirm={handleConfirmSelection}
-            onCancel={onClose}
+            onCancel={() => setStep('customer_info')}
           />
         ) : step === 'fill_quote' && currentStyle ? (
           <QuoteForm
@@ -721,6 +914,7 @@ export default function NewQuoteModal({
             style={currentStyle}
             logos={logos}
             formData={makeDefaultFormData(currentStyle)}
+            customerData={customerData}
             currentIndex={currentQuoteIndex}
             totalCount={selectedStylesList.length}
             onSave={handleSaveQuote}
@@ -732,15 +926,34 @@ export default function NewQuoteModal({
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
-            <h3 className="text-lg font-semibold mb-2">All quotes created</h3>
+            <h3 className="text-lg font-semibold mb-2">Quote Offer Created</h3>
             <p className="text-sm text-neutral-400 mb-6">
-              {selectedStylesList.length} quote{selectedStylesList.length !== 1 ? 's' : ''} saved successfully.
+              {createdQuotes.length} quote{createdQuotes.length !== 1 ? 's' : ''} saved successfully.
             </p>
+
+            {/* Created quotes summary */}
+            <div className="mb-6 space-y-2 text-left max-w-sm mx-auto">
+              {createdQuotes.map((q) => (
+                <div key={q.id} className="flex items-center justify-between px-4 py-2.5 bg-neutral-900 border border-neutral-800 rounded-lg">
+                  <div>
+                    <span className="text-xs font-mono text-neutral-500">{q.quote_number}</span>
+                    <div className="text-sm font-medium text-white">{q.styleName}</div>
+                  </div>
+                  <button
+                    onClick={() => handleViewQuote(q.id)}
+                    className="px-3 py-1 text-xs text-neutral-400 hover:text-white border border-neutral-700 rounded hover:border-neutral-500 transition"
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
+            </div>
+
             <button
-              onClick={onClose}
+              onClick={handleDone}
               className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition"
             >
-              Back to Quotes
+              {createdQuotes.length === 1 ? 'View Quote' : 'View Latest Quote'}
             </button>
           </div>
         ) : null}

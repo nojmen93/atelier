@@ -35,6 +35,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 interface Quote {
   id: string
+  quote_number: string | null
   customer_name: string
   customer_email: string
   customer_company: string | null
@@ -120,6 +121,7 @@ export default function QuoteList({ initialQuotes, showNewButton = true }: { ini
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-800 text-neutral-500 text-xs uppercase tracking-wide">
+              <th className="text-left px-4 py-3 font-medium">ID</th>
               <th className="text-left px-4 py-3 font-medium">Date</th>
               <th className="text-left px-4 py-3 font-medium">Customer</th>
               <th className="text-left px-4 py-3 font-medium">Company</th>
@@ -133,13 +135,16 @@ export default function QuoteList({ initialQuotes, showNewButton = true }: { ini
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-neutral-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-neutral-500">
                   No quotes match your filters.
                 </td>
               </tr>
             ) : (
               filtered.map((q) => (
                 <tr key={q.id} className="border-b border-neutral-800 last:border-b-0 hover:bg-neutral-900/50 transition">
+                  <td className="px-4 py-3 text-neutral-500 font-mono text-xs">
+                    {q.quote_number || '—'}
+                  </td>
                   <td className="px-4 py-3 text-neutral-400 tabular-nums">
                     {new Date(q.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                   </td>
