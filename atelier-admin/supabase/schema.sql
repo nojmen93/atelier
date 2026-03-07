@@ -5,14 +5,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUM TYPES
 -- ============================================================
 
-CREATE TYPE gender_type AS ENUM ('mens', 'womens', 'unisex', 'na');
-CREATE TYPE collection_type AS ENUM ('editorial', 'signature', 'foundation', 'special_projects');
+CREATE TYPE gender_type AS ENUM ('mens', 'womens', 'unisex');
+CREATE TYPE collection_type AS ENUM ('editorials', 'signature', 'foundation', 'special_projects');
 CREATE TYPE product_capability AS ENUM ('none', 'simple_customizable', 'quote_only', 'both');
 CREATE TYPE style_status AS ENUM ('active', 'development', 'archived');
 
 -- ============================================================
 -- LEVEL 1 — CONCEPTS (Permanent Top Level)
--- Examples: RTW, Home, Accessories
+-- Values: RTW, Accessories and Objects
 -- Permanent structure, NOT seasonal
 -- ============================================================
 
