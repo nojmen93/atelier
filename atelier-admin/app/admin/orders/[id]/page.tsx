@@ -19,7 +19,7 @@ export default async function OrderDetailPage({
       .single(),
     supabase
       .from('purchase_orders')
-      .select('*, styles(id, name, images, suppliers(name))')
+      .select('*, suppliers(id, name), po_lines(*, styles(id, name, images, suppliers(name)))')
       .eq('order_id', id)
       .order('sort_order', { ascending: true }),
   ])

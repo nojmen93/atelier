@@ -21,7 +21,7 @@ interface Style {
   supplier_id: string | null
   categories?: { name: string } | null
   concepts?: { name: string } | null
-  suppliers?: { name: string } | null
+  suppliers?: { id: string; name: string } | null
 }
 
 interface SizeQty {
@@ -33,13 +33,14 @@ interface POLineData {
   styleId: string
   styleName: string
   styleImage: string | null
+  supplierId: string | null
   supplierName: string | null
   sizeBreakdown: SizeQty[]
   quantity: number
   notes: string
 }
 
-type ModalStep = 'customer_info' | 'select_styles' | 'fill_pos' | 'done'
+type ModalStep = 'customer_info' | 'select_styles' | 'fill_lines' | 'done'
 type StyleViewMode = 'dropdown' | 'grid' | 'gallery'
 
 const COMMON_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']
@@ -52,6 +53,11 @@ function generateOrderNumber(): string {
   const mm = String(now.getMonth() + 1).padStart(2, '0')
   const rand = String(Math.floor(Math.random() * 10000)).padStart(4, '0')
   return `ORD-${yy}${mm}-${rand}`
+}
+
+function generatePONumber(orderNumber: string, index: number): string {
+  const suffix = String.fromCharCode(65 + index) // A, B, C...
+  return `${orderNumber}-${suffix}`
 }
 
 // ─── Step 1: Customer & Order Info ───────────────────────────────────
@@ -172,7 +178,7 @@ function CustomerOrderForm({
   )
 }
 
-// ─── Step 2: Style Selector (reused pattern from quotes) ─────────────
+// ─── Step 2: Style Selector ──────────────────────────────────────────
 
 function StyleSelector({
   styles,
@@ -414,11 +420,16 @@ function StyleSelector({
   )
 }
 
-// ─── Step 3: PO Details per Product (Minimal) ────────────────────────
+// ─── Step 3: PO Lines grouped by Supplier ────────────────────────────
 
-function POEditor({
-  lines,
-  styles,
+interface POGroup {
+  supplierId: string | null
+  supplierName: string
+  lines: POLineData[]
+}
+
+function POLinesEditor({
+  groups,
   onUpdateLine,
   onRemoveLine,
   onSaveOrder,
@@ -426,129 +437,146 @@ function POEditor({
   onCancel,
   saving,
 }: {
-  lines: POLineData[]
-  styles: Style[]
-  onUpdateLine: (index: number, line: POLineData) => void
-  onRemoveLine: (index: number) => void
+  groups: POGroup[]
+  onUpdateLine: (supplierId: string | null, lineIdx: number, line: POLineData) => void
+  onRemoveLine: (supplierId: string | null, lineIdx: number) => void
   onSaveOrder: () => void
   onSaveAndGo: () => void
   onCancel: () => void
   saving: boolean
 }) {
-  const totalQty = lines.reduce((sum, l) => sum + l.quantity, 0)
+  const totalQty = groups.reduce((sum, g) => sum + g.lines.reduce((s, l) => s + l.quantity, 0), 0)
+  const totalLines = groups.reduce((sum, g) => sum + g.lines.length, 0)
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Purchase Orders</h3>
         <span className="text-xs text-neutral-500">
-          {lines.length} PO{lines.length !== 1 ? 's' : ''} · {totalQty} units
+          {groups.length} PO{groups.length !== 1 ? 's' : ''} · {totalLines} line{totalLines !== 1 ? 's' : ''} · {totalQty} units
         </span>
       </div>
 
-      <div className="space-y-4 max-h-[55vh] overflow-y-auto">
-        {lines.map((line, lineIdx) => {
-          const style = styles.find((s) => s.id === line.styleId)
-          const lineQty = line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
+      <p className="text-xs text-neutral-500">
+        Products are grouped by supplier. Each group becomes a separate PO.
+      </p>
 
-          return (
-            <div key={lineIdx} className="border border-neutral-800 rounded-lg p-4 space-y-3">
-              {/* PO header */}
-              <div className="flex items-center gap-3">
-                {line.styleImage ? (
-                  <img src={line.styleImage} alt="" className="w-10 h-10 rounded object-cover bg-neutral-800 flex-shrink-0" />
-                ) : (
-                  <div className="w-10 h-10 rounded bg-neutral-800 flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-white truncate">{line.styleName}</div>
-                  <div className="text-xs text-neutral-500">
-                    {style?.categories?.name}
-                    {style?.suppliers?.name && ` · ${style.suppliers.name}`}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveLine(lineIdx)}
-                  className="px-2 py-1 text-neutral-500 hover:text-red-400 transition text-xs"
-                >
-                  Remove
-                </button>
-              </div>
-
-              {/* Size breakdown — quick-add with tick boxes */}
+      <div className="space-y-6 max-h-[55vh] overflow-y-auto">
+        {groups.map((group, groupIdx) => (
+          <div key={group.supplierId || 'no-supplier'} className="border border-neutral-800 rounded-lg overflow-hidden">
+            {/* PO header */}
+            <div className="bg-neutral-900/50 px-4 py-3 border-b border-neutral-800 flex items-center justify-between">
               <div>
-                <label className="block text-xs text-neutral-500 mb-2">Size Breakdown</label>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {COMMON_SIZES.map((size) => {
-                    const exists = line.sizeBreakdown.some((s) => s.size === size)
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => {
-                          if (exists) {
-                            const newBreakdown = line.sizeBreakdown.filter((s) => s.size !== size)
-                            const newQty = newBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
-                            onUpdateLine(lineIdx, { ...line, sizeBreakdown: newBreakdown, quantity: newQty })
-                          } else {
-                            const newBreakdown = [...line.sizeBreakdown, { size, quantity: '' }]
-                            onUpdateLine(lineIdx, { ...line, sizeBreakdown: newBreakdown })
-                          }
-                        }}
-                        className={`px-3 py-1 text-xs font-medium rounded border transition ${
-                          exists
-                            ? 'bg-white text-black border-white'
-                            : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    )
-                  })}
-                </div>
+                <span className="text-sm font-medium text-white">
+                  PO {String.fromCharCode(65 + groupIdx)}
+                </span>
+                <span className="text-xs text-neutral-500 ml-3">
+                  {group.supplierName}
+                </span>
+              </div>
+              <span className="text-xs text-neutral-500">
+                {group.lines.length} product{group.lines.length !== 1 ? 's' : ''} ·{' '}
+                {group.lines.reduce((s, l) => s + l.quantity, 0)} pcs
+              </span>
+            </div>
 
-                {line.sizeBreakdown.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {line.sizeBreakdown.map((sz, szIdx) => (
-                      <div key={sz.size} className="flex items-center gap-1">
-                        <span className="text-xs text-neutral-400 w-8">{sz.size}</span>
-                        <input
-                          type="number"
-                          value={sz.quantity}
-                          onChange={(e) => {
-                            const newBreakdown = [...line.sizeBreakdown]
-                            newBreakdown[szIdx] = { ...sz, quantity: e.target.value }
-                            const newQty = newBreakdown.reduce((s, szz) => s + (parseInt(szz.quantity) || 0), 0)
-                            onUpdateLine(lineIdx, { ...line, sizeBreakdown: newBreakdown, quantity: newQty })
-                          }}
-                          placeholder="0"
-                          min="0"
-                          className="w-16 px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-white text-sm text-center focus:border-neutral-600 focus:outline-none"
-                        />
+            {/* Lines within PO */}
+            <div className="divide-y divide-neutral-800/50">
+              {group.lines.map((line, lineIdx) => {
+                const lineQty = line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
+
+                return (
+                  <div key={line.styleId} className="p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      {line.styleImage ? (
+                        <img src={line.styleImage} alt="" className="w-10 h-10 rounded object-cover bg-neutral-800 flex-shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-neutral-800 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-white truncate">{line.styleName}</div>
                       </div>
-                    ))}
-                    <div className="flex items-center text-xs text-neutral-500 ml-2">
-                      = {lineQty} pcs
+                      <button
+                        type="button"
+                        onClick={() => onRemoveLine(group.supplierId, lineIdx)}
+                        className="px-2 py-1 text-neutral-500 hover:text-red-400 transition text-xs"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    {/* Size breakdown */}
+                    <div>
+                      <label className="block text-xs text-neutral-500 mb-2">Size Breakdown</label>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {COMMON_SIZES.map((size) => {
+                          const exists = line.sizeBreakdown.some((s) => s.size === size)
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => {
+                                const newBreakdown = exists
+                                  ? line.sizeBreakdown.filter((s) => s.size !== size)
+                                  : [...line.sizeBreakdown, { size, quantity: '' }]
+                                const newQty = newBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
+                                onUpdateLine(group.supplierId, lineIdx, { ...line, sizeBreakdown: newBreakdown, quantity: newQty })
+                              }}
+                              className={`px-3 py-1 text-xs font-medium rounded border transition ${
+                                exists
+                                  ? 'bg-white text-black border-white'
+                                  : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {line.sizeBreakdown.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {line.sizeBreakdown.map((sz, szIdx) => (
+                            <div key={sz.size} className="flex items-center gap-1">
+                              <span className="text-xs text-neutral-400 w-8">{sz.size}</span>
+                              <input
+                                type="number"
+                                value={sz.quantity}
+                                onChange={(e) => {
+                                  const newBreakdown = [...line.sizeBreakdown]
+                                  newBreakdown[szIdx] = { ...sz, quantity: e.target.value }
+                                  const newQty = newBreakdown.reduce((s, szz) => s + (parseInt(szz.quantity) || 0), 0)
+                                  onUpdateLine(group.supplierId, lineIdx, { ...line, sizeBreakdown: newBreakdown, quantity: newQty })
+                                }}
+                                placeholder="0"
+                                min="0"
+                                className="w-16 px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-white text-sm text-center focus:border-neutral-600 focus:outline-none"
+                              />
+                            </div>
+                          ))}
+                          <span className="flex items-center text-xs text-neutral-500 ml-2">
+                            = {lineQty} pcs
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="block text-xs text-neutral-500 mb-1">Notes</label>
+                      <input
+                        type="text"
+                        value={line.notes}
+                        onChange={(e) => onUpdateLine(group.supplierId, lineIdx, { ...line, notes: e.target.value })}
+                        placeholder="Optional notes..."
+                        className="w-full px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none"
+                      />
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-xs text-neutral-500 mb-1">Notes</label>
-                <input
-                  type="text"
-                  value={line.notes}
-                  onChange={(e) => onUpdateLine(lineIdx, { ...line, notes: e.target.value })}
-                  placeholder="Optional notes for this PO..."
-                  className="w-full px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none"
-                />
-              </div>
+                )
+              })}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
@@ -595,7 +623,7 @@ export default function NewOrderModal({
   const [styles, setStyles] = useState<Style[]>([])
   const [existingCustomers, setExistingCustomers] = useState<{ name: string; company: string | null }[]>([])
   const [selectedStyleIds, setSelectedStyleIds] = useState<Set<string>>(new Set())
-  const [poLines, setPOLines] = useState<POLineData[]>([])
+  const [linesBySupplier, setLinesBySupplier] = useState<Record<string, POLineData[]>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -613,7 +641,7 @@ export default function NewOrderModal({
     Promise.all([
       supabase
         .from('styles')
-        .select('id, name, images, base_cost, material, gender, status, category_id, concept_id, supplier_id, categories(name), concepts(name), suppliers(name)')
+        .select('id, name, images, base_cost, material, gender, status, category_id, concept_id, supplier_id, categories(name), concepts(name), suppliers(id, name)')
         .neq('status', 'archived')
         .order('name'),
       supabase
@@ -638,7 +666,6 @@ export default function NewOrderModal({
         setStyles(normalized as Style[])
       }
 
-      // Merge unique customers from quotes and orders
       const seen = new Set<string>()
       const customers: { name: string; company: string | null }[] = []
       const allCustomers = [
@@ -665,47 +692,80 @@ export default function NewOrderModal({
     })
   }
 
+  // Group selected styles by supplier and initialize lines
   const handleConfirmSelection = () => {
     if (selectedStyleIds.size === 0) return
 
-    const styleIds = Array.from(selectedStyleIds)
-    const newLines: POLineData[] = styleIds.map((id) => {
-      const style = styles.find((s) => s.id === id)
-      // Keep existing PO data if style was already selected
-      const existing = poLines.find((l) => l.styleId === id)
-      if (existing) return existing
-      return {
-        styleId: id,
-        styleName: style?.name || '',
-        styleImage: style?.images?.[0] || null,
-        supplierName: style?.suppliers?.name || null,
+    const grouped: Record<string, POLineData[]> = {}
+
+    for (const styleId of selectedStyleIds) {
+      const style = styles.find((s) => s.id === styleId)
+      if (!style) continue
+
+      const key = style.supplier_id || 'no-supplier'
+
+      // Preserve existing line data if already filled
+      const existingLines = linesBySupplier[key] || []
+      const existingLine = existingLines.find((l) => l.styleId === styleId)
+
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(existingLine || {
+        styleId: style.id,
+        styleName: style.name,
+        styleImage: style.images?.[0] || null,
+        supplierId: style.supplier_id,
+        supplierName: style.suppliers?.name || null,
         sizeBreakdown: [],
         quantity: 0,
         notes: '',
-      }
-    })
-    setPOLines(newLines)
-    setStep('fill_pos')
+      })
+    }
+
+    setLinesBySupplier(grouped)
+    setStep('fill_lines')
   }
 
-  const handleUpdateLine = (index: number, line: POLineData) => {
-    setPOLines((prev) => prev.map((l, i) => i === index ? line : l))
+  // Build POGroup array for the editor
+  const poGroups: POGroup[] = useMemo(() => {
+    return Object.entries(linesBySupplier).map(([key, lines]) => ({
+      supplierId: key === 'no-supplier' ? null : key,
+      supplierName: lines[0]?.supplierName || 'No supplier assigned',
+      lines,
+    }))
+  }, [linesBySupplier])
+
+  const handleUpdateLine = (supplierId: string | null, lineIdx: number, line: POLineData) => {
+    const key = supplierId || 'no-supplier'
+    setLinesBySupplier((prev) => ({
+      ...prev,
+      [key]: prev[key].map((l, i) => i === lineIdx ? line : l),
+    }))
   }
 
-  const handleRemoveLine = (index: number) => {
-    const line = poLines[index]
-    setPOLines((prev) => prev.filter((_, i) => i !== index))
+  const handleRemoveLine = (supplierId: string | null, lineIdx: number) => {
+    const key = supplierId || 'no-supplier'
+    const line = linesBySupplier[key]?.[lineIdx]
+    if (!line) return
+
     setSelectedStyleIds((prev) => {
       const next = new Set(prev)
       next.delete(line.styleId)
       return next
+    })
+
+    setLinesBySupplier((prev) => {
+      const updated = { ...prev }
+      updated[key] = updated[key].filter((_, i) => i !== lineIdx)
+      if (updated[key].length === 0) delete updated[key]
+      return updated
     })
   }
 
   const saveOrder = async (navigateToOrder: boolean) => {
     setSaving(true)
 
-    const totalQty = poLines.reduce((sum, l) => sum + l.quantity, 0)
+    const allLines = Object.values(linesBySupplier).flat()
+    const totalQty = allLines.reduce((sum, l) => sum + l.quantity, 0)
 
     // Insert the order
     const { data: order, error: orderError } = await supabase.from('orders').insert({
@@ -724,27 +784,48 @@ export default function NewOrderModal({
       return
     }
 
-    // Insert purchase orders
-    const poRows = poLines.map((line, idx) => ({
-      order_id: order.id,
-      style_id: line.styleId,
-      style_name: line.styleName,
-      size_breakdown: line.sizeBreakdown
-        .filter((s) => s.size)
-        .map((s) => ({ size: s.size, quantity: parseInt(s.quantity) || 0 })),
-      quantity: line.quantity,
-      notes: line.notes || null,
-      sort_order: idx,
-    }))
+    // Insert POs and their lines
+    let poIdx = 0
+    for (const [key, lines] of Object.entries(linesBySupplier)) {
+      const supplierId = key === 'no-supplier' ? null : key
+      const poNumber = generatePONumber(orderNumber, poIdx)
 
-    if (poRows.length > 0) {
-      const { error: poError } = await supabase.from('purchase_orders').insert(poRows)
+      const { data: po, error: poError } = await supabase.from('purchase_orders').insert({
+        order_id: order.id,
+        po_number: poNumber,
+        supplier_id: supplierId,
+        sort_order: poIdx,
+      }).select('id').single()
+
       if (poError) {
         console.error('PO insert error:', poError.message)
+        poIdx++
+        continue
       }
+
+      const lineRows = lines.map((line, idx) => ({
+        purchase_order_id: po.id,
+        style_id: line.styleId,
+        style_name: line.styleName,
+        size_breakdown: line.sizeBreakdown
+          .filter((s) => s.size)
+          .map((s) => ({ size: s.size, quantity: parseInt(s.quantity) || 0 })),
+        quantity: line.quantity,
+        notes: line.notes || null,
+        sort_order: idx,
+      }))
+
+      if (lineRows.length > 0) {
+        const { error: linesError } = await supabase.from('po_lines').insert(lineRows)
+        if (linesError) {
+          console.error('PO lines insert error:', linesError.message)
+        }
+      }
+
+      poIdx++
     }
 
-    toast.success(`Order ${orderNumber} created`)
+    toast.success(`Order ${orderNumber} created with ${poIdx} PO${poIdx !== 1 ? 's' : ''}`)
     onOrderCreated()
     setSaving(false)
 
@@ -784,10 +865,9 @@ export default function NewOrderModal({
             onConfirm={handleConfirmSelection}
             onCancel={() => setStep('customer_info')}
           />
-        ) : step === 'fill_pos' ? (
-          <POEditor
-            lines={poLines}
-            styles={styles}
+        ) : step === 'fill_lines' ? (
+          <POLinesEditor
+            groups={poGroups}
             onUpdateLine={handleUpdateLine}
             onRemoveLine={handleRemoveLine}
             onSaveOrder={() => saveOrder(false)}
