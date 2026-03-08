@@ -8,6 +8,9 @@ import { useKeyboardSave } from '@/lib/useKeyboardSave'
 import ImageUpload from '@/components/ImageUpload'
 import VariantTable from '@/components/VariantTable'
 import CustomizationTab from '@/components/CustomizationTab'
+import ColourwaysTab from '@/components/ColourwaysTab'
+import SKUTab from '@/components/SKUTab'
+import SupplierQuoteTab from '@/components/SupplierQuoteTab'
 import {
   GENDER_LABELS,
   COLLECTION_TYPES,
@@ -17,9 +20,11 @@ import {
 } from '@/lib/product-hierarchy'
 
 const TABS = [
-  { key: 'details', label: 'Details' },
-  { key: 'variants', label: 'Variants' },
-  { key: 'customization', label: 'Customization' },
+  { key: 'product', label: 'Product' },
+  { key: 'colourways', label: 'Colourways' },
+  { key: 'sku', label: 'SKU' },
+  { key: 'specification', label: 'Specification' },
+  { key: 'supplier_quote', label: 'Supplier Quote' },
 ]
 
 interface Style {
@@ -69,7 +74,7 @@ export default function StyleEditForm({
   suppliers: Supplier[]
   logos: Logo[]
 }) {
-  const [activeTab, setActiveTab] = useState('details')
+  const [activeTab, setActiveTab] = useState('product')
   const [name, setName] = useState(style.name)
   const [description, setDescription] = useState(style.description || '')
   const [material, setMaterial] = useState(style.material || '')
@@ -93,6 +98,7 @@ export default function StyleEditForm({
     .find((c) => c.id === style.concept_id)
     ?.categories.find((cat) => cat.id === style.category_id)?.name || '—'
   const genderLabel = GENDER_LABELS[style.gender] || style.gender
+  const supplierName = suppliers.find((s) => s.id === supplierId)?.name || '—'
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,7 +133,7 @@ export default function StyleEditForm({
   }
 
   const handleKeyboardSave = useCallback(() => {
-    if (activeTab === 'details') {
+    if (activeTab === 'product') {
       const form = document.querySelector('form')
       form?.requestSubmit()
     }
@@ -196,8 +202,8 @@ export default function StyleEditForm({
         ))}
       </div>
 
-      {/* Details Tab */}
-      {activeTab === 'details' && (
+      {/* Product Tab */}
+      {activeTab === 'product' && (
         <form onSubmit={handleSave} className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2">Product Name</label>
@@ -332,6 +338,22 @@ export default function StyleEditForm({
             />
           </div>
 
+          {/* Variants Section */}
+          <div className="pt-6 border-t border-neutral-800">
+            <h3 className="text-sm font-medium text-neutral-300 mb-4">Variants</h3>
+            <VariantTable styleId={style.id} styleName={name} />
+          </div>
+
+          {/* Customization Section */}
+          <div className="pt-6 border-t border-neutral-800">
+            <h3 className="text-sm font-medium text-neutral-300 mb-4">Customization</h3>
+            <CustomizationTab
+              styleId={style.id}
+              images={images}
+              logos={logos}
+            />
+          </div>
+
           <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
             <button
               type="submit"
@@ -373,18 +395,96 @@ export default function StyleEditForm({
         </form>
       )}
 
-      {/* Variants Tab */}
-      {activeTab === 'variants' && (
-        <VariantTable styleId={style.id} styleName={name} />
+      {/* Colourways Tab */}
+      {activeTab === 'colourways' && (
+        <ColourwaysTab />
       )}
 
-      {/* Customization Tab */}
-      {activeTab === 'customization' && (
-        <CustomizationTab
-          styleId={style.id}
-          images={images}
-          logos={logos}
-        />
+      {/* SKU Tab */}
+      {activeTab === 'sku' && (
+        <SKUTab styleId={style.id} styleName={name} />
+      )}
+
+      {/* Specification Tab */}
+      {activeTab === 'specification' && (
+        <div className="space-y-6">
+          <h2 className="text-lg font-semibold">Product Specification</h2>
+          <div className="border border-neutral-800 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium w-48">Product Name</td>
+                  <td className="px-4 py-3 text-white">{name}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Concept</td>
+                  <td className="px-4 py-3 text-white">{conceptName}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Gender</td>
+                  <td className="px-4 py-3 text-white">{genderLabel}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Category</td>
+                  <td className="px-4 py-3 text-white">{categoryName}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Collection Type</td>
+                  <td className="px-4 py-3 text-white">
+                    {COLLECTION_TYPES.find((ct) => ct.value === collectionType)?.label || collectionType}
+                  </td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Material</td>
+                  <td className="px-4 py-3 text-white">{material || '—'}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Description</td>
+                  <td className="px-4 py-3 text-white whitespace-pre-wrap">{description || '—'}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Base Supplier</td>
+                  <td className="px-4 py-3 text-white">{supplierName}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Base Cost</td>
+                  <td className="px-4 py-3 text-white font-mono">
+                    {baseCost ? `€${parseFloat(baseCost).toFixed(2)}` : '—'}
+                  </td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Lead Time</td>
+                  <td className="px-4 py-3 text-white">
+                    {leadTimeDays ? `${leadTimeDays} days` : '—'}
+                  </td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Customization Mode</td>
+                  <td className="px-4 py-3 text-white">{customizationMode || '—'}</td>
+                </tr>
+                <tr className="border-b border-neutral-800">
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Product Capability</td>
+                  <td className="px-4 py-3 text-white">
+                    {PRODUCT_CAPABILITIES.find((pc) => pc.value === productCapability)?.label || productCapability}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 text-neutral-500 font-medium">Status</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-1 rounded border ${statusColor}`}>
+                      {STATUSES.find((s) => s.value === status)?.label || status}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Supplier Quote Tab */}
+      {activeTab === 'supplier_quote' && (
+        <SupplierQuoteTab styleId={style.id} suppliers={suppliers} />
       )}
     </>
   )
