@@ -849,7 +849,7 @@ export default function NewQuoteModal({
         quantity: l.quantity ? parseInt(l.quantity) : null,
       }))
 
-    const basePayload = {
+    const payload = {
       customer_name: customerData.customerName,
       customer_email: customerData.customerEmail,
       customer_company: customerData.customerCompany || null,
@@ -860,46 +860,30 @@ export default function NewQuoteModal({
       message: data.message || null,
       customization_preferences: Object.keys(customizationPreferences).length > 0 ? customizationPreferences : {},
       variant_preferences: variantPrefs.length > 0 ? variantPrefs : [],
-    }
-
-    // Try with quote_number column first; fall back without it if column doesn't exist yet
-    let inserted: { id: string; quote_number?: string | null } | null = null
-    let finalQuoteNumber: string | null = quoteNumber
-
-    const { data: result, error } = await supabase.from('quote_requests').insert({
-      ...basePayload,
       quote_number: quoteNumber,
-    }).select('id, quote_number').single()
-
-    if (error) {
-      if (error.message.includes('quote_number')) {
-        // Column doesn't exist yet — insert without it
-        finalQuoteNumber = null
-        const { data: fallback, error: fallbackErr } = await supabase.from('quote_requests')
-          .insert(basePayload)
-          .select('id').single()
-        if (fallbackErr) {
-          toast.error(fallbackErr.message)
-          return
-        }
-        inserted = fallback
-      } else {
-        toast.error(error.message)
-        return
-      }
-    } else {
-      inserted = result
     }
 
-    if (!inserted) return
+    // Use API route (admin client) to bypass RLS
+    const res = await fetch('/api/quotes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const result = await res.json()
+
+    if (!res.ok || result.error) {
+      toast.error(result.error || 'Failed to create quote')
+      return
+    }
 
     setCreatedQuotes((prev) => [...prev, {
-      id: inserted!.id,
-      quote_number: finalQuoteNumber,
+      id: result.id,
+      quote_number: result.quote_number || quoteNumber,
       styleName: data.styleName,
     }])
 
-    toast.success(`Quote ${finalQuoteNumber || ''} saved for ${data.styleName}`.trim())
+    toast.success(`Quote ${result.quote_number || quoteNumber} saved for ${data.styleName}`)
 
     // Move to next style or finish
     const nextIndex = currentQuoteIndex + 1

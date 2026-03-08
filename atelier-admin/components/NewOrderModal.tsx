@@ -767,71 +767,60 @@ export default function NewOrderModal({
     const allLines = Object.values(linesBySupplier).flat()
     const totalQty = allLines.reduce((sum, l) => sum + l.quantity, 0)
 
-    // Insert the order
-    const { data: order, error: orderError } = await supabase.from('orders').insert({
-      order_number: orderNumber,
-      customer_name: customerName.trim() || null,
-      customer_company: customerCompany.trim() || null,
-      quantity: totalQty,
-      currency: 'EUR',
-      order_date: new Date().toISOString().split('T')[0],
-      status: 'draft',
-    }).select('id').single()
+    // Build PO payloads
+    const purchaseOrders = Object.entries(linesBySupplier).map(([key, lines], poIdx) => {
+      const supplierId = key === 'no-supplier' ? null : key
+      return {
+        po_number: generatePONumber(orderNumber, poIdx),
+        supplier_id: supplierId,
+        sort_order: poIdx,
+        lines: lines.map((line, idx) => ({
+          style_id: line.styleId,
+          style_name: line.styleName,
+          size_breakdown: line.sizeBreakdown
+            .filter((s) => s.size)
+            .map((s) => ({ size: s.size, quantity: parseInt(s.quantity) || 0 })),
+          quantity: line.quantity,
+          notes: line.notes || null,
+          sort_order: idx,
+        })),
+      }
+    })
 
-    if (orderError) {
-      toast.error(orderError.message)
+    // Use API route (admin client) to bypass RLS
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order: {
+          order_number: orderNumber,
+          customer_name: customerName.trim() || null,
+          customer_company: customerCompany.trim() || null,
+          quantity: totalQty,
+          currency: 'EUR',
+          order_date: new Date().toISOString().split('T')[0],
+          status: 'draft',
+        },
+        purchaseOrders,
+      }),
+    })
+
+    const result = await res.json()
+
+    if (!res.ok || result.error) {
+      toast.error(result.error || 'Failed to create order')
       setSaving(false)
       return
     }
 
-    // Insert POs and their lines
-    let poIdx = 0
-    for (const [key, lines] of Object.entries(linesBySupplier)) {
-      const supplierId = key === 'no-supplier' ? null : key
-      const poNumber = generatePONumber(orderNumber, poIdx)
-
-      const { data: po, error: poError } = await supabase.from('purchase_orders').insert({
-        order_id: order.id,
-        po_number: poNumber,
-        supplier_id: supplierId,
-        sort_order: poIdx,
-      }).select('id').single()
-
-      if (poError) {
-        console.error('PO insert error:', poError.message)
-        poIdx++
-        continue
-      }
-
-      const lineRows = lines.map((line, idx) => ({
-        purchase_order_id: po.id,
-        style_id: line.styleId,
-        style_name: line.styleName,
-        size_breakdown: line.sizeBreakdown
-          .filter((s) => s.size)
-          .map((s) => ({ size: s.size, quantity: parseInt(s.quantity) || 0 })),
-        quantity: line.quantity,
-        notes: line.notes || null,
-        sort_order: idx,
-      }))
-
-      if (lineRows.length > 0) {
-        const { error: linesError } = await supabase.from('po_lines').insert(lineRows)
-        if (linesError) {
-          console.error('PO lines insert error:', linesError.message)
-        }
-      }
-
-      poIdx++
-    }
-
-    toast.success(`Order ${orderNumber} created with ${poIdx} PO${poIdx !== 1 ? 's' : ''}`)
+    const poCount = result.purchase_orders?.length || 0
+    toast.success(`Order ${orderNumber} created with ${poCount} PO${poCount !== 1 ? 's' : ''}`)
     onOrderCreated()
     setSaving(false)
 
     if (navigateToOrder) {
       onClose()
-      router.push(`/admin/orders/${order.id}`)
+      router.push(`/admin/orders/${result.id}`)
     } else {
       onClose()
       router.push('/admin/orders')
