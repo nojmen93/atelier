@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -18,16 +18,10 @@ interface Style {
   status: string
   category_id: string | null
   concept_id: string | null
+  supplier_id: string | null
   categories?: { name: string } | null
   concepts?: { name: string } | null
-}
-
-interface Variant {
-  id: string
-  style_id: string
-  size: string | null
-  color: string | null
-  sku: string | null
+  suppliers?: { name: string } | null
 }
 
 interface SizeQty {
@@ -35,28 +29,17 @@ interface SizeQty {
   quantity: string
 }
 
-interface OrderLineData {
+interface POLineData {
   styleId: string
   styleName: string
   styleImage: string | null
-  color: string
-  sku: string
+  supplierName: string | null
   sizeBreakdown: SizeQty[]
-  unitPrice: string
+  quantity: number
   notes: string
 }
 
-interface OrderDetails {
-  orderNumber: string
-  supplierId: string
-  factoryId: string
-  currency: string
-  orderDate: string
-  expectedDelivery: string
-  notes: string
-}
-
-type ModalStep = 'order_details' | 'select_styles' | 'fill_lines' | 'review' | 'done'
+type ModalStep = 'customer_info' | 'select_styles' | 'fill_pos' | 'done'
 type StyleViewMode = 'dropdown' | 'grid' | 'gallery'
 
 const COMMON_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']
@@ -68,115 +51,104 @@ function generateOrderNumber(): string {
   const yy = now.getFullYear().toString().slice(-2)
   const mm = String(now.getMonth() + 1).padStart(2, '0')
   const rand = String(Math.floor(Math.random() * 10000)).padStart(4, '0')
-  return `PO-${yy}${mm}-${rand}`
+  return `ORD-${yy}${mm}-${rand}`
 }
 
-// ─── Step 1: Order Details ───────────────────────────────────────────
+// ─── Step 1: Customer & Order Info ───────────────────────────────────
 
-function OrderDetailsForm({
-  data,
-  onChange,
-  suppliers,
-  factories,
+function CustomerOrderForm({
+  customerName,
+  customerCompany,
+  orderNumber,
+  onChangeCustomerName,
+  onChangeCustomerCompany,
+  existingCustomers,
   onConfirm,
   onCancel,
 }: {
-  data: OrderDetails
-  onChange: (data: OrderDetails) => void
-  suppliers: { id: string; name: string }[]
-  factories: { id: string; name: string }[]
+  customerName: string
+  customerCompany: string
+  orderNumber: string
+  onChangeCustomerName: (v: string) => void
+  onChangeCustomerCompany: (v: string) => void
+  existingCustomers: { name: string; company: string | null }[]
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const inputClass = 'w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none'
+
+  const suggestions = useMemo(() => {
+    if (!customerName.trim()) return []
+    const q = customerName.toLowerCase()
+    return existingCustomers.filter(
+      (c) => c.name.toLowerCase().includes(q) || (c.company && c.company.toLowerCase().includes(q))
+    ).slice(0, 6)
+  }, [customerName, existingCustomers])
 
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-lg font-semibold">Order Details</h3>
-        <p className="text-sm text-neutral-500 mt-1">Enter the main order information.</p>
+        <h3 className="text-lg font-semibold">New Order</h3>
+        <p className="text-sm text-neutral-500 mt-1">Enter customer details to get started.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="relative">
+          <label className="block text-xs text-neutral-500 mb-1">Customer Name *</label>
+          <input
+            type="text"
+            value={customerName}
+            onChange={(e) => { onChangeCustomerName(e.target.value); setShowSuggestions(true) }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            className={inputClass}
+            placeholder="Type customer name..."
+            autoFocus
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-neutral-900 border border-neutral-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-800 transition"
+                  onMouseDown={() => {
+                    onChangeCustomerName(s.name)
+                    if (s.company) onChangeCustomerCompany(s.company)
+                    setShowSuggestions(false)
+                  }}
+                >
+                  <span className="text-white">{s.name}</span>
+                  {s.company && <span className="text-neutral-500 ml-2 text-xs">({s.company})</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block text-xs text-neutral-500 mb-1">Company</label>
+          <input
+            type="text"
+            value={customerCompany}
+            onChange={(e) => onChangeCustomerCompany(e.target.value)}
+            className={inputClass}
+            placeholder="Company name"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs text-neutral-500 mb-1">Order Number *</label>
+          <label className="block text-xs text-neutral-500 mb-1">Order Number</label>
           <input
             type="text"
-            value={data.orderNumber}
-            onChange={(e) => onChange({ ...data, orderNumber: e.target.value })}
-            className={inputClass}
-            placeholder="PO-2603-0001"
-            autoFocus
+            value={orderNumber}
+            disabled
+            className={`${inputClass} opacity-60 cursor-not-allowed`}
           />
+          <p className="text-[10px] text-neutral-600 mt-1">Auto-generated</p>
         </div>
-        <div>
-          <label className="block text-xs text-neutral-500 mb-1">Order Date</label>
-          <input
-            type="date"
-            value={data.orderDate}
-            onChange={(e) => onChange({ ...data, orderDate: e.target.value })}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-neutral-500 mb-1">Supplier</label>
-          <select
-            value={data.supplierId}
-            onChange={(e) => onChange({ ...data, supplierId: e.target.value })}
-            className={inputClass}
-          >
-            <option value="">— Select supplier —</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs text-neutral-500 mb-1">Factory</label>
-          <select
-            value={data.factoryId}
-            onChange={(e) => onChange({ ...data, factoryId: e.target.value })}
-            className={inputClass}
-          >
-            <option value="">— Select factory —</option>
-            {factories.map((f) => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs text-neutral-500 mb-1">Expected Delivery</label>
-          <input
-            type="date"
-            value={data.expectedDelivery}
-            onChange={(e) => onChange({ ...data, expectedDelivery: e.target.value })}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-neutral-500 mb-1">Currency</label>
-          <select
-            value={data.currency}
-            onChange={(e) => onChange({ ...data, currency: e.target.value })}
-            className={inputClass}
-          >
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-            <option value="GBP">GBP</option>
-            <option value="SEK">SEK</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs text-neutral-500 mb-1">Notes</label>
-        <textarea
-          value={data.notes}
-          onChange={(e) => onChange({ ...data, notes: e.target.value })}
-          rows={2}
-          className={inputClass}
-          placeholder="Optional order notes..."
-        />
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
@@ -190,10 +162,10 @@ function OrderDetailsForm({
         <button
           type="button"
           onClick={onConfirm}
-          disabled={!data.orderNumber.trim()}
+          disabled={!customerName.trim()}
           className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Add Products to Order
+          Select Products
         </button>
       </div>
     </div>
@@ -252,7 +224,7 @@ function StyleSelector({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Add Products to Order</h3>
+        <h3 className="text-lg font-semibold">Select Products</h3>
         <div className="flex gap-1 bg-neutral-900 rounded p-0.5">
           {(['dropdown', 'grid', 'gallery'] as StyleViewMode[]).map((mode) => (
             <button
@@ -305,7 +277,7 @@ function StyleSelector({
         {filtered.length !== styles.length && ` · ${filtered.length} of ${styles.length} shown`}
       </p>
 
-      {/* Dropdown / List view */}
+      {/* List view */}
       {viewMode === 'dropdown' && (
         <div className="border border-neutral-800 rounded-lg max-h-72 overflow-y-auto">
           {filtered.length === 0 ? (
@@ -326,7 +298,7 @@ function StyleSelector({
                   <div className="text-sm font-medium text-white truncate">{s.name}</div>
                   <div className="text-xs text-neutral-500">
                     {[s.concepts?.name, s.categories?.name].filter(Boolean).join(' / ')}
-                    {s.base_cost && ` · €${Number(s.base_cost).toFixed(2)}`}
+                    {s.suppliers?.name && ` · ${s.suppliers.name}`}
                   </div>
                 </div>
                 {s.images?.[0] && (
@@ -374,11 +346,8 @@ function StyleSelector({
                   {s.categories?.name && (
                     <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded">{s.categories.name}</span>
                   )}
-                  {s.base_cost && (
-                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded">€{Number(s.base_cost).toFixed(2)}</span>
-                  )}
-                  {s.material && (
-                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-500 rounded">{s.material}</span>
+                  {s.suppliers?.name && (
+                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded">{s.suppliers.name}</span>
                   )}
                 </div>
               </div>
@@ -417,8 +386,7 @@ function StyleSelector({
                 <div className="text-xs text-neutral-500 mt-0.5">
                   {[s.concepts?.name, s.categories?.name].filter(Boolean).join(' / ')}
                 </div>
-                {s.material && <div className="text-xs text-neutral-600 mt-0.5">{s.material}</div>}
-                {s.base_cost && <div className="text-xs text-neutral-400 mt-0.5">€{Number(s.base_cost).toFixed(2)}</div>}
+                {s.suppliers?.name && <div className="text-xs text-neutral-600 mt-0.5">{s.suppliers.name}</div>}
               </div>
             </label>
           ))}
@@ -446,64 +414,46 @@ function StyleSelector({
   )
 }
 
-// ─── Step 3: Fill Line Details (all products in a grid) ──────────────
+// ─── Step 3: PO Details per Product (Minimal) ────────────────────────
 
-function OrderLinesEditor({
+function POEditor({
   lines,
   styles,
-  variantsByStyle,
   onUpdateLine,
   onRemoveLine,
-  onConfirm,
+  onSaveOrder,
+  onSaveAndGo,
   onCancel,
-  currency,
+  saving,
 }: {
-  lines: OrderLineData[]
+  lines: POLineData[]
   styles: Style[]
-  variantsByStyle: Record<string, Variant[]>
-  onUpdateLine: (index: number, line: OrderLineData) => void
+  onUpdateLine: (index: number, line: POLineData) => void
   onRemoveLine: (index: number) => void
-  onConfirm: () => void
+  onSaveOrder: () => void
+  onSaveAndGo: () => void
   onCancel: () => void
-  currency: string
+  saving: boolean
 }) {
-  const inputClass = 'w-full px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none'
-
-  const getColorsForStyle = (styleId: string): string[] => {
-    const variants = variantsByStyle[styleId] || []
-    const colors = new Set<string>()
-    variants.forEach((v) => {
-      if (v.color) colors.add(v.color)
-    })
-    return Array.from(colors)
-  }
-
-  const getLineTotal = (line: OrderLineData): number => {
-    const totalQty = line.sizeBreakdown.reduce((sum, s) => sum + (parseInt(s.quantity) || 0), 0)
-    const price = parseFloat(line.unitPrice) || 0
-    return totalQty * price
-  }
-
-  const grandTotal = lines.reduce((sum, line) => sum + getLineTotal(line), 0)
-  const totalQty = lines.reduce((sum, line) => sum + line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0), 0)
+  const totalQty = lines.reduce((sum, l) => sum + l.quantity, 0)
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Order Lines</h3>
+        <h3 className="text-lg font-semibold">Purchase Orders</h3>
         <span className="text-xs text-neutral-500">
-          {lines.length} product{lines.length !== 1 ? 's' : ''} · {totalQty} units · {currency} {grandTotal.toFixed(2)}
+          {lines.length} PO{lines.length !== 1 ? 's' : ''} · {totalQty} units
         </span>
       </div>
 
       <div className="space-y-4 max-h-[55vh] overflow-y-auto">
         {lines.map((line, lineIdx) => {
           const style = styles.find((s) => s.id === line.styleId)
-          const availableColors = getColorsForStyle(line.styleId)
+          const lineQty = line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
 
           return (
             <div key={lineIdx} className="border border-neutral-800 rounded-lg p-4 space-y-3">
-              {/* Line header */}
+              {/* PO header */}
               <div className="flex items-center gap-3">
                 {line.styleImage ? (
                   <img src={line.styleImage} alt="" className="w-10 h-10 rounded object-cover bg-neutral-800 flex-shrink-0" />
@@ -513,7 +463,8 @@ function OrderLinesEditor({
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-white truncate">{line.styleName}</div>
                   <div className="text-xs text-neutral-500">
-                    {style?.categories?.name} {style?.material && `· ${style.material}`}
+                    {style?.categories?.name}
+                    {style?.suppliers?.name && ` · ${style.suppliers.name}`}
                   </div>
                 </div>
                 <button
@@ -523,54 +474,6 @@ function OrderLinesEditor({
                 >
                   Remove
                 </button>
-              </div>
-
-              {/* Color + SKU + Unit Price row */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs text-neutral-500 mb-1">Colour</label>
-                  {availableColors.length > 0 ? (
-                    <select
-                      value={line.color}
-                      onChange={(e) => onUpdateLine(lineIdx, { ...line, color: e.target.value })}
-                      className={inputClass}
-                    >
-                      <option value="">— Select colour —</option>
-                      {availableColors.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={line.color}
-                      onChange={(e) => onUpdateLine(lineIdx, { ...line, color: e.target.value })}
-                      placeholder="Enter colour"
-                      className={inputClass}
-                    />
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs text-neutral-500 mb-1">SKU</label>
-                  <input
-                    type="text"
-                    value={line.sku}
-                    onChange={(e) => onUpdateLine(lineIdx, { ...line, sku: e.target.value })}
-                    placeholder="SKU"
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-neutral-500 mb-1">Unit Price ({currency})</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={line.unitPrice}
-                    onChange={(e) => onUpdateLine(lineIdx, { ...line, unitPrice: e.target.value })}
-                    placeholder="0.00"
-                    className={inputClass}
-                  />
-                </div>
               </div>
 
               {/* Size breakdown — quick-add with tick boxes */}
@@ -585,15 +488,12 @@ function OrderLinesEditor({
                         type="button"
                         onClick={() => {
                           if (exists) {
-                            onUpdateLine(lineIdx, {
-                              ...line,
-                              sizeBreakdown: line.sizeBreakdown.filter((s) => s.size !== size),
-                            })
+                            const newBreakdown = line.sizeBreakdown.filter((s) => s.size !== size)
+                            const newQty = newBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
+                            onUpdateLine(lineIdx, { ...line, sizeBreakdown: newBreakdown, quantity: newQty })
                           } else {
-                            onUpdateLine(lineIdx, {
-                              ...line,
-                              sizeBreakdown: [...line.sizeBreakdown, { size, quantity: '' }],
-                            })
+                            const newBreakdown = [...line.sizeBreakdown, { size, quantity: '' }]
+                            onUpdateLine(lineIdx, { ...line, sizeBreakdown: newBreakdown })
                           }
                         }}
                         className={`px-3 py-1 text-xs font-medium rounded border transition ${
@@ -608,7 +508,6 @@ function OrderLinesEditor({
                   })}
                 </div>
 
-                {/* Qty inputs for selected sizes */}
                 {line.sizeBreakdown.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {line.sizeBreakdown.map((sz, szIdx) => (
@@ -620,7 +519,8 @@ function OrderLinesEditor({
                           onChange={(e) => {
                             const newBreakdown = [...line.sizeBreakdown]
                             newBreakdown[szIdx] = { ...sz, quantity: e.target.value }
-                            onUpdateLine(lineIdx, { ...line, sizeBreakdown: newBreakdown })
+                            const newQty = newBreakdown.reduce((s, szz) => s + (parseInt(szz.quantity) || 0), 0)
+                            onUpdateLine(lineIdx, { ...line, sizeBreakdown: newBreakdown, quantity: newQty })
                           }}
                           placeholder="0"
                           min="0"
@@ -629,18 +529,23 @@ function OrderLinesEditor({
                       </div>
                     ))}
                     <div className="flex items-center text-xs text-neutral-500 ml-2">
-                      = {line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)} pcs
+                      = {lineQty} pcs
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Line total */}
-              {parseFloat(line.unitPrice) > 0 && (
-                <div className="text-right text-xs text-neutral-400">
-                  Line total: {currency} {getLineTotal(line).toFixed(2)}
-                </div>
-              )}
+              {/* Notes */}
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Notes</label>
+                <input
+                  type="text"
+                  value={line.notes}
+                  onChange={(e) => onUpdateLine(lineIdx, { ...line, notes: e.target.value })}
+                  placeholder="Optional notes for this PO..."
+                  className="w-full px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none"
+                />
+              </div>
             </div>
           )
         })}
@@ -657,10 +562,19 @@ function OrderLinesEditor({
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={onConfirm}
-            className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition"
+            onClick={onSaveOrder}
+            disabled={saving || totalQty === 0}
+            className="px-6 py-2.5 border border-neutral-700 text-white text-sm font-medium rounded hover:bg-neutral-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Review Order
+            {saving ? 'Saving...' : 'Save Order'}
+          </button>
+          <button
+            type="button"
+            onClick={onSaveAndGo}
+            disabled={saving || totalQty === 0}
+            className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Saving...' : 'Save & Go to Order'}
           </button>
         </div>
       </div>
@@ -677,26 +591,17 @@ export default function NewOrderModal({
   onClose: () => void
   onOrderCreated: () => void
 }) {
-  const [step, setStep] = useState<ModalStep>('order_details')
+  const [step, setStep] = useState<ModalStep>('customer_info')
   const [styles, setStyles] = useState<Style[]>([])
-  const [variantsByStyle, setVariantsByStyle] = useState<Record<string, Variant[]>>({})
-  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([])
-  const [factories, setFactories] = useState<{ id: string; name: string }[]>([])
+  const [existingCustomers, setExistingCustomers] = useState<{ name: string; company: string | null }[]>([])
   const [selectedStyleIds, setSelectedStyleIds] = useState<Set<string>>(new Set())
-  const [orderLines, setOrderLines] = useState<OrderLineData[]>([])
+  const [poLines, setPOLines] = useState<POLineData[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
 
-  const [orderDetails, setOrderDetails] = useState<OrderDetails>({
-    orderNumber: generateOrderNumber(),
-    supplierId: '',
-    factoryId: '',
-    currency: 'EUR',
-    orderDate: new Date().toISOString().split('T')[0],
-    expectedDelivery: '',
-    notes: '',
-  })
+  const [customerName, setCustomerName] = useState('')
+  const [customerCompany, setCustomerCompany] = useState('')
+  const [orderNumber] = useState(generateOrderNumber)
 
   const supabase = createClient()
   const router = useRouter()
@@ -708,22 +613,45 @@ export default function NewOrderModal({
     Promise.all([
       supabase
         .from('styles')
-        .select('id, name, images, base_cost, material, gender, status, category_id, concept_id, categories(name), concepts(name)')
+        .select('id, name, images, base_cost, material, gender, status, category_id, concept_id, supplier_id, categories(name), concepts(name), suppliers(name)')
         .neq('status', 'archived')
         .order('name'),
-      supabase.from('suppliers').select('id, name').order('name'),
-      supabase.from('factories').select('id, name').order('name'),
-    ]).then(([stylesRes, suppliersRes, factoriesRes]) => {
+      supabase
+        .from('quote_requests')
+        .select('customer_name, customer_company')
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase
+        .from('orders')
+        .select('customer_name, customer_company')
+        .not('customer_name', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(100),
+    ]).then(([stylesRes, quoteCustomersRes, orderCustomersRes]) => {
       if (stylesRes.data) {
         const normalized = (stylesRes.data as Record<string, unknown>[]).map((s) => ({
           ...s,
           categories: Array.isArray(s.categories) ? s.categories[0] || null : s.categories,
           concepts: Array.isArray(s.concepts) ? s.concepts[0] || null : s.concepts,
+          suppliers: Array.isArray(s.suppliers) ? s.suppliers[0] || null : s.suppliers,
         }))
         setStyles(normalized as Style[])
       }
-      setSuppliers(suppliersRes.data || [])
-      setFactories(factoriesRes.data || [])
+
+      // Merge unique customers from quotes and orders
+      const seen = new Set<string>()
+      const customers: { name: string; company: string | null }[] = []
+      const allCustomers = [
+        ...(quoteCustomersRes.data || []).map((q: { customer_name: string; customer_company: string | null }) => ({ name: q.customer_name, company: q.customer_company })),
+        ...(orderCustomersRes.data || []).map((o: { customer_name: string | null; customer_company: string | null }) => ({ name: o.customer_name || '', company: o.customer_company })),
+      ]
+      for (const c of allCustomers) {
+        if (c.name && !seen.has(c.name.toLowerCase())) {
+          seen.add(c.name.toLowerCase())
+          customers.push(c)
+        }
+      }
+      setExistingCustomers(customers)
       setLoading(false)
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -737,49 +665,36 @@ export default function NewOrderModal({
     })
   }
 
-  // When moving to fill_lines, fetch variants for selected styles and initialize lines
-  const handleConfirmSelection = async () => {
+  const handleConfirmSelection = () => {
     if (selectedStyleIds.size === 0) return
 
-    // Fetch variants for selected styles
     const styleIds = Array.from(selectedStyleIds)
-    const { data: variants } = await supabase
-      .from('variants')
-      .select('id, style_id, size, color, sku')
-      .in('style_id', styleIds)
-
-    const grouped: Record<string, Variant[]> = {}
-    ;(variants || []).forEach((v: Variant) => {
-      if (!grouped[v.style_id]) grouped[v.style_id] = []
-      grouped[v.style_id].push(v)
-    })
-    setVariantsByStyle(grouped)
-
-    // Initialize order lines for each selected style
-    const newLines: OrderLineData[] = styleIds.map((id) => {
+    const newLines: POLineData[] = styleIds.map((id) => {
       const style = styles.find((s) => s.id === id)
+      // Keep existing PO data if style was already selected
+      const existing = poLines.find((l) => l.styleId === id)
+      if (existing) return existing
       return {
         styleId: id,
         styleName: style?.name || '',
         styleImage: style?.images?.[0] || null,
-        color: '',
-        sku: '',
+        supplierName: style?.suppliers?.name || null,
         sizeBreakdown: [],
-        unitPrice: style?.base_cost ? String(style.base_cost) : '',
+        quantity: 0,
         notes: '',
       }
     })
-    setOrderLines(newLines)
-    setStep('fill_lines')
+    setPOLines(newLines)
+    setStep('fill_pos')
   }
 
-  const handleUpdateLine = (index: number, line: OrderLineData) => {
-    setOrderLines((prev) => prev.map((l, i) => i === index ? line : l))
+  const handleUpdateLine = (index: number, line: POLineData) => {
+    setPOLines((prev) => prev.map((l, i) => i === index ? line : l))
   }
 
   const handleRemoveLine = (index: number) => {
-    const line = orderLines[index]
-    setOrderLines((prev) => prev.filter((_, i) => i !== index))
+    const line = poLines[index]
+    setPOLines((prev) => prev.filter((_, i) => i !== index))
     setSelectedStyleIds((prev) => {
       const next = new Set(prev)
       next.delete(line.styleId)
@@ -787,29 +702,19 @@ export default function NewOrderModal({
     })
   }
 
-  const handleSaveOrder = async () => {
+  const saveOrder = async (navigateToOrder: boolean) => {
     setSaving(true)
 
-    const totalQty = orderLines.reduce(
-      (sum, line) => sum + line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0),
-      0
-    )
-    const totalPrice = orderLines.reduce((sum, line) => {
-      const lineQty = line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
-      return sum + lineQty * (parseFloat(line.unitPrice) || 0)
-    }, 0)
+    const totalQty = poLines.reduce((sum, l) => sum + l.quantity, 0)
 
     // Insert the order
     const { data: order, error: orderError } = await supabase.from('orders').insert({
-      order_number: orderDetails.orderNumber.trim(),
-      supplier_id: orderDetails.supplierId || null,
-      factory_id: orderDetails.factoryId || null,
+      order_number: orderNumber,
+      customer_name: customerName.trim() || null,
+      customer_company: customerCompany.trim() || null,
       quantity: totalQty,
-      total_price: totalPrice > 0 ? totalPrice : null,
-      currency: orderDetails.currency,
-      order_date: orderDetails.orderDate || null,
-      expected_delivery: orderDetails.expectedDelivery || null,
-      notes: orderDetails.notes || null,
+      currency: 'EUR',
+      order_date: new Date().toISOString().split('T')[0],
       status: 'draft',
     }).select('id').single()
 
@@ -819,47 +724,37 @@ export default function NewOrderModal({
       return
     }
 
-    // Insert order lines
-    const lineRows = orderLines.map((line, idx) => ({
+    // Insert purchase orders
+    const poRows = poLines.map((line, idx) => ({
       order_id: order.id,
       style_id: line.styleId,
       style_name: line.styleName,
-      color: line.color || null,
-      sku: line.sku || null,
       size_breakdown: line.sizeBreakdown
         .filter((s) => s.size)
         .map((s) => ({ size: s.size, quantity: parseInt(s.quantity) || 0 })),
-      quantity: line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0),
-      unit_price: line.unitPrice ? parseFloat(line.unitPrice) : null,
-      line_total: (() => {
-        const qty = line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
-        const price = parseFloat(line.unitPrice) || 0
-        return qty * price > 0 ? qty * price : null
-      })(),
+      quantity: line.quantity,
+      notes: line.notes || null,
       sort_order: idx,
     }))
 
-    if (lineRows.length > 0) {
-      const { error: linesError } = await supabase.from('order_lines').insert(lineRows)
-      if (linesError) {
-        // order_lines table might not exist yet
-        if (!linesError.message.includes('order_lines')) {
-          toast.error(linesError.message)
-        }
+    if (poRows.length > 0) {
+      const { error: poError } = await supabase.from('purchase_orders').insert(poRows)
+      if (poError) {
+        console.error('PO insert error:', poError.message)
       }
     }
 
-    setCreatedOrderId(order.id)
+    toast.success(`Order ${orderNumber} created`)
     onOrderCreated()
-    toast.success(`Order ${orderDetails.orderNumber} created`)
     setSaving(false)
-    setStep('done')
-  }
 
-  const handleDone = () => {
-    onClose()
-    if (createdOrderId) {
-      router.push(`/admin/orders/${createdOrderId}`)
+    if (navigateToOrder) {
+      onClose()
+      router.push(`/admin/orders/${order.id}`)
+    } else {
+      onClose()
+      router.push('/admin/orders')
+      router.refresh()
     }
   }
 
@@ -870,12 +765,14 @@ export default function NewOrderModal({
           <div className="flex items-center justify-center py-16">
             <div className="text-neutral-500 text-sm">Loading...</div>
           </div>
-        ) : step === 'order_details' ? (
-          <OrderDetailsForm
-            data={orderDetails}
-            onChange={setOrderDetails}
-            suppliers={suppliers}
-            factories={factories}
+        ) : step === 'customer_info' ? (
+          <CustomerOrderForm
+            customerName={customerName}
+            customerCompany={customerCompany}
+            orderNumber={orderNumber}
+            onChangeCustomerName={setCustomerName}
+            onChangeCustomerCompany={setCustomerCompany}
+            existingCustomers={existingCustomers}
             onConfirm={() => setStep('select_styles')}
             onCancel={onClose}
           />
@@ -885,145 +782,19 @@ export default function NewOrderModal({
             selectedIds={selectedStyleIds}
             onToggle={toggleStyle}
             onConfirm={handleConfirmSelection}
-            onCancel={() => setStep('order_details')}
+            onCancel={() => setStep('customer_info')}
           />
-        ) : step === 'fill_lines' ? (
-          <OrderLinesEditor
-            lines={orderLines}
+        ) : step === 'fill_pos' ? (
+          <POEditor
+            lines={poLines}
             styles={styles}
-            variantsByStyle={variantsByStyle}
             onUpdateLine={handleUpdateLine}
             onRemoveLine={handleRemoveLine}
-            onConfirm={() => setStep('review')}
+            onSaveOrder={() => saveOrder(false)}
+            onSaveAndGo={() => saveOrder(true)}
             onCancel={() => setStep('select_styles')}
-            currency={orderDetails.currency}
+            saving={saving}
           />
-        ) : step === 'review' ? (
-          <div className="space-y-5">
-            <h3 className="text-lg font-semibold">Review Order</h3>
-
-            {/* Order summary */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-neutral-500">Order #</span>
-                <div className="text-white font-mono">{orderDetails.orderNumber}</div>
-              </div>
-              <div>
-                <span className="text-neutral-500">Date</span>
-                <div className="text-white">{orderDetails.orderDate || '—'}</div>
-              </div>
-              <div>
-                <span className="text-neutral-500">Supplier</span>
-                <div className="text-white">{suppliers.find((s) => s.id === orderDetails.supplierId)?.name || '—'}</div>
-              </div>
-              <div>
-                <span className="text-neutral-500">Factory</span>
-                <div className="text-white">{factories.find((f) => f.id === orderDetails.factoryId)?.name || '—'}</div>
-              </div>
-            </div>
-
-            {/* Lines summary table */}
-            <div className="border border-neutral-800 rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-800 text-neutral-500 text-xs">
-                    <th className="text-left px-3 py-2 font-medium">Product</th>
-                    <th className="text-left px-3 py-2 font-medium">Colour</th>
-                    <th className="text-left px-3 py-2 font-medium">Sizes</th>
-                    <th className="text-right px-3 py-2 font-medium">Qty</th>
-                    <th className="text-right px-3 py-2 font-medium">Unit</th>
-                    <th className="text-right px-3 py-2 font-medium">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderLines.map((line, idx) => {
-                    const lineQty = line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
-                    const lineTotal = lineQty * (parseFloat(line.unitPrice) || 0)
-                    return (
-                      <tr key={idx} className="border-b border-neutral-800 last:border-b-0">
-                        <td className="px-3 py-2 text-white">{line.styleName}</td>
-                        <td className="px-3 py-2 text-neutral-400">{line.color || '—'}</td>
-                        <td className="px-3 py-2 text-neutral-400 text-xs">
-                          {line.sizeBreakdown.map((s) => `${s.size}×${s.quantity || 0}`).join(', ') || '—'}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-neutral-300">{lineQty}</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-neutral-400">
-                          {line.unitPrice ? `${orderDetails.currency} ${parseFloat(line.unitPrice).toFixed(2)}` : '—'}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-neutral-300">
-                          {lineTotal > 0 ? `${orderDetails.currency} ${lineTotal.toFixed(2)}` : '—'}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t border-neutral-700">
-                    <td colSpan={3} className="px-3 py-2 text-right text-xs text-neutral-500 font-medium">Total</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-white font-medium">
-                      {orderLines.reduce((s, l) => s + l.sizeBreakdown.reduce((ss, sz) => ss + (parseInt(sz.quantity) || 0), 0), 0)}
-                    </td>
-                    <td className="px-3 py-2" />
-                    <td className="px-3 py-2 text-right tabular-nums text-white font-medium">
-                      {orderDetails.currency} {orderLines.reduce((sum, line) => {
-                        const q = line.sizeBreakdown.reduce((s, sz) => s + (parseInt(sz.quantity) || 0), 0)
-                        return sum + q * (parseFloat(line.unitPrice) || 0)
-                      }, 0).toFixed(2)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
-              <button
-                type="button"
-                onClick={() => setStep('fill_lines')}
-                className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition"
-              >
-                Back to Edit
-              </button>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleSaveOrder}
-                  disabled={saving}
-                  className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Order'}
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className="px-6 py-2.5 bg-neutral-800 text-neutral-500 text-sm font-medium rounded cursor-not-allowed"
-                  title="Coming soon"
-                >
-                  Push Order
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : step === 'done' ? (
-          <div className="text-center py-8">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-4 text-emerald-400">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            <h3 className="text-lg font-semibold mb-2">Order Created</h3>
-            <p className="text-sm text-neutral-400 mb-2">
-              <span className="font-mono text-neutral-300">{orderDetails.orderNumber}</span> has been saved as draft.
-            </p>
-            <p className="text-xs text-neutral-500 mb-6">
-              {orderLines.length} line{orderLines.length !== 1 ? 's' : ''} ·{' '}
-              {orderLines.reduce((s, l) => s + l.sizeBreakdown.reduce((ss, sz) => ss + (parseInt(sz.quantity) || 0), 0), 0)} total units
-            </p>
-            <button
-              onClick={handleDone}
-              className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition"
-            >
-              View Order
-            </button>
-          </div>
         ) : null}
       </div>
     </div>

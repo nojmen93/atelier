@@ -1,9 +1,9 @@
 -- ============================================================
--- ORDER LINES — Individual product lines within an order
--- An order can have multiple styles, each as a separate line.
+-- PURCHASE ORDERS — Individual PO lines within an order
+-- An order can have multiple styles, each as a separate PO.
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS order_lines (
+CREATE TABLE IF NOT EXISTS purchase_orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   style_id UUID REFERENCES styles(id) ON DELETE SET NULL,
@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS order_lines (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_order_lines_order ON order_lines(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_lines_style ON order_lines(style_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_order ON purchase_orders(order_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_style ON purchase_orders(style_id);
 
--- Make style_id nullable on orders since lines now carry the products
--- (The existing column stays for backwards compat but is no longer required)
+-- Add customer fields to orders so orders can be created directly (not only from quotes)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_company TEXT;
