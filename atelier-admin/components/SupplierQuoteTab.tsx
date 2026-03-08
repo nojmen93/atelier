@@ -77,8 +77,10 @@ export default function SupplierQuoteTab({
       fetch(`/api/supplier-quotes?styleId=${styleId}`).then((r) => r.json()),
       fetch('/api/colours').then((r) => r.json()),
     ]).then(([quoteData, colourData]) => {
-      setQuotes(quoteData)
-      setColours(colourData)
+      setQuotes(Array.isArray(quoteData) ? quoteData : [])
+      setColours(Array.isArray(colourData) ? colourData : [])
+      setLoading(false)
+    }).catch(() => {
       setLoading(false)
     })
   }, [styleId])

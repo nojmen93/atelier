@@ -54,10 +54,14 @@ export default function ColourwaysTab({ styleId }: { styleId: string }) {
       fetch(`/api/style-colours?styleId=${styleId}`),
     ])
 
-    if (coloursRes.ok) setAllColours(await coloursRes.json())
+    if (coloursRes.ok) {
+      const data = await coloursRes.json()
+      setAllColours(Array.isArray(data) ? data : [])
+    }
     if (assignedRes.ok) {
-      const assigned: StyleColour[] = await assignedRes.json()
-      setAssignedColourIds(new Set(assigned.map((a) => a.colour_id)))
+      const assigned = await assignedRes.json()
+      const arr: StyleColour[] = Array.isArray(assigned) ? assigned : []
+      setAssignedColourIds(new Set(arr.map((a) => a.colour_id)))
     }
     setLoading(false)
   }
