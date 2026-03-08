@@ -42,6 +42,13 @@ interface CustomerData {
   customerPhone: string
 }
 
+interface StyleColour {
+  id: string
+  colour_name: string
+  colour_code: string
+  hex_value: string | null
+}
+
 interface QuoteFormData {
   styleId: string
   styleName: string
@@ -51,8 +58,8 @@ interface QuoteFormData {
   customerPhone: string
   quantity: string
   message: string
-  colourMode: 'dtm' | 'colour_card' | ''
-  colourValue: string
+  colourId: string
+  colourName: string
   placement: string
   technique: string
   logoId: string
@@ -446,6 +453,20 @@ function QuoteForm({
   const [data, setData] = useState<QuoteFormData>(formData)
   const [saving, setSaving] = useState(false)
   const [quickAddSizes, setQuickAddSizes] = useState<Set<string>>(new Set())
+  const [productColours, setProductColours] = useState<StyleColour[]>([])
+  const [coloursLoading, setColoursLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`/api/style-colours?styleId=${style.id}`)
+      .then((r) => r.json())
+      .then((styleColourData) => {
+        const colours = Array.isArray(styleColourData)
+          ? styleColourData.map((sc: { colour: StyleColour }) => sc.colour).filter(Boolean)
+          : []
+        setProductColours(colours)
+        setColoursLoading(false)
+      })
+  }, [style.id])
 
   const update = <K extends keyof QuoteFormData>(key: K, value: QuoteFormData[K]) => {
     setData((prev) => ({ ...prev, [key]: value }))
@@ -565,54 +586,31 @@ function QuoteForm({
         <input type="number" value={data.quantity} onChange={(e) => update('quantity', e.target.value)} className={inputClass} min="1" />
       </div>
 
-      {/* Colour Mode */}
+      {/* Colour */}
       <div>
         <h4 className="text-sm font-semibold text-neutral-400 mb-3">Colour</h4>
-        <div className="flex gap-3 mb-3">
-          <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition ${
-            data.colourMode === 'dtm' ? 'border-white bg-neutral-800' : 'border-neutral-800 hover:border-neutral-700'
-          }`}>
-            <input
-              type="radio"
-              name="colourMode"
-              value="dtm"
-              checked={data.colourMode === 'dtm'}
-              onChange={() => update('colourMode', 'dtm')}
-              className="accent-white"
-            />
-            <div>
-              <div className="text-sm font-medium">DTM</div>
-              <div className="text-[10px] text-neutral-500">Dye To Match (Pantone)</div>
-            </div>
-          </label>
-          <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition ${
-            data.colourMode === 'colour_card' ? 'border-white bg-neutral-800' : 'border-neutral-800 hover:border-neutral-700'
-          }`}>
-            <input
-              type="radio"
-              name="colourMode"
-              value="colour_card"
-              checked={data.colourMode === 'colour_card'}
-              onChange={() => update('colourMode', 'colour_card')}
-              className="accent-white"
-            />
-            <div>
-              <div className="text-sm font-medium">Colour Card</div>
-              <div className="text-[10px] text-neutral-500">From supplier card</div>
-            </div>
-          </label>
-        </div>
-        {data.colourMode === 'dtm' && (
-          <input
-            type="text"
-            value={data.colourValue}
-            onChange={(e) => update('colourValue', e.target.value)}
-            placeholder="e.g. Pantone 186 C"
-            className={inputClass}
-          />
-        )}
-        {data.colourMode === 'colour_card' && (
-          <p className="text-xs text-neutral-500">Colour will be selected from the supplier&apos;s standard colour card.</p>
+        {coloursLoading ? (
+          <div className="text-xs text-neutral-500">Loading colours...</div>
+        ) : productColours.length === 0 ? (
+          <div className="border border-neutral-800 border-dashed rounded-lg p-4 text-center">
+            <p className="text-xs text-neutral-500">No colours assigned to this product.</p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {productColours.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { update('colourId', c.id); update('colourName', c.colour_name) }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition ${
+                  data.colourId === c.id ? 'border-white bg-neutral-800' : 'border-neutral-800 hover:border-neutral-700'
+                }`}
+              >
+                <div className="w-4 h-4 rounded border border-neutral-700" style={{ backgroundColor: c.hex_value || '#333' }} />
+                <span className="text-sm text-white">{c.colour_name}</span>
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -823,8 +821,8 @@ export default function NewQuoteModal({
     ...customerData,
     quantity: '1',
     message: '',
-    colourMode: '',
-    colourValue: '',
+    colourId: '',
+    colourName: '',
     placement: '',
     technique: '',
     logoId: '',
@@ -837,8 +835,8 @@ export default function NewQuoteModal({
     const customizationPreferences: Record<string, string> = {}
     if (data.placement) customizationPreferences.placement = data.placement
     if (data.technique) customizationPreferences.technique = data.technique
-    if (data.colourMode) customizationPreferences.colour_mode = data.colourMode
-    if (data.colourValue) customizationPreferences.colour_value = data.colourValue
+    if (data.colourId) customizationPreferences.colour_id = data.colourId
+    if (data.colourName) customizationPreferences.colour_name = data.colourName
     if (data.logoId) customizationPreferences.logo_id = data.logoId
 
     const variantPrefs = data.variantLines

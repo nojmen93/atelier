@@ -29,12 +29,21 @@ interface SizeQty {
   quantity: string
 }
 
+interface StyleColour {
+  id: string
+  colour_name: string
+  colour_code: string
+  hex_value: string | null
+}
+
 interface POLineData {
   styleId: string
   styleName: string
   styleImage: string | null
   supplierId: string | null
   supplierName: string | null
+  colourId: string
+  colourName: string
   sizeBreakdown: SizeQty[]
   quantity: number
   notes: string
@@ -428,6 +437,67 @@ interface POGroup {
   lines: POLineData[]
 }
 
+function LineColourSelector({
+  styleId,
+  selectedColourId,
+  onSelect,
+}: {
+  styleId: string
+  selectedColourId: string
+  onSelect: (colourId: string, colourName: string) => void
+}) {
+  const [colours, setColours] = useState<StyleColour[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/style-colours?styleId=${styleId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const mapped = Array.isArray(data)
+          ? data.map((sc: { colour: StyleColour }) => sc.colour).filter(Boolean)
+          : []
+        setColours(mapped)
+        setLoaded(true)
+      })
+  }, [styleId])
+
+  if (!loaded) return <div className="text-xs text-neutral-600">Loading colours...</div>
+
+  if (colours.length === 0) {
+    return (
+      <div className="text-xs text-yellow-200/70 bg-yellow-950/20 border border-yellow-900/30 rounded px-3 py-2">
+        No colours assigned to this product. Assign colours in the Colourways tab first.
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <label className="block text-xs text-neutral-500 mb-1.5">Colour *</label>
+      <div className="flex flex-wrap gap-1.5">
+        {colours.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onSelect(c.id, c.colour_name)}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded border transition ${
+              selectedColourId === c.id
+                ? 'bg-white text-black border-white font-medium'
+                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
+            }`}
+          >
+            <div
+              className="w-3.5 h-3.5 rounded-full border border-neutral-700 flex-shrink-0"
+              style={{ backgroundColor: c.hex_value || '#333' }}
+            />
+            {c.colour_name}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function POLinesEditor({
   groups,
   onUpdateLine,
@@ -504,6 +574,15 @@ function POLinesEditor({
                         Remove
                       </button>
                     </div>
+
+                    {/* Colour selector */}
+                    <LineColourSelector
+                      styleId={line.styleId}
+                      selectedColourId={line.colourId}
+                      onSelect={(colourId, colourName) =>
+                        onUpdateLine(group.supplierId, lineIdx, { ...line, colourId, colourName })
+                      }
+                    />
 
                     {/* Size breakdown */}
                     <div>
@@ -715,6 +794,8 @@ export default function NewOrderModal({
         styleImage: style.images?.[0] || null,
         supplierId: style.supplier_id,
         supplierName: style.suppliers?.name || null,
+        colourId: '',
+        colourName: '',
         sizeBreakdown: [],
         quantity: 0,
         notes: '',
@@ -777,6 +858,8 @@ export default function NewOrderModal({
         lines: lines.map((line, idx) => ({
           style_id: line.styleId,
           style_name: line.styleName,
+          colour_id: line.colourId || null,
+          colour_name: line.colourName || null,
           size_breakdown: line.sizeBreakdown
             .filter((s) => s.size)
             .map((s) => ({ size: s.size, quantity: parseInt(s.quantity) || 0 })),
