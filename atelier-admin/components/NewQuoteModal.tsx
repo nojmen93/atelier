@@ -896,15 +896,15 @@ export default function NewQuoteModal({
   }
 
   const handleViewQuote = (quoteId: string) => {
-    onClose()
-    router.push(`/admin/quotes/${quoteId}`)
+    // Hard navigation to avoid race with onClose's router.refresh()
+    window.location.href = `/admin/quotes/${quoteId}`
   }
 
   const handleDone = () => {
-    onClose()
-    // Navigate to the last created quote
     if (createdQuotes.length > 0) {
-      router.push(`/admin/quotes/${createdQuotes[createdQuotes.length - 1].id}`)
+      window.location.href = `/admin/quotes/${createdQuotes[createdQuotes.length - 1].id}`
+    } else {
+      onClose()
     }
   }
 
