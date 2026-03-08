@@ -57,6 +57,7 @@ const sections: NavSection[] = [
     items: [
       { label: 'Hierarchy', href: '/admin/styles/hierarchy' },
       { label: 'Product', href: '/admin/styles' },
+      { label: 'Colour Library', href: '/admin/styles/colours' },
       { label: 'Specification', href: '/admin/styles/specification' },
     ],
   },

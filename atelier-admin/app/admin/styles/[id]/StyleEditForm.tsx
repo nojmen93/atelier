@@ -397,7 +397,7 @@ export default function StyleEditForm({
 
       {/* Colourways Tab */}
       {activeTab === 'colourways' && (
-        <ColourwaysTab />
+        <ColourwaysTab styleId={style.id} />
       )}
 
       {/* SKU Tab */}

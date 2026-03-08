@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 interface Colour {
   id: string
@@ -9,8 +10,13 @@ interface Colour {
   colour_code: string
   colour_family_code: string | null
   hex_value: string | null
-  g1_code: string | null
-  created_at: string
+}
+
+interface StyleColour {
+  id: string
+  style_id: string
+  colour_id: string
+  colour: Colour
 }
 
 const COLOUR_FAMILIES = [
@@ -30,308 +36,209 @@ const COLOUR_FAMILIES = [
   { code: 'OTH', label: 'Other' },
 ]
 
-const inputClass = 'w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none'
-
-export default function ColourwaysTab() {
-  const [colours, setColours] = useState<Colour[]>([])
+export default function ColourwaysTab({ styleId }: { styleId: string }) {
+  const [allColours, setAllColours] = useState<Colour[]>([])
+  const [assignedColourIds, setAssignedColourIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [filterFamily, setFilterFamily] = useState('')
+  const [showPicker, setShowPicker] = useState(false)
   const [search, setSearch] = useState('')
-
-  // Form state
-  const [colourName, setColourName] = useState('')
-  const [colourCode, setColourCode] = useState('')
-  const [colourFamilyCode, setColourFamilyCode] = useState('')
-  const [hexValue, setHexValue] = useState('#000000')
-  const [g1Code, setG1Code] = useState('')
+  const [filterFamily, setFilterFamily] = useState('')
 
   useEffect(() => {
-    fetchColours()
-  }, [])
+    loadData()
+  }, [styleId])
 
-  const fetchColours = async () => {
-    const res = await fetch('/api/colours')
-    if (res.ok) {
-      setColours(await res.json())
+  const loadData = async () => {
+    const [coloursRes, assignedRes] = await Promise.all([
+      fetch('/api/colours'),
+      fetch(`/api/style-colours?styleId=${styleId}`),
+    ])
+
+    if (coloursRes.ok) setAllColours(await coloursRes.json())
+    if (assignedRes.ok) {
+      const assigned: StyleColour[] = await assignedRes.json()
+      setAssignedColourIds(new Set(assigned.map((a) => a.colour_id)))
     }
     setLoading(false)
   }
 
-  const resetForm = () => {
-    setColourName('')
-    setColourCode('')
-    setColourFamilyCode('')
-    setHexValue('#000000')
-    setG1Code('')
-    setEditingId(null)
-    setShowForm(false)
-  }
+  const assignedColours = allColours.filter((c) => assignedColourIds.has(c.id))
 
-  const handleEdit = (colour: Colour) => {
-    setColourName(colour.colour_name)
-    setColourCode(colour.colour_code)
-    setColourFamilyCode(colour.colour_family_code || '')
-    setHexValue(colour.hex_value || '#000000')
-    setG1Code(colour.g1_code || '')
-    setEditingId(colour.id)
-    setShowForm(true)
-  }
-
-  const handleSave = async () => {
-    if (!colourName || !colourCode) {
-      toast.error('Colour name and code are required')
-      return
-    }
-
-    const payload = {
-      colour_name: colourName,
-      colour_code: colourCode,
-      colour_family_code: colourFamilyCode || null,
-      hex_value: hexValue || null,
-      g1_code: g1Code || null,
-    }
-
-    const res = editingId
-      ? await fetch('/api/colours', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingId, ...payload }),
-        })
-      : await fetch('/api/colours', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-
-    if (res.ok) {
-      toast.success(editingId ? 'Colour updated' : 'Colour added')
-      resetForm()
-      fetchColours()
-    } else {
-      const data = await res.json()
-      toast.error(data.error || 'Failed to save')
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    const res = await fetch('/api/colours', {
-      method: 'DELETE',
+  const handleAssign = async (colourId: string) => {
+    const res = await fetch('/api/style-colours', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ style_id: styleId, colour_id: colourId }),
     })
 
     if (res.ok) {
-      toast.success('Colour deleted')
-      fetchColours()
+      setAssignedColourIds((prev) => new Set([...prev, colourId]))
+      toast.success('Colour added')
     } else {
-      toast.error('Failed to delete')
+      toast.error('Failed to add colour')
     }
   }
 
-  const filtered = colours.filter((c) => {
+  const handleRemove = async (colourId: string) => {
+    const res = await fetch('/api/style-colours', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ style_id: styleId, colour_id: colourId }),
+    })
+
+    if (res.ok) {
+      setAssignedColourIds((prev) => {
+        const next = new Set(prev)
+        next.delete(colourId)
+        return next
+      })
+      toast.success('Colour removed')
+    } else {
+      toast.error('Failed to remove colour')
+    }
+  }
+
+  // Filter available colours for picker
+  const available = allColours.filter((c) => {
+    if (assignedColourIds.has(c.id)) return false
     if (filterFamily && c.colour_family_code !== filterFamily) return false
     if (search) {
       const s = search.toLowerCase()
-      return (
-        c.colour_name.toLowerCase().includes(s) ||
-        c.colour_code.toLowerCase().includes(s) ||
-        (c.g1_code && c.g1_code.toLowerCase().includes(s))
-      )
+      return c.colour_name.toLowerCase().includes(s) || c.colour_code.toLowerCase().includes(s)
     }
     return true
   })
 
+  // Group available by family
+  const grouped = COLOUR_FAMILIES
+    .map((family) => ({
+      ...family,
+      colours: available.filter((c) => c.colour_family_code === family.code),
+    }))
+    .filter((g) => g.colours.length > 0)
+
   if (loading) {
-    return <div className="text-neutral-500 text-sm py-8 text-center">Loading colour library...</div>
+    return <div className="text-neutral-500 text-sm py-8 text-center">Loading colours...</div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Colour Library</h2>
-          <p className="text-xs text-neutral-500 mt-1">Global colour reference — not style-specific</p>
+          <h2 className="text-lg font-semibold">Colourways</h2>
+          <p className="text-xs text-neutral-500 mt-1">
+            Select colours from the{' '}
+            <Link href="/admin/styles/colours" className="text-neutral-400 underline hover:text-white">
+              colour library
+            </Link>{' '}
+            for this product
+          </p>
         </div>
         <button
           type="button"
-          onClick={() => { resetForm(); setShowForm(true) }}
+          onClick={() => { setShowPicker(!showPicker); setSearch(''); setFilterFamily('') }}
           className="px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition"
         >
-          + Add Colour
+          {showPicker ? 'Done' : '+ Add Colours'}
         </button>
       </div>
 
-      {/* Add/Edit Form */}
-      {showForm && (
-        <div className="border border-neutral-800 rounded-lg p-6 space-y-4">
-          <h3 className="text-sm font-medium text-neutral-300">
-            {editingId ? 'Edit Colour' : 'New Colour'}
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-neutral-500 mb-1">Colour Name *</label>
-              <input
-                type="text"
-                value={colourName}
-                onChange={(e) => setColourName(e.target.value)}
-                className={inputClass}
-                placeholder="e.g. Midnight Navy"
+      {/* Assigned Colours */}
+      {assignedColours.length === 0 ? (
+        <div className="border border-neutral-800 border-dashed rounded-lg py-12 text-center text-neutral-500 text-sm">
+          No colours assigned to this product yet.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {assignedColours.map((colour) => (
+            <div
+              key={colour.id}
+              className="group border border-neutral-800 rounded-lg overflow-hidden"
+            >
+              <div
+                className="h-16 w-full"
+                style={{ backgroundColor: colour.hex_value || '#333' }}
               />
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-500 mb-1">Colour Code *</label>
-              <input
-                type="text"
-                value={colourCode}
-                onChange={(e) => setColourCode(e.target.value)}
-                className={inputClass}
-                placeholder="e.g. MN-001"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-500 mb-1">Colour Family</label>
-              <select
-                value={colourFamilyCode}
-                onChange={(e) => setColourFamilyCode(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">Select family...</option>
-                {COLOUR_FAMILIES.map((f) => (
-                  <option key={f.code} value={f.code}>{f.label} ({f.code})</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-neutral-500 mb-1">Hex Value</label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={hexValue}
-                  onChange={(e) => setHexValue(e.target.value)}
-                  className="w-10 h-10 rounded border border-neutral-800 bg-transparent cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={hexValue}
-                  onChange={(e) => setHexValue(e.target.value)}
-                  className={inputClass}
-                  placeholder="#000000"
-                />
+              <div className="px-3 py-2">
+                <div className="text-sm text-white font-medium">{colour.colour_name}</div>
+                <div className="text-xs text-neutral-500 font-mono mt-0.5">{colour.colour_code}</div>
+                <button
+                  type="button"
+                  onClick={() => handleRemove(colour.id)}
+                  className="text-xs text-neutral-600 hover:text-red-400 mt-1.5 opacity-0 group-hover:opacity-100 transition"
+                >
+                  Remove
+                </button>
               </div>
             </div>
-            <div>
-              <label className="block text-xs text-neutral-500 mb-1">G1 Code (US)</label>
-              <input
-                type="text"
-                value={g1Code}
-                onChange={(e) => setG1Code(e.target.value)}
-                className={inputClass}
-                placeholder="e.g. G1-NVY-042"
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-5 py-2 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition"
-            >
-              {editingId ? 'Update' : 'Save'}
-            </button>
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-5 py-2 text-sm text-neutral-400 hover:text-white transition"
-            >
-              Cancel
-            </button>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex gap-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search colours..."
-          className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white text-sm w-64 focus:border-neutral-600 focus:outline-none"
-        />
-        <select
-          value={filterFamily}
-          onChange={(e) => setFilterFamily(e.target.value)}
-          className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none"
-        >
-          <option value="">All Families</option>
-          {COLOUR_FAMILIES.map((f) => (
-            <option key={f.code} value={f.code}>{f.label}</option>
-          ))}
-        </select>
-      </div>
+      {/* Colour Picker */}
+      {showPicker && (
+        <div className="border border-neutral-700 rounded-lg p-5 space-y-4 bg-neutral-950">
+          <h3 className="text-sm font-medium text-neutral-300">Select from Colour Library</h3>
 
-      {/* Colour Table */}
-      {filtered.length === 0 ? (
-        <div className="text-neutral-500 text-sm py-8 text-center">
-          {colours.length === 0 ? 'No colours in the library yet.' : 'No colours match your filter.'}
-        </div>
-      ) : (
-        <div className="border border-neutral-800 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-800 text-neutral-500 text-xs">
-                <th className="text-left px-4 py-3 font-medium">Colour</th>
-                <th className="text-left px-4 py-3 font-medium">Name</th>
-                <th className="text-left px-4 py-3 font-medium">Code</th>
-                <th className="text-left px-4 py-3 font-medium">Family</th>
-                <th className="text-left px-4 py-3 font-medium">Hex</th>
-                <th className="text-left px-4 py-3 font-medium">G1 Code</th>
-                <th className="text-right px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((colour) => (
-                <tr key={colour.id} className="border-b border-neutral-800/50 hover:bg-neutral-900/50">
-                  <td className="px-4 py-3">
-                    <div
-                      className="w-8 h-8 rounded border border-neutral-700"
-                      style={{ backgroundColor: colour.hex_value || '#333' }}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-white">{colour.colour_name}</td>
-                  <td className="px-4 py-3 text-neutral-400 font-mono text-xs">{colour.colour_code}</td>
-                  <td className="px-4 py-3 text-neutral-400">
-                    {COLOUR_FAMILIES.find((f) => f.code === colour.colour_family_code)?.label || colour.colour_family_code || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-400 font-mono text-xs">{colour.hex_value || '—'}</td>
-                  <td className="px-4 py-3 text-neutral-400 font-mono text-xs">{colour.g1_code || '—'}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(colour)}
-                      className="text-neutral-500 hover:text-white text-xs mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(colour.id)}
-                      className="text-neutral-500 hover:text-red-400 text-xs"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search colours..."
+              className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white text-sm w-64 focus:border-neutral-600 focus:outline-none"
+            />
+            <select
+              value={filterFamily}
+              onChange={(e) => setFilterFamily(e.target.value)}
+              className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white text-sm focus:border-neutral-600 focus:outline-none"
+            >
+              <option value="">All Families</option>
+              {COLOUR_FAMILIES.map((f) => (
+                <option key={f.code} value={f.code}>{f.label}</option>
               ))}
-            </tbody>
-          </table>
+            </select>
+          </div>
+
+          {grouped.length === 0 ? (
+            <div className="text-neutral-500 text-sm py-4 text-center">
+              {allColours.length === assignedColourIds.size
+                ? 'All colours already assigned.'
+                : 'No colours match your search.'}
+            </div>
+          ) : (
+            <div className="space-y-5 max-h-[400px] overflow-y-auto">
+              {grouped.map((group) => (
+                <div key={group.code}>
+                  <h4 className="text-xs text-neutral-500 font-medium mb-2">{group.label}</h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                    {group.colours.map((colour) => (
+                      <button
+                        key={colour.id}
+                        type="button"
+                        onClick={() => handleAssign(colour.id)}
+                        className="text-left border border-neutral-800 rounded-lg overflow-hidden hover:border-neutral-500 transition group/item"
+                      >
+                        <div
+                          className="h-10 w-full"
+                          style={{ backgroundColor: colour.hex_value || '#333' }}
+                        />
+                        <div className="px-2 py-1.5">
+                          <div className="text-xs text-white truncate">{colour.colour_name}</div>
+                          <div className="text-[10px] text-neutral-600 font-mono">{colour.colour_code}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       <div className="text-xs text-neutral-600">
-        {filtered.length} colour{filtered.length !== 1 ? 's' : ''} in library
+        {assignedColours.length} colour{assignedColours.length !== 1 ? 's' : ''} assigned
       </div>
     </div>
   )
