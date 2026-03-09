@@ -22,20 +22,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-const GENDER_LABELS: Record<string, string> = {
-  mens: "Men's",
-  womens: "Women's",
-  unisex: 'Unisex',
-  na: 'N/A',
-}
-
-const COLLECTION_LABELS: Record<string, string> = {
-  editorial: 'Editorial',
-  signature: 'Signature',
-  foundation: 'Foundation',
-  special_projects: 'Special Projects',
-}
+import { GENDER_LABELS, COLLECTION_TYPE_LABELS } from '@/lib/product-hierarchy'
+import { useHierarchy } from '@/lib/hierarchy-context'
 
 interface Style {
   id: string
@@ -129,6 +117,8 @@ function SortableStyleCard({ style, isDragging }: { style: Style; isDragging?: b
             <p className="text-neutral-500 text-xs mt-1">
               {style.categories.concepts.name}
               {' / '}
+              {GENDER_LABELS[style.gender] || style.gender}
+              {' / '}
               {style.categories.name}
             </p>
           )}
@@ -140,7 +130,7 @@ function SortableStyleCard({ style, isDragging }: { style: Style; isDragging?: b
               {GENDER_LABELS[style.gender] || style.gender}
             </span>
             <span className="px-2 py-1 text-xs rounded bg-neutral-800 text-neutral-400">
-              {COLLECTION_LABELS[style.collection_type] || style.collection_type}
+              {COLLECTION_TYPE_LABELS[style.collection_type] || style.collection_type}
             </span>
             {style.variants?.length > 0 && (
               <span className="px-2 py-1 text-xs rounded bg-neutral-800 text-neutral-400">
@@ -165,17 +155,35 @@ function StyleOverlay({ style }: { style: Style }) {
   )
 }
 
+function getConceptName(style: Style): string | null {
+  if (!style.categories?.concepts) return null
+  return style.categories.concepts.name || null
+}
+
+function getCategoryName(style: Style): string | null {
+  if (!style.categories) return null
+  return style.categories.name || null
+}
+
 export default function SortableStyleList({ initialStyles }: { initialStyles: Style[] }) {
   const [styles, setStyles] = useState(initialStyles)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const { conceptId, categoryId, genderId, conceptName, categoryName } = useHierarchy()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const activeStyle = activeId ? styles.find((s) => s.id === activeId) : null
+  const filtered = styles.filter((s) => {
+    if (conceptId && getConceptName(s) !== conceptName) return false
+    if (genderId && s.gender !== genderId) return false
+    if (categoryId && getCategoryName(s) !== categoryName) return false
+    return true
+  })
+
+  const activeStyle = activeId ? filtered.find((s) => s.id === activeId) : null
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)
@@ -186,22 +194,34 @@ export default function SortableStyleList({ initialStyles }: { initialStyles: St
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = styles.findIndex((s) => s.id === active.id)
-    const newIndex = styles.findIndex((s) => s.id === over.id)
-    const reordered = arrayMove(styles, oldIndex, newIndex)
-    setStyles(reordered)
+    const oldIndex = filtered.findIndex((s) => s.id === active.id)
+    const newIndex = filtered.findIndex((s) => s.id === over.id)
+    const reorderedFiltered = arrayMove(filtered, oldIndex, newIndex)
+
+    // Update display_order for filtered items, keep others unchanged
+    const updatedStyles = styles.map((s) => {
+      const filteredIndex = reorderedFiltered.findIndex((f) => f.id === s.id)
+      if (filteredIndex !== -1) {
+        return { ...s, display_order: filteredIndex }
+      }
+      return s
+    })
+    setStyles(updatedStyles.sort((a, b) => a.display_order - b.display_order))
 
     setSaving(true)
     const supabase = createClient()
-    const updates = reordered.map((s, i) => ({
-      id: s.id,
-      display_order: i,
-    }))
-
-    for (const { id, display_order } of updates) {
-      await supabase.from('styles').update({ display_order }).eq('id', id)
+    for (let i = 0; i < reorderedFiltered.length; i++) {
+      await supabase.from('styles').update({ display_order: i }).eq('id', reorderedFiltered[i].id)
     }
     setSaving(false)
+  }
+
+  if (filtered.length === 0) {
+    return (
+      <div className="border border-neutral-800 border-dashed rounded-lg p-12 text-center text-neutral-500 text-sm">
+        No products found for this selection.
+      </div>
+    )
   }
 
   return (
@@ -215,9 +235,9 @@ export default function SortableStyleList({ initialStyles }: { initialStyles: St
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={styles.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={filtered.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {styles.map((style) => (
+            {filtered.map((style) => (
               <SortableStyleCard key={style.id} style={style} />
             ))}
           </div>

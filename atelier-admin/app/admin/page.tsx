@@ -25,7 +25,7 @@ export default async function AdminDashboard() {
     supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['accepted', 'converted']),
     supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['quoted', 'accepted', 'converted']),
     supabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['confirmed', 'in_production', 'shipped']),
-    supabase.from('quote_requests').select('id, customer_name, customer_company, product_name, status, quantity, created_at, styles(name)').order('created_at', { ascending: false }).limit(5),
+    supabase.from('quote_requests').select('id, customer_name, customer_company, product_name, status, quantity, created_at, styles!style_id(name)').order('created_at', { ascending: false }).limit(5),
   ])
 
   const conversionRate = (quotedQuotes || 0) > 0

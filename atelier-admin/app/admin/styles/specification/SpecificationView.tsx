@@ -1,6 +1,7 @@
 'use client'
 
 import { useHierarchy } from '@/lib/hierarchy-context'
+import { GENDER_LABELS } from '@/lib/product-hierarchy'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -30,7 +31,6 @@ interface Style {
 function getCategoryName(style: Style): string | null {
   const raw = style.categories
   if (!raw) return null
-  // Supabase may return as object or array depending on the relation
   const cat = (Array.isArray(raw) ? raw[0] : raw) as { name?: string } | undefined
   return cat?.name || null
 }
@@ -46,12 +46,13 @@ function getConceptName(style: Style): string | null {
 }
 
 export default function SpecificationView({ styles }: { styles: Style[] }) {
-  const { conceptId, categoryId, conceptName, categoryName } = useHierarchy()
+  const { conceptId, categoryId, genderId, conceptName, genderName, categoryName } = useHierarchy()
   const [search, setSearch] = useState('')
 
   const filtered = styles.filter((s) => {
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false
     if (conceptId && getConceptName(s) !== conceptName) return false
+    if (genderId && s.gender !== genderId) return false
     if (categoryId && getCategoryName(s) !== categoryName) return false
     return true
   })
@@ -62,6 +63,7 @@ export default function SpecificationView({ styles }: { styles: Style[] }) {
       {conceptName && (
         <div className="text-sm text-neutral-400 mb-4">
           Filtered: <span className="text-white">{conceptName}</span>
+          {genderName && <> / <span className="text-white">{genderName}</span></>}
           {categoryName && <> / <span className="text-white">{categoryName}</span></>}
         </div>
       )}
@@ -69,7 +71,7 @@ export default function SpecificationView({ styles }: { styles: Style[] }) {
       <div className="mb-6">
         <input
           type="text"
-          placeholder="Search styles..."
+          placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full max-w-sm px-4 py-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-sm placeholder:text-neutral-600 focus:border-neutral-600 focus:outline-none"
@@ -78,14 +80,14 @@ export default function SpecificationView({ styles }: { styles: Style[] }) {
 
       {filtered.length === 0 ? (
         <div className="border border-neutral-800 border-dashed rounded-lg p-12 text-center text-neutral-500 text-sm">
-          No styles found.
+          No products found.
         </div>
       ) : (
         <div className="border border-neutral-800 rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-800 text-neutral-500 text-xs">
-                <th className="text-left px-4 py-3 font-medium">Style</th>
+                <th className="text-left px-4 py-3 font-medium">Product</th>
                 <th className="text-left px-4 py-3 font-medium">Material</th>
                 <th className="text-left px-4 py-3 font-medium">Gender</th>
                 <th className="text-left px-4 py-3 font-medium">Variants</th>
@@ -103,14 +105,14 @@ export default function SpecificationView({ styles }: { styles: Style[] }) {
                     </Link>
                     {(getConceptName(style) || getCategoryName(style)) && (
                       <div className="text-xs text-neutral-600 mt-0.5">
-                        {getConceptName(style)} / {getCategoryName(style)}
+                        {getConceptName(style)} / {GENDER_LABELS[style.gender] || style.gender} / {getCategoryName(style)}
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-neutral-400">{style.material || '—'}</td>
                   <td className="px-4 py-3">
                     <span className="text-xs px-2 py-0.5 bg-neutral-800 text-neutral-300 rounded">
-                      {style.gender}
+                      {GENDER_LABELS[style.gender] || style.gender}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-neutral-400">{style.variants?.length || 0}</td>

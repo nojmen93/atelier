@@ -33,7 +33,7 @@ export default async function EditStylePage({
 
   return (
     <div className="max-w-4xl">
-      <BackLink href="/admin/styles" label="Back to Styles" />
+      <BackLink href="/admin/styles" label="Back to Products" />
       <StyleEditForm
         style={style}
         concepts={concepts || []}

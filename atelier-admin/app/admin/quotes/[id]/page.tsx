@@ -1,7 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import BackLink from '@/components/BackLink'
 import QuoteDetailView from './QuoteDetailView'
+
+export const dynamic = 'force-dynamic'
 
 export default async function QuoteDetailPage({
   params,
@@ -9,12 +11,12 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
-  const [{ data: quote }, { data: styles }, { data: concepts }, { data: suppliers }, { data: logos }] = await Promise.all([
+  const [quoteResult, { data: styles }, { data: concepts }, { data: suppliers }, { data: logos }] = await Promise.all([
     supabase
       .from('quote_requests')
-      .select('*, styles(id, name, images, base_cost, lead_time_days, material, description)')
+      .select('*, styles!style_id(id, name, images, base_cost, lead_time_days, material, description)')
       .eq('id', id)
       .single(),
     supabase
@@ -36,9 +38,12 @@ export default async function QuoteDetailPage({
       .order('company_name'),
   ])
 
-  if (!quote) {
+  if (quoteResult.error || !quoteResult.data) {
+    console.error('Quote fetch error:', quoteResult.error?.message, 'id:', id)
     notFound()
   }
+
+  const quote = quoteResult.data
 
   return (
     <div>

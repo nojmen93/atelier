@@ -9,3 +9,40 @@
     @apply outline-none focus:ring-2 focus:ring-white/20 transition;
   }
 }
+
+/* Print styles — hide all chrome, show only data */
+@media print {
+  aside,
+  nav {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body,
+  main,
+  div.min-h-screen {
+    background: white !important;
+    color: black !important;
+  }
+
+  div.min-h-screen {
+    display: block !important;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+}

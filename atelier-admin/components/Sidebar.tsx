@@ -47,7 +47,7 @@ const sections: NavSection[] = [
     items: [],
   },
   {
-    label: 'Styles',
+    label: 'Product',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20.38 3.46L16 2 12 3.46 8 2 3.62 3.46a2 2 0 00-1.34 1.89v13.3a2 2 0 001.34 1.89L8 22l4-1.46L16 22l4.38-1.46a2 2 0 001.34-1.89V5.35a2 2 0 00-1.34-1.89z" />
@@ -56,9 +56,8 @@ const sections: NavSection[] = [
     ),
     items: [
       { label: 'Hierarchy', href: '/admin/styles/hierarchy' },
-      { label: 'Style Gallery', href: '/admin/styles' },
-      { label: 'New Style', href: '/admin/styles/new' },
-      { label: 'Categories', href: '/admin/concepts' },
+      { label: 'Product', href: '/admin/styles' },
+      { label: 'Colour Library', href: '/admin/styles/colours' },
       { label: 'Specification', href: '/admin/styles/specification' },
     ],
   },
@@ -70,7 +69,7 @@ const sections: NavSection[] = [
       </svg>
     ),
     items: [
-      { label: 'Quotes', href: '/admin/quotes' },
+      { label: 'Quote Requests', href: '/admin/quotes' },
       { label: 'Orders', href: '/admin/orders' },
       { label: 'Suppliers', href: '/admin/suppliers' },
       { label: 'Factories', href: '/admin/factories' },
@@ -108,7 +107,7 @@ const sections: NavSection[] = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ logoutAction }: { logoutAction?: () => Promise<void> }) {
   const pathname = usePathname()
 
   // Determine which sections should be open based on current path
@@ -204,7 +203,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-neutral-800 px-5 py-3">
+      <div className="border-t border-neutral-800 px-5 py-3 space-y-2">
         <Link
           href="/admin/settings"
           className={`flex items-center gap-3 text-sm transition ${
@@ -219,6 +218,21 @@ export default function Sidebar() {
           </svg>
           Settings
         </Link>
+        {logoutAction && (
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex items-center gap-3 text-sm text-neutral-500 hover:text-white transition w-full"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign Out
+            </button>
+          </form>
+        )}
       </div>
     </aside>
   )

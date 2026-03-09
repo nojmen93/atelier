@@ -1,10 +1,16 @@
 'use client'
 
 import { useHierarchy } from '@/lib/hierarchy-context'
-import Link from 'next/link'
 
 export default function StyleGalleryFilter() {
-  const { conceptName, categoryName, clearSelection, clearCategory } = useHierarchy()
+  const {
+    conceptName,
+    genderName,
+    categoryName,
+    clearSelection,
+    clearGender,
+    clearCategory,
+  } = useHierarchy()
 
   if (!conceptName) return null
 
@@ -15,13 +21,23 @@ export default function StyleGalleryFilter() {
         All
       </button>
       <span className="text-neutral-600">/</span>
-      {categoryName ? (
+      {genderName ? (
         <>
-          <button onClick={clearCategory} className="text-neutral-400 hover:text-white transition">
+          <button onClick={clearGender} className="text-neutral-400 hover:text-white transition">
             {conceptName}
           </button>
           <span className="text-neutral-600">/</span>
-          <span className="text-white font-medium">{categoryName}</span>
+          {categoryName ? (
+            <>
+              <button onClick={clearCategory} className="text-neutral-400 hover:text-white transition">
+                {genderName}
+              </button>
+              <span className="text-neutral-600">/</span>
+              <span className="text-white font-medium">{categoryName}</span>
+            </>
+          ) : (
+            <span className="text-white font-medium">{genderName}</span>
+          )}
         </>
       ) : (
         <span className="text-white font-medium">{conceptName}</span>

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import NewQuoteModal from '@/components/NewQuoteModal'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -33,6 +35,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 interface Quote {
   id: string
+  quote_number: string | null
   customer_name: string
   customer_email: string
   customer_company: string | null
@@ -44,9 +47,11 @@ interface Quote {
   styles: { name: string; images: string[] | null } | null
 }
 
-export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] }) {
+export default function QuoteList({ initialQuotes, showNewButton = true }: { initialQuotes: Quote[]; showNewButton?: boolean }) {
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
+  const [showNewQuoteModal, setShowNewQuoteModal] = useState(false)
+  const router = useRouter()
 
   const filtered = initialQuotes.filter((q) => {
     if (statusFilter && q.status !== statusFilter) return false
@@ -60,8 +65,30 @@ export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] })
     return true
   })
 
+  const handleQuoteCreated = () => {
+    router.refresh()
+  }
+
+  const handleModalClose = () => {
+    setShowNewQuoteModal(false)
+    router.refresh()
+  }
+
   return (
     <div>
+      {/* Header with New Quote button */}
+      {showNewButton && (
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Quote Requests</h1>
+          <button
+            onClick={() => setShowNewQuoteModal(true)}
+            className="px-6 py-3 bg-white text-black font-medium rounded hover:bg-neutral-200 transition"
+          >
+            New Quote
+          </button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex gap-4 mb-6">
         <input
@@ -94,6 +121,7 @@ export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] })
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-800 text-neutral-500 text-xs uppercase tracking-wide">
+              <th className="text-left px-4 py-3 font-medium">ID</th>
               <th className="text-left px-4 py-3 font-medium">Date</th>
               <th className="text-left px-4 py-3 font-medium">Customer</th>
               <th className="text-left px-4 py-3 font-medium">Company</th>
@@ -107,13 +135,16 @@ export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] })
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-neutral-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-neutral-500">
                   No quotes match your filters.
                 </td>
               </tr>
             ) : (
               filtered.map((q) => (
                 <tr key={q.id} className="border-b border-neutral-800 last:border-b-0 hover:bg-neutral-900/50 transition">
+                  <td className="px-4 py-3 text-neutral-500 font-mono text-xs">
+                    {q.quote_number || '—'}
+                  </td>
                   <td className="px-4 py-3 text-neutral-400 tabular-nums">
                     {new Date(q.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                   </td>
@@ -152,6 +183,14 @@ export default function QuoteList({ initialQuotes }: { initialQuotes: Quote[] })
           </tbody>
         </table>
       </div>
+
+      {/* New Quote Modal */}
+      {showNewQuoteModal && (
+        <NewQuoteModal
+          onClose={handleModalClose}
+          onQuoteCreated={handleQuoteCreated}
+        />
+      )}
     </div>
   )
 }
