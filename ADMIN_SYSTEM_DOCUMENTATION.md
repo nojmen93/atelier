@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-**Atelier Admin** is an internal admin panel for managing a custom apparel brand's style catalog, suppliers, logos, and customizations. It provides a full CRUD interface with image uploads, variant management, drag-and-drop reordering, a Fabric.js-powered mockup generator, and a dynamic view builder with PDF export.
+**Atelier Admin** is an internal admin panel for managing a custom apparel brand's style catalog, suppliers, logos, and customizations. It provides a full CRUD interface with image uploads, variant management, drag-and-drop reordering, a Canvas 2D-powered mockup generator, and a dynamic view builder with PDF export.
 
 ### Tech Stack
 
@@ -12,7 +12,7 @@
 - **Database/Auth**: Supabase (PostgreSQL + Auth + Storage)
 - **Monorepo**: Turborepo with pnpm workspaces
 - **Drag & Drop**: @dnd-kit/core + @dnd-kit/sortable
-- **Canvas/Mockups**: Fabric.js v7 (fabric)
+- **Canvas/Mockups**: Native Canvas 2D API (browser built-in)
 - **Image Processing**: sharp (metadata extraction)
 - **Notifications**: Sonner (toast system)
 - **Runtime**: React 19
@@ -24,7 +24,8 @@
 - Supplier CRUD
 - Concept & Category hierarchy management
 - Logo Library with upload, metadata extraction, and gallery
-- Customization Engine — Fabric.js mockup generator with embroidery/print techniques
+- Customization Engine — Canvas 2D mockup editor with embroidery/print techniques (per-style, on the Style edit page)
+- Standalone Mockup Generator — full-page mockup tool with product templates and realistic logo compositing (`/admin/mockup`)
 - Dynamic View Builder with gallery/grid modes and PDF export
 - Image upload to Supabase Storage with drag reordering
 - Variant management (individual + bulk creation)
@@ -35,6 +36,8 @@
 - Keyboard shortcuts (Cmd+S save, Escape close)
 - Empty states for all list pages
 - Back navigation on all edit/new pages
+- Settings page with user management (create/remove admin users)
+- Collapsible sidebar navigation with active-link highlighting
 
 ---
 
@@ -71,7 +74,7 @@
 
 ### Concept & Category System
 
-> The system uses a two-level hierarchy: Concepts contain Categories.
+> The system uses a two-level hierarchy: Concepts contain Categories. In the sidebar, "Categories" is listed as a sub-item under the **Styles** section, pointing to `/admin/concepts`.
 
 - **Concepts List**: `/admin/concepts` — drag-and-drop reordering, shows categories inline
 - **Create Concept**: `/admin/concepts/new` — name, auto-generated slug, description
@@ -99,11 +102,11 @@
 - **Empty State**: Styled empty state with icon and "Upload First Logo" CTA
 - **Keyboard Save**: Cmd+S on logo detail page
 
-### Enhanced Mockup Generator (Customization Engine)
+### Customization Engine (Style-Level Mockup Editor)
 
-Powered by **Fabric.js v7** (`components/CustomizationTab.tsx`).
+Powered by the **native Canvas 2D API** (`components/CustomizationTab.tsx`). Replaces the previous Fabric.js v7 implementation — migrated to fix image clipping issues and improve reliability.
 
-- **Interactive Canvas**: 500x600px canvas with product image as background
+- **Interactive Canvas**: Canvas dynamically sized to fit the product image
 - **Logo Placement**: 5 predefined positions — Center Front, Center Back, From HSP, Center on WRS, Center on WLS
 - **Technique Toggle**: Embroidery (stitch texture, shadow overlay, 85% opacity) vs Print (flat, 95% opacity)
 - **Real-time Preview**: Logo, placement, technique, and size changes update canvas instantly
@@ -119,6 +122,28 @@ Powered by **Fabric.js v7** (`components/CustomizationTab.tsx`).
 - **Export**: Download mockup as 2x PNG, upload to Supabase Storage, save URL to customization record
 - **CRUD**: Save, edit, and delete customizations with full table display
 - **Loading/Empty States**: Skeleton rows while loading, empty state messages
+
+### Standalone Mockup Generator
+
+A dedicated full-page tool at `/admin/mockup` (`app/admin/mockup/page.tsx`) for quickly visualising logos on product templates without linking to a specific style.
+
+- **Product Templates**: Built-in templates for T-Shirt, Cap, and Tote Bag, each with multiple color variants (using Unsplash stock images)
+- **Logo Source**: Choose from the Logo Library or upload a file directly (PNG, SVG, JPEG, WebP)
+- **Color-Aware Compositing**: Automatically switches blend mode between `multiply` (light products) and `screen` (dark products) for realistic logo integration
+- **Fabric Texture Overlay**: Subtle noise pass at 8% opacity adds fabric texture to the logo rendering
+- **Perspective/Skew**: Per-variant skew parameters simulate natural product curvature
+- **Logo Adjustments**: Slider controls for size (20–100%), horizontal offset, and vertical offset; reset button
+- **Export**: Exports a full-resolution PNG and uploads it to the `product-images` Supabase Storage bucket under `mockups/generator/`
+- **Tips Panel**: In-page guidance for best results
+
+### Settings & User Management
+
+Located at `/admin/settings` (`app/admin/settings/page.tsx`), accessible from the bottom of the sidebar.
+
+- **List Users**: Displays all Supabase Auth users (email + creation date), fetched via `/api/users` (GET) using the service role key
+- **Create User**: Form to add a new admin user with email and password (min. 6 chars); auto-confirms email via `email_confirm: true`
+- **Remove User**: Delete any user except the currently logged-in user (guarded server-side)
+- **API Endpoint**: `/api/users` (`app/api/users/route.ts`) — GET / POST / DELETE, all require an authenticated session
 
 ### Dynamic View Builder
 
@@ -479,6 +504,10 @@ atelier/
 │   │   │   │       │   └── page.tsx  # Render view (ViewRuntime)
 │   │   │   │       └── export/
 │   │   │   │           └── page.tsx  # PDF export
+│   │   │   ├── mockup/
+│   │   │   │   └── page.tsx          # Standalone Mockup Generator
+│   │   │   ├── settings/
+│   │   │   │   └── page.tsx          # Settings — user management
 │   │   │   ├── products/
 │   │   │   │   └── page.tsx          # Redirects to /admin/styles
 │   │   │   └── categories/
@@ -494,6 +523,8 @@ atelier/
 │   │   └── api/
 │   │       ├── upload/
 │   │       │   └── route.ts          # Product image upload API
+│   │       ├── users/
+│   │       │   └── route.ts          # User management API (GET/POST/DELETE)
 │   │       └── logos/
 │   │           └── upload/
 │   │               └── route.ts      # Logo upload API (with sharp metadata)
@@ -536,7 +567,7 @@ atelier/
 | `ImageUpload`          | Multi-file upload with drag reorder             |
 | `VariantTable`         | CRUD table for product variants                 |
 | `BulkVariantModal`     | Quick Add: size x color matrix variant generator |
-| `CustomizationTab`     | Fabric.js interactive mockup editor             |
+| `CustomizationTab`     | Canvas 2D mockup editor (per-style customization) |
 | `Skeleton`             | Loading skeletons (card, row, logo, metric) + EmptyState |
 | `ViewBuilder`          | 4-tab view configuration interface              |
 | `ViewRuntime`          | View renderer with filters, pagination, export  |
@@ -549,7 +580,6 @@ atelier/
 
 | Package              | Version | Purpose                                  |
 |----------------------|---------|------------------------------------------|
-| `fabric`             | ^7.2.0  | Fabric.js canvas for mockup generation   |
 | `sonner`             | ^2.0.7  | Toast notification system                |
 | `sharp`              | ^0.34.5 | Server-side image metadata extraction    |
 | `@dnd-kit/core`      | ^6.3.1  | Drag-and-drop core                       |
@@ -633,12 +663,15 @@ When fixing bugs:
 ### Completed
 
 - ~~Logo Library~~ — Upload and manage brand logos for mockup generation
-- ~~Mockup Generator~~ — Generate product mockups with Fabric.js canvas
+- ~~Mockup Generator~~ — Per-style Canvas 2D mockup editor (migrated from Fabric.js)
+- ~~Standalone Mockup Generator~~ — Full-page mockup tool with product templates at `/admin/mockup`
 - ~~Toast notifications~~ — Migrated from `alert()` to Sonner toasts
 - ~~Loading states~~ — Skeleton components for all list pages
 - ~~Keyboard shortcuts~~ — Cmd+S save, Escape close
 - ~~Empty states~~ — Styled empty states for all sections
 - ~~View Builder~~ — Dynamic gallery/grid views with PDF export
+- ~~Settings & User Management~~ — Create and remove admin users via Supabase Auth Admin API
+- ~~Sidebar navigation~~ — Collapsible sections with active-link highlighting
 
 ### Planned Features
 
@@ -654,7 +687,7 @@ When fixing bugs:
 - No search/filter on style or supplier lists (use Views for filtered data)
 - No image deletion from Supabase Storage when removed from a style
 - Variant SKU uniqueness not enforced client-side
-- No role-based access control (single admin role only)
+- No role-based access control (all admin users share the same permissions)
 - No audit log for changes
-- Active nav link not highlighted in top bar
 - Embroidery overlay position may drift if logo is dragged on canvas
+- Standalone Mockup Generator uses stock product images (Unsplash); not linked to actual style images

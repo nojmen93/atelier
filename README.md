@@ -1,16 +1,45 @@
 # Atelier — Custom Apparel Studio
 
-A premium custom apparel website built with Next.js 14 and Sanity CMS.
+A premium custom apparel brand management platform. The monorepo contains three applications: a public-facing marketing site, a Sanity CMS studio, and a full admin dashboard for internal product lifecycle management.
 
 ## Architecture
 
 ```
 atelier/
+├── atelier-admin/    # Admin dashboard — Next.js 16 (App Router)
 ├── apps/
-│   ├── web/          # Next.js 14 (App Router)
-│   └── studio/       # Sanity Studio v3
+│   ├── web/          # Public website — Next.js 14 (App Router)
+│   └── studio/       # Sanity Studio v3 (CMS)
 └── packages/
     └── config/       # Shared configs (future)
+```
+
+### Atelier Admin (`atelier-admin/`)
+
+An internal Product Lifecycle Management (PLM) dashboard for managing styles, suppliers, logos, customizations, quotes, orders, and factories. See [`ADMIN_SYSTEM_DOCUMENTATION.md`](./ADMIN_SYSTEM_DOCUMENTATION.md) for full documentation.
+
+**Key features:**
+- Style catalog (CRUD, variants, drag-and-drop reorder, image upload)
+- Concept & Category hierarchy
+- Supplier & Factory management
+- Logo Library with Canvas 2D mockup generator
+- Standalone Mockup Generator with product templates
+- Quote request system with email templates
+- Order management
+- Dynamic View Builder (gallery/grid + PDF export)
+- Settings — user management via Supabase Auth Admin API
+
+**Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS v4, Supabase (PostgreSQL + Auth + Storage), @dnd-kit, Sonner
+
+**Local setup:**
+
+```bash
+# Create atelier-admin/.env.local
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+cd atelier-admin && npm run dev   # http://localhost:3000
 ```
 
 ## Prerequisites
@@ -148,12 +177,22 @@ export default defineType({
 
 ## Tech Stack
 
+### Public Website (`apps/web`)
 - **Framework**: Next.js 14 (App Router)
 - **CMS**: Sanity v3
 - **Styling**: Vanilla CSS (custom properties)
 - **Fonts**: Bebas Neue + Outfit (Google Fonts)
-- **Monorepo**: pnpm + Turborepo
 - **Deployment**: Vercel + Sanity Cloud
+
+### Admin Dashboard (`atelier-admin`)
+- **Framework**: Next.js 16 (App Router), React 19, TypeScript
+- **Styling**: Tailwind CSS v4 (dark theme)
+- **Database/Auth**: Supabase (PostgreSQL + Auth + Storage)
+- **Canvas**: Native Canvas 2D API (mockup generation)
+- **Drag & Drop**: @dnd-kit
+
+### Monorepo
+- **Tooling**: pnpm 9 + Turborepo v2
 
 ## License
 
