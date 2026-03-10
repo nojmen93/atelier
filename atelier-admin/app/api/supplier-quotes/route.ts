@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('supplier_quotes')
-    .select('*, suppliers(name), colours(colour_name, hex_value)')
+    .select('*, suppliers(name), colours!colour_id(colour_name, hex_value)')
     .order('created_at', { ascending: false })
 
   if (styleId) {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('supplier_quotes')
     .insert(body)
-    .select('*, suppliers(name), colours(colour_name, hex_value)')
+    .select('*, suppliers(name), colours!colour_id(colour_name, hex_value)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest) {
     .from('supplier_quotes')
     .update(updates)
     .eq('id', id)
-    .select('*, suppliers(name), colours(colour_name, hex_value)')
+    .select('*, suppliers(name), colours!colour_id(colour_name, hex_value)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
