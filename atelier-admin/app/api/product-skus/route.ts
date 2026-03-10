@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('product_skus')
-    .select('*, styles(name, categories:category_id(name)), colours(colour_name, hex_value)')
+    .select('*, styles(name, categories:category_id(name)), colours!colour_id(colour_name, hex_value, colour_code, g1_code)')
     .order('created_at', { ascending: false })
 
   if (styleId) {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('product_skus')
     .insert(body)
-    .select('*, styles(name, categories:category_id(name)), colours(colour_name, hex_value)')
+    .select('*, styles(name, categories:category_id(name)), colours!colour_id(colour_name, hex_value, colour_code, g1_code)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest) {
     .from('product_skus')
     .update(updates)
     .eq('id', id)
-    .select('*, styles(name, categories:category_id(name)), colours(colour_name, hex_value)')
+    .select('*, styles(name, categories:category_id(name)), colours!colour_id(colour_name, hex_value, colour_code, g1_code)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

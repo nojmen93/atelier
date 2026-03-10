@@ -14,20 +14,17 @@ import SupplierQuoteTab from '@/components/SupplierQuoteTab'
 import {
   GENDER_LABELS,
   COLLECTION_TYPES,
-  COLLECTION_TYPE_LABELS,
   PRODUCT_CAPABILITIES,
   STATUSES,
   FABRIC_CONSTRUCTIONS,
   PACKAGING_METHODS,
   PRODUCTION_COUNTRIES,
-  PRODUCTION_COUNTRY_LABELS,
 } from '@/lib/product-hierarchy'
 
 const TABS = [
-  { key: 'product', label: 'Product' },
+  { key: 'product', label: 'Properties' },
   { key: 'colourways', label: 'Colourways' },
   { key: 'sku', label: 'SKU' },
-  { key: 'specification', label: 'Specification' },
   { key: 'supplier_quote', label: 'Supplier Quote' },
 ]
 
@@ -265,37 +262,28 @@ export default function StyleEditForm({
         ))}
       </div>
 
-      {/* Product Tab */}
+      {/* Properties Tab */}
       {activeTab === 'product' && (
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="space-y-4">
 
-          {/* ── Section: Product (Base) ── */}
-          <div className="border border-neutral-800 rounded-lg p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Product (Base)</h3>
-            <div className="grid grid-cols-2 gap-4">
+          {/* ── Identity & Hierarchy ── */}
+          <div className="border border-neutral-800 rounded-lg p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Identity</h3>
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-2">Product Name *</label>
+                <label className="block text-xs text-neutral-500 mb-1">Product Name *</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} required />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Product Code</label>
+                <label className="block text-xs text-neutral-500 mb-1">Product Code</label>
                 <input type="text" value={baseStyleCode} onChange={(e) => setBaseStyleCode(e.target.value)} className={inputClass} placeholder="e.g. SH-SOF-01" />
-                <p className="text-xs text-neutral-600 mt-1">Stable internal code</p>
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Display Name</label>
+                <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={inputClass} placeholder="Customer-facing name" />
               </div>
             </div>
-            <div>
-              <span className="block text-xs text-neutral-500 mb-1">Unique ID</span>
-              <span className="text-sm text-neutral-400 font-mono">{style.id}</span>
-            </div>
-          </div>
-
-          {/* ── Section: Hierarchy ── */}
-          <div className="border border-neutral-800 rounded-lg p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Hierarchy</h3>
-              <span className="text-xs text-neutral-600">(set at creation, read-only)</span>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-5 gap-3">
               <div>
                 <span className="block text-xs text-neutral-500 mb-1">Concept</span>
                 <span className="text-sm text-white">{conceptName}</span>
@@ -310,84 +298,107 @@ export default function StyleEditForm({
               </div>
               <div>
                 <label className="block text-xs text-neutral-500 mb-1">Sub Category</label>
-                <input type="text" value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className={inputClass} placeholder="Optional finer grouping" />
+                <input type="text" value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className={inputClass} placeholder="Optional" />
               </div>
-            </div>
-          </div>
-
-          {/* ── Section: Commercial ── */}
-          <div className="border border-neutral-800 rounded-lg p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Commercial</h3>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Collection Type *</label>
+                <label className="block text-xs text-neutral-500 mb-1">Collection Type *</label>
                 <select value={collectionType} onChange={(e) => setCollectionType(e.target.value)} className={inputClass} required>
                   {COLLECTION_TYPES.map((ct) => (
                     <option key={ct.value} value={ct.value}>{ct.label}</option>
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Display Name</label>
-                <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={inputClass} placeholder="Customer-facing name on portal/website" />
-              </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex items-center gap-3 py-2">
+            <div className="flex items-center gap-6 pt-1">
+              <div className="flex items-center gap-2">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="sr-only peer" />
-                  <div className="w-9 h-5 bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:bg-green-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                  <div className="w-8 h-4 bg-neutral-700 rounded-full peer peer-checked:bg-green-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4" />
                 </label>
-                <span className="text-sm text-neutral-300">Active</span>
+                <span className="text-xs text-neutral-300">Active</span>
               </div>
-              <div className="flex items-center gap-3 py-2">
+              <div className="flex items-center gap-2">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={showOnWebsite} onChange={(e) => setShowOnWebsite(e.target.checked)} className="sr-only peer" />
-                  <div className="w-9 h-5 bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:bg-green-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                  <div className="w-8 h-4 bg-neutral-700 rounded-full peer peer-checked:bg-green-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4" />
                 </label>
-                <span className="text-sm text-neutral-300">Show on Website</span>
+                <span className="text-xs text-neutral-300">Show on Website</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-neutral-500">Capability</label>
+                <select value={productCapability} onChange={(e) => setProductCapability(e.target.value)} className="px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-white text-xs focus:border-neutral-600 focus:outline-none">
+                  {PRODUCT_CAPABILITIES.map((pc) => (
+                    <option key={pc.value} value={pc.value}>{pc.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-neutral-500">RRP</label>
+                <input type="number" step="0.01" value={rrpEur} onChange={(e) => setRrpEur(e.target.value)} className="w-24 px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-white text-xs focus:border-neutral-600 focus:outline-none" placeholder="EUR" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Specification (Materials & Construction) ── */}
+          <div className="border border-neutral-800 rounded-lg p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Specification</h3>
+            <div className="grid grid-cols-4 gap-3">
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Main Materials</label>
+                <input type="text" value={material} onChange={(e) => setMaterial(e.target.value)} className={inputClass} placeholder="e.g. Organic Cotton" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">RRP (EUR)</label>
-                <input type="number" step="0.01" value={rrpEur} onChange={(e) => setRrpEur(e.target.value)} className={inputClass} placeholder="0.00" />
+                <label className="block text-xs text-neutral-500 mb-1">Composition</label>
+                <input type="text" value={composition} onChange={(e) => setComposition(e.target.value)} className={inputClass} placeholder="e.g. 100% cotton" />
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Fabric Construction</label>
+                <select value={fabricConstruction} onChange={(e) => setFabricConstruction(e.target.value)} className={inputClass}>
+                  <option value="">Select...</option>
+                  {FABRIC_CONSTRUCTIONS.map((fc) => (
+                    <option key={fc.value} value={fc.value}>{fc.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Packaging Method</label>
+                <select value={packagingMethod} onChange={(e) => setPackagingMethod(e.target.value)} className={inputClass}>
+                  <option value="">Select...</option>
+                  {PACKAGING_METHODS.map((pm) => (
+                    <option key={pm.value} value={pm.value}>{pm.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Product Capability</label>
-              <select value={productCapability} onChange={(e) => setProductCapability(e.target.value)} className={inputClass} required>
-                {PRODUCT_CAPABILITIES.map((pc) => (
-                  <option key={pc.value} value={pc.value}>{pc.label}</option>
-                ))}
-              </select>
-              <p className="text-xs text-neutral-500 mt-1">Controls frontend checkout and customization behavior</p>
+          </div>
+
+          {/* ── Content ── */}
+          <div className="border border-neutral-800 rounded-lg p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Content</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Description</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className={inputClass} placeholder="Short description" />
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Extended Description</label>
+                <textarea value={extendedDescription} onChange={(e) => setExtendedDescription(e.target.value)} rows={2} className={inputClass} placeholder="For PDFs/quotes" />
+              </div>
             </div>
           </div>
 
-          {/* ── Section: Content ── */}
-          <div className="border border-neutral-800 rounded-lg p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Content</h3>
-            <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={inputClass} placeholder="Short description of garment" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Extended Description</label>
-              <textarea value={extendedDescription} onChange={(e) => setExtendedDescription(e.target.value)} rows={4} className={inputClass} placeholder="Longer description for PDFs/quotes" />
-            </div>
-          </div>
-
-          {/* ── Section: Assets ── */}
-          <div className="border border-neutral-800 rounded-lg p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Assets</h3>
+          {/* ── Assets ── */}
+          <div className="border border-neutral-800 rounded-lg p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Assets</h3>
             <ImageUpload images={images} onImagesChange={setImages} />
           </div>
 
-          {/* ── Section: Production ── */}
-          <div className="border border-neutral-800 rounded-lg p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Production</h3>
-            <div className="grid grid-cols-2 gap-4">
+          {/* ── Production & Costs ── */}
+          <div className="border border-neutral-800 rounded-lg p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Production</h3>
+            <div className="grid grid-cols-4 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-2">Production Supplier</label>
+                <label className="block text-xs text-neutral-500 mb-1">Supplier</label>
                 <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className={inputClass}>
                   <option value="">None</option>
                   {suppliers.map((s) => (
@@ -396,79 +407,74 @@ export default function StyleEditForm({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Production Factory</label>
+                <label className="block text-xs text-neutral-500 mb-1">Factory</label>
                 <input type="text" value={productionFactory} onChange={(e) => setProductionFactory(e.target.value)} className={inputClass} placeholder="Factory name" />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Production Country</label>
+                <label className="block text-xs text-neutral-500 mb-1">Country</label>
                 <select value={productionCountry} onChange={(e) => setProductionCountry(e.target.value)} className={inputClass}>
-                  <option value="">Select country...</option>
+                  <option value="">Select...</option>
                   {PRODUCTION_COUNTRIES.map((c) => (
                     <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Production City</label>
+                <label className="block text-xs text-neutral-500 mb-1">City</label>
                 <input type="text" value={productionCity} onChange={(e) => setProductionCity(e.target.value)} className={inputClass} placeholder="City" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-6 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-2">MID Number</label>
-                <input type="text" value={midNumber} onChange={(e) => setMidNumber(e.target.value)} className={inputClass} placeholder="Manufacturer ID (US)" />
+                <label className="block text-xs text-neutral-500 mb-1">Base Cost</label>
+                <input type="number" step="0.01" value={baseCost} onChange={(e) => setBaseCost(e.target.value)} className={inputClass} placeholder="EUR" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Delivery Drop</label>
-                <input type="text" value={deliveryDrop} onChange={(e) => setDeliveryDrop(e.target.value)} className={inputClass} placeholder="Internal delivery/drop" />
+                <label className="block text-xs text-neutral-500 mb-1">Landed Cost</label>
+                <input type="number" step="0.01" value={landedCostEur} onChange={(e) => setLandedCostEur(e.target.value)} className={inputClass} placeholder="EUR" />
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Lead Time</label>
+                <input type="number" value={leadTimeDays} onChange={(e) => setLeadTimeDays(e.target.value)} className={inputClass} placeholder="days" />
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">MID Number</label>
+                <input type="text" value={midNumber} onChange={(e) => setMidNumber(e.target.value)} className={inputClass} placeholder="Mfr ID" />
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Delivery Drop</label>
+                <input type="text" value={deliveryDrop} onChange={(e) => setDeliveryDrop(e.target.value)} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Customization</label>
+                <input type="text" value={customizationMode} onChange={(e) => setCustomizationMode(e.target.value)} className={inputClass} placeholder="e.g. embroidery" />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-2">EU Harmonized Code</label>
-                <input type="text" value={euHsCode} onChange={(e) => setEuHsCode(e.target.value)} className={inputClass} placeholder="HS code for EU" />
+                <label className="block text-xs text-neutral-500 mb-1">EU HS Code</label>
+                <input type="text" value={euHsCode} onChange={(e) => setEuHsCode(e.target.value)} className={inputClass} placeholder="HS code EU" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">US Harmonized Code</label>
-                <input type="text" value={usHsCode} onChange={(e) => setUsHsCode(e.target.value)} className={inputClass} placeholder="HS code for US" />
+                <label className="block text-xs text-neutral-500 mb-1">US HS Code</label>
+                <input type="text" value={usHsCode} onChange={(e) => setUsHsCode(e.target.value)} className={inputClass} placeholder="HS code US" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">HTS Lookup Ref</label>
+                <label className="block text-xs text-neutral-500 mb-1">HTS Lookup Ref</label>
                 <input type="text" value={htsLookupRef} onChange={(e) => setHtsLookupRef(e.target.value)} className={inputClass} placeholder="HTS reference" />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Base Cost (&euro;)</label>
-                <input type="number" step="0.01" value={baseCost} onChange={(e) => setBaseCost(e.target.value)} className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Landed Cost (EUR)</label>
-                <input type="number" step="0.01" value={landedCostEur} onChange={(e) => setLandedCostEur(e.target.value)} className={inputClass} placeholder="Baseline landed cost" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Lead Time (days)</label>
-                <input type="number" value={leadTimeDays} onChange={(e) => setLeadTimeDays(e.target.value)} className={inputClass} />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Customization Mode</label>
-            <input type="text" value={customizationMode} onChange={(e) => setCustomizationMode(e.target.value)} className={inputClass} placeholder="e.g. logo placement, embroidery" />
           </div>
 
           {/* Variants Section */}
-          <div className="pt-6 border-t border-neutral-800">
-            <h3 className="text-sm font-medium text-neutral-300 mb-4">Variants</h3>
+          <div className="pt-4 border-t border-neutral-800">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Variants</h3>
             <VariantTable styleId={style.id} styleName={name} />
           </div>
 
           {/* Customization Section */}
-          <div className="pt-6 border-t border-neutral-800">
-            <h3 className="text-sm font-medium text-neutral-300 mb-4">Customization</h3>
+          <div className="pt-4 border-t border-neutral-800">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Customization</h3>
             <CustomizationTab
               styleId={style.id}
               images={images}
@@ -480,7 +486,7 @@ export default function StyleEditForm({
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-3 bg-white text-black font-medium rounded hover:bg-neutral-200 transition"
+              className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded hover:bg-neutral-200 transition"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -489,13 +495,13 @@ export default function StyleEditForm({
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="px-6 py-3 text-red-400 border border-red-900 rounded hover:bg-red-900/30 transition"
+                className="px-4 py-2 text-red-400 text-sm border border-red-900 rounded hover:bg-red-900/30 transition"
               >
                 Delete
               </button>
             ) : (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-red-400">Delete this product permanently?</span>
+                <span className="text-sm text-red-400">Delete permanently?</span>
                 <button
                   type="button"
                   onClick={handleDelete}
@@ -525,149 +531,6 @@ export default function StyleEditForm({
       {/* SKU Tab */}
       {activeTab === 'sku' && (
         <SKUTab styleId={style.id} styleName={name} />
-      )}
-
-      {/* Specification Tab */}
-      {activeTab === 'specification' && (
-        <div className="space-y-6">
-          <h2 className="text-lg font-semibold">Product Specification</h2>
-          <p className="text-xs text-neutral-500">Materials, composition, and construction details for this product.</p>
-
-          {/* Editable specification fields */}
-          <div className="border border-neutral-800 rounded-lg p-5 space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Main Materials</label>
-              <input type="text" value={material} onChange={(e) => setMaterial(e.target.value)} className={inputClass} placeholder="e.g. Organic Cotton, Recycled Polyester" />
-              <p className="text-xs text-neutral-600 mt-1">Links to materials master data</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Composition</label>
-              <input type="text" value={composition} onChange={(e) => setComposition(e.target.value)} className={inputClass} placeholder="e.g. 100% cotton, 60% cotton / 40% polyester" />
-              <p className="text-xs text-neutral-600 mt-1">Fiber composition for labeling</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Knit / Woven / Neither</label>
-                <select value={fabricConstruction} onChange={(e) => setFabricConstruction(e.target.value)} className={inputClass}>
-                  <option value="">Select...</option>
-                  {FABRIC_CONSTRUCTIONS.map((fc) => (
-                    <option key={fc.value} value={fc.value}>{fc.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Packaging Method</label>
-                <select value={packagingMethod} onChange={(e) => setPackagingMethod(e.target.value)} className={inputClass}>
-                  <option value="">Select...</option>
-                  {PACKAGING_METHODS.map((pm) => (
-                    <option key={pm.value} value={pm.value}>{pm.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Read-only summary of all key product data */}
-          <h3 className="text-sm font-semibold text-neutral-400 pt-2">Full Product Summary</h3>
-          <div className="border border-neutral-800 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <tbody>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium w-48">Product Name</td>
-                  <td className="px-4 py-3 text-white">{name}</td>
-                </tr>
-                {baseStyleCode && (
-                  <tr className="border-b border-neutral-800">
-                    <td className="px-4 py-3 text-neutral-500 font-medium">Product Code</td>
-                    <td className="px-4 py-3 text-white font-mono">{baseStyleCode}</td>
-                  </tr>
-                )}
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Concept</td>
-                  <td className="px-4 py-3 text-white">{conceptName}</td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Gender</td>
-                  <td className="px-4 py-3 text-white">{genderLabel}</td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Category</td>
-                  <td className="px-4 py-3 text-white">{categoryName}{subCategory ? ` / ${subCategory}` : ''}</td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Collection Type</td>
-                  <td className="px-4 py-3 text-white">
-                    {COLLECTION_TYPES.find((ct) => ct.value === collectionType)?.label || collectionType}
-                  </td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Material</td>
-                  <td className="px-4 py-3 text-white">{material || '—'}</td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Composition</td>
-                  <td className="px-4 py-3 text-white">{composition || '—'}</td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Fabric Construction</td>
-                  <td className="px-4 py-3 text-white">
-                    {FABRIC_CONSTRUCTIONS.find((fc) => fc.value === fabricConstruction)?.label || fabricConstruction || '—'}
-                  </td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Packaging Method</td>
-                  <td className="px-4 py-3 text-white">
-                    {PACKAGING_METHODS.find((pm) => pm.value === packagingMethod)?.label || packagingMethod || '—'}
-                  </td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Production Supplier</td>
-                  <td className="px-4 py-3 text-white">{supplierName}</td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Production Country</td>
-                  <td className="px-4 py-3 text-white">{PRODUCTION_COUNTRY_LABELS[productionCountry] || productionCountry || '—'}</td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Base Cost</td>
-                  <td className="px-4 py-3 text-white font-mono">
-                    {baseCost ? `€${parseFloat(baseCost).toFixed(2)}` : '—'}
-                  </td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Landed Cost (EUR)</td>
-                  <td className="px-4 py-3 text-white font-mono">
-                    {landedCostEur ? `€${parseFloat(landedCostEur).toFixed(2)}` : '—'}
-                  </td>
-                </tr>
-                <tr className="border-b border-neutral-800">
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Lead Time</td>
-                  <td className="px-4 py-3 text-white">
-                    {leadTimeDays ? `${leadTimeDays} days` : '—'}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 text-neutral-500 font-medium">Status</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-1 rounded border ${statusColor}`}>
-                      {STATUSES.find((s) => s.value === status)?.label || status}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Save button for specification changes */}
-          <button
-            type="button"
-            onClick={(e) => handleSave(e as unknown as React.FormEvent)}
-            disabled={saving}
-            className="px-6 py-3 bg-white text-black font-medium rounded hover:bg-neutral-200 transition"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
       )}
 
       {/* Supplier Quote Tab */}

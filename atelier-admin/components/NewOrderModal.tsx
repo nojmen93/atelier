@@ -50,7 +50,7 @@ interface POLineData {
 }
 
 type ModalStep = 'customer_info' | 'select_styles' | 'fill_lines' | 'done'
-type StyleViewMode = 'dropdown' | 'grid' | 'gallery'
+type StyleViewMode = 'dropdown' | 'gallery'
 
 const COMMON_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']
 
@@ -202,7 +202,7 @@ function StyleSelector({
   onConfirm: () => void
   onCancel: () => void
 }) {
-  const [viewMode, setViewMode] = useState<StyleViewMode>('grid')
+  const [viewMode, setViewMode] = useState<StyleViewMode>('dropdown')
   const [search, setSearch] = useState('')
   const [conceptFilter, setConceptFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -241,7 +241,7 @@ function StyleSelector({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Select Products</h3>
         <div className="flex gap-1 bg-neutral-900 rounded p-0.5">
-          {(['dropdown', 'grid', 'gallery'] as StyleViewMode[]).map((mode) => (
+          {(['dropdown', 'gallery'] as StyleViewMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
@@ -251,7 +251,7 @@ function StyleSelector({
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              {mode === 'dropdown' ? 'List' : mode === 'grid' ? 'Grid' : 'Gallery'}
+              {mode === 'dropdown' ? 'List' : 'Gallery'}
             </button>
           ))}
         </div>
@@ -322,52 +322,6 @@ function StyleSelector({
               </label>
             ))
           )}
-        </div>
-      )}
-
-      {/* Grid view */}
-      {viewMode === 'grid' && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-80 overflow-y-auto">
-          {filtered.map((s) => (
-            <div
-              key={s.id}
-              onClick={() => onToggle(s.id)}
-              className={`relative border rounded-lg overflow-hidden cursor-pointer transition ${
-                selectedIds.has(s.id)
-                  ? 'border-white ring-1 ring-white/20'
-                  : 'border-neutral-800 hover:border-neutral-600'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={selectedIds.has(s.id)}
-                onChange={() => onToggle(s.id)}
-                className="absolute top-2 right-2 z-10 accent-white"
-              />
-              {s.images?.[0] ? (
-                <img src={s.images[0]} alt="" className="w-full aspect-[3/4] object-cover bg-neutral-800" />
-              ) : (
-                <div className="w-full aspect-[3/4] bg-neutral-900 flex items-center justify-center">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-neutral-700">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <path d="M21 15l-5-5L5 21" />
-                  </svg>
-                </div>
-              )}
-              <div className="p-3">
-                <div className="text-sm font-medium text-white truncate">{s.name}</div>
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {s.categories?.name && (
-                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded">{s.categories.name}</span>
-                  )}
-                  {s.suppliers?.name && (
-                    <span className="px-1.5 py-0.5 text-[10px] bg-neutral-800 text-neutral-400 rounded">{s.suppliers.name}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 
