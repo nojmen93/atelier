@@ -24,11 +24,13 @@ export async function POST(request: NextRequest) {
   const supabase = createAdminClient()
   const body = await request.json()
 
+  // Support bulk insert (array) or single insert (object)
+  const rows = Array.isArray(body) ? body : [body]
+
   const { data, error } = await supabase
     .from('product_skus')
-    .insert(body)
+    .insert(rows)
     .select('*, styles(name, categories:category_id(name)), colours!colour_id(colour_name, hex_value, colour_code, g1_code)')
-    .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json(data)

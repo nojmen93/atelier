@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
+import RowActions from './RowActions'
 
 interface Supplier {
   id: string
@@ -593,9 +594,11 @@ export default function SupplierQuoteTab({
                     <td className={`px-3 py-2.5 text-right font-mono text-xs font-medium ${belowTarget ? 'text-yellow-400' : 'text-neutral-300'}`}>
                       {qc.calculatedMargin > 0 ? `${qc.calculatedMargin.toFixed(1)}%` : '—'}
                     </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <button type="button" onClick={() => handleEdit(q)} className="text-neutral-500 hover:text-white text-xs mr-2">Edit</button>
-                      <button type="button" onClick={() => handleDelete(q.id)} className="text-neutral-500 hover:text-red-400 text-xs">Delete</button>
+                    <td className="px-3 py-2.5">
+                      <RowActions
+                        onEdit={() => handleEdit(q)}
+                        onDelete={() => handleDelete(q.id)}
+                      />
                     </td>
                   </tr>
                 )
