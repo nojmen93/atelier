@@ -7,7 +7,6 @@ export default async function SpecificationPage() {
   const { data: styles } = await supabase
     .from('styles')
     .select('id, name, material, description, base_cost, lead_time_days, customization_mode, status, gender, collection_type, categories(name, concepts(name)), variants(id, size, color, sku, stock)')
-    .neq('status', 'archived')
     .order('name')
 
   return (

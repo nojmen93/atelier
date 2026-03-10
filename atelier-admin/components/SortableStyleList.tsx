@@ -71,7 +71,6 @@ function SortableStyleCard({ style, isDragging }: { style: Style; isDragging?: b
   const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
     active: { bg: 'bg-green-900', text: 'text-green-100', label: 'Active' },
     development: { bg: 'bg-yellow-900', text: 'text-yellow-100', label: 'Development' },
-    archived: { bg: 'bg-neutral-800', text: 'text-neutral-400', label: 'Archived' },
   }
 
   const statusStyle = statusConfig[style.status] || statusConfig.development

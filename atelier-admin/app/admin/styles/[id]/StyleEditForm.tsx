@@ -210,14 +210,14 @@ export default function StyleEditForm({
 
     const { error } = await supabase
       .from('styles')
-      .update({ status: 'archived' })
+      .delete()
       .eq('id', style.id)
 
     if (error) {
       toast.error(error.message)
       setDeleting(false)
     } else {
-      toast.success('Product archived')
+      toast.success('Product deleted')
       router.push('/admin/styles')
       router.refresh()
     }
@@ -226,7 +226,6 @@ export default function StyleEditForm({
   const statusColor = {
     active: 'border-green-700 bg-green-900/50 text-green-100',
     development: 'border-yellow-700 bg-yellow-900/50 text-yellow-100',
-    archived: 'border-red-700 bg-red-900/50 text-red-100',
   }[status] || 'border-neutral-700 bg-neutral-800 text-neutral-300'
 
   const inputClass = 'w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded text-white focus:border-neutral-600 focus:outline-none'
@@ -492,18 +491,18 @@ export default function StyleEditForm({
                 onClick={() => setShowDeleteConfirm(true)}
                 className="px-6 py-3 text-red-400 border border-red-900 rounded hover:bg-red-900/30 transition"
               >
-                Archive
+                Delete
               </button>
             ) : (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-red-400">Archive this product?</span>
+                <span className="text-sm text-red-400">Delete this product permanently?</span>
                 <button
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting}
                   className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
                 >
-                  {deleting ? 'Archiving...' : 'Yes, Archive'}
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
                 </button>
                 <button
                   type="button"

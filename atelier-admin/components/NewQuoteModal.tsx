@@ -768,7 +768,7 @@ export default function NewQuoteModal({
       supabase
         .from('styles')
         .select('id, name, images, base_cost, material, gender, status, category_id, concept_id, categories(name), concepts(name)')
-        .neq('status', 'archived')
+        .eq('active', true)
         .order('name'),
       supabase
         .from('logos')

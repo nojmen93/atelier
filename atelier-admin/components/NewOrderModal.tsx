@@ -721,7 +721,7 @@ export default function NewOrderModal({
       supabase
         .from('styles')
         .select('id, name, images, base_cost, material, gender, status, category_id, concept_id, supplier_id, categories(name), concepts(name), suppliers(id, name)')
-        .neq('status', 'archived')
+        .eq('active', true)
         .order('name'),
       supabase
         .from('quote_requests')

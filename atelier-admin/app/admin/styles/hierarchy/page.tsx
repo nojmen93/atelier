@@ -12,7 +12,7 @@ export default async function HierarchyPage() {
     supabase
       .from('styles')
       .select('id, concept_id, gender, category_id')
-      .neq('status', 'archived'),
+      .eq('active', true),
   ])
 
   return (

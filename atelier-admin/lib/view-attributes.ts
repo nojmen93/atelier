@@ -45,7 +45,6 @@ export const STYLE_ATTRIBUTES: AttributeDefinition[] = [
     enumValues: [
       { value: 'active', label: 'Active' },
       { value: 'development', label: 'Development' },
-      { value: 'archived', label: 'Archived' },
     ],
   },
   { key: 'base_cost', label: 'Base Cost (€)', type: 'number', sortable: true },
@@ -120,7 +119,7 @@ export const COLLECTION_LABELS: Record<string, string> = {
 }
 
 export const STATUS_LABELS: Record<string, string> = {
-  active: 'Active', development: 'Development', archived: 'Archived',
+  active: 'Active', development: 'Development',
 }
 
 export const CAPABILITY_LABELS: Record<string, string> = {
