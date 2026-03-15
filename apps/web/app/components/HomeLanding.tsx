@@ -59,7 +59,7 @@ export default function HomeLanding({ onOpenQuote }: Props) {
   const [mounted,        setMounted]        = useState(false)
 
   const cursorRef  = useRef<HTMLDivElement>(null)
-  const btnRef     = useRef<HTMLButtonElement>(null)
+  const btnRef     = useRef<HTMLAnchorElement>(null)
   const swapRef    = useRef<ReturnType<typeof setTimeout>>()
   const cursorRaf  = useRef<number>()
   const curTarget  = useRef({ x: -100, y: -100 })
@@ -177,7 +177,7 @@ export default function HomeLanding({ onOpenQuote }: Props) {
             Premium apparel for brands<br />that refuse to blend in.
           </p>
 
-          <button ref={btnRef} className="bw-cta bw-fade bw-d800" onClick={() => onOpenQuote()} aria-label="Enter Collection">
+          <a href="/collection" ref={btnRef} className="bw-cta bw-fade bw-d800" aria-label="Enter Collection">
             <span className="bw-cta-fill" aria-hidden="true" />
             <span className="bw-cta-inner">
               <span>Enter Collection</span>
@@ -186,7 +186,7 @@ export default function HomeLanding({ onOpenQuote }: Props) {
                 <polyline points="42,1 52,5 42,9" stroke="currentColor" strokeWidth="1" fill="none"/>
               </svg>
             </span>
-          </button>
+          </a>
 
           <div className="bw-stats bw-fade bw-d1000">
             {[['500+','Brands'],['12+','Years'],['100%','Quality']].map(([n,l],i) => (
