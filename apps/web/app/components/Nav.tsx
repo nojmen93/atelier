@@ -1,56 +1,48 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 
-export default function Nav() {
-  const [scrolled, setScrolled] = useState(false)
+interface Props {
+  onOpenQuote?: () => void
+}
+
+export default function Nav({ onOpenQuote }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 100)
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  useEffect(() => {
-    document.body.style.overflow = mobileOpen ? 'hidden' : ''
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [mobileOpen])
-
-  const navLinks = [
-    { href: '#products', label: 'Products' },
-    { href: '/journal', label: 'Journal' },
-    { href: '#quote', label: 'Contact' },
-  ]
+  const closeMobile = () => setMobileOpen(false)
 
   return (
     <>
-      <nav className={`nav ${scrolled ? 'scrolled' : ''}`}>
+      <nav className="nav">
         <div className="container">
           <div className="nav-inner">
             <Link href="/" className="logo">
               ATELIER
             </Link>
+
             <ul className="nav-links">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href}>{link.label}</Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/journal">Journal</Link>
+              </li>
+              <li>
+                <a href="mailto:studio@atelier.com">Contact</a>
+              </li>
             </ul>
-            <a href="#quote" className="nav-cta">
+
+            <button
+              className="nav-cta"
+              onClick={onOpenQuote}
+              type="button"
+            >
               Get a Quote
-            </a>
+            </button>
+
             <button
               className="mobile-toggle"
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
+              type="button"
             >
               <span />
               <span />
@@ -61,24 +53,27 @@ export default function Nav() {
       </nav>
 
       {/* Mobile Menu */}
-      <div className={`mobile-menu ${mobileOpen ? 'active' : ''}`}>
+      <div className={`mobile-menu${mobileOpen ? ' active' : ''}`}>
         <button
           className="mobile-close"
-          onClick={() => setMobileOpen(false)}
+          onClick={closeMobile}
           aria-label="Close menu"
+          type="button"
         />
         <ul className="mobile-menu-links">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href} onClick={() => setMobileOpen(false)}>
-                {link.label}
-              </Link>
-            </li>
-          ))}
           <li>
-            <a href="#quote" onClick={() => setMobileOpen(false)}>
+            <Link href="/journal" onClick={closeMobile}>Journal</Link>
+          </li>
+          <li>
+            <a href="mailto:studio@atelier.com" onClick={closeMobile}>Contact</a>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => { closeMobile(); onOpenQuote?.() }}
+            >
               Get a Quote
-            </a>
+            </button>
           </li>
         </ul>
       </div>
