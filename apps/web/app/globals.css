@@ -3254,6 +3254,13 @@ a {
   letter-spacing: 0.05em;
 }
 
+.qmodal-field-error {
+  display: block;
+  font-size: 0.75rem;
+  color: #cc0000;
+  margin-top: 0.25rem;
+}
+
 .qmodal-error {
   font-size: 0.8rem;
   color: #cc0000;
