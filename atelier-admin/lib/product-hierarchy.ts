@@ -43,7 +43,6 @@ export const PRODUCT_CAPABILITIES = [
 export const STATUSES = [
   { value: 'development', label: 'Development' },
   { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
 ] as const
 
 // Categories per concept

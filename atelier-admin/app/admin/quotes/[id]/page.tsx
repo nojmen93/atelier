@@ -22,7 +22,7 @@ export default async function QuoteDetailPage({
     supabase
       .from('styles')
       .select('id, name')
-      .neq('status', 'archived')
+      .eq('active', true)
       .order('name'),
     supabase
       .from('concepts')

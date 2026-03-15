@@ -27,6 +27,7 @@ interface Style {
   base_cost: number | null
   lead_time_days: number | null
   display_order: number
+  active: boolean
   created_at: string
   updated_at: string
   categories: { name: string; concepts: { name: string } } | null
@@ -102,7 +103,6 @@ function rawValue(key: string, style: Style): string {
 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
   active: { bg: 'bg-green-900', text: 'text-green-100', label: 'Active' },
   development: { bg: 'bg-yellow-900', text: 'text-yellow-100', label: 'Development' },
-  archived: { bg: 'bg-neutral-800', text: 'text-neutral-400', label: 'Archived' },
 }
 
 const DEFAULT_GRID_COLUMNS = ['name', 'material', 'concept_name', 'gender', 'category_name', 'collection_type', 'status', 'variant_count', 'base_cost']
@@ -350,6 +350,7 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
   const { conceptId, categoryId, genderId, conceptName, genderName, categoryName, clearSelection, clearGender, clearCategory } = useHierarchy()
 
   const [viewMode, setViewMode] = useState<'grid' | 'gallery'>('grid')
+  const [showInactive, setShowInactive] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showColumns, setShowColumns] = useState(false)
   const [filters, setFilters] = useState<ViewFilter[]>([])
@@ -376,6 +377,7 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
 
   // Hierarchy filtering
   const hierarchyFiltered = initialStyles.filter((s) => {
+    if (!showInactive && s.active === false) return false
     if (conceptId && getConceptName(s) !== conceptName) return false
     if (genderId && s.gender !== genderId) return false
     if (categoryId && getCategoryName(s) !== categoryName) return false
@@ -516,6 +518,18 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
 
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-2 mb-6 py-2 border-y border-neutral-800 print:hidden">
+        {/* Active / Inactive toggle */}
+        <button
+          onClick={() => setShowInactive(!showInactive)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition ${
+            showInactive ? 'bg-neutral-800 text-white' : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+          }`}
+        >
+          {showInactive ? 'All Products' : 'Active Only'}
+        </button>
+
+        <div className="w-px h-5 bg-neutral-800" />
+
         {/* Filter */}
         <button
           onClick={() => setShowFilters(!showFilters)}
@@ -725,7 +739,7 @@ export default function ProductPage({ initialStyles }: { initialStyles: Style[] 
               {filtered.map((style) => {
                 const s = statusConfig[style.status] || statusConfig.development
                 return (
-                  <tr key={style.id} className="border-b border-neutral-800 last:border-b-0 hover:bg-neutral-900/50 transition print:border-gray-200 print:hover:bg-transparent">
+                  <tr key={style.id} className={`border-b border-neutral-800 last:border-b-0 hover:bg-neutral-900/50 transition print:border-gray-200 print:hover:bg-transparent ${style.active === false ? 'opacity-50' : ''}`}>
                     {gridColumns.map((key) => {
                       const val = formatValue(key, style)
                       if (key === 'name') {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -66,6 +66,48 @@ function getNextGS1Code(familyCode: string, existingColours: Colour[]): string {
     : family.gs1RangeStart + 1
 
   return String(next).padStart(3, '0')
+}
+
+function ColourCardMenu({ onDelete }: { onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative mt-2 opacity-0 group-hover:opacity-100 transition">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-6 h-6 flex items-center justify-center text-neutral-600 hover:text-neutral-300 rounded hover:bg-neutral-800 transition"
+        aria-label="More actions"
+      >
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+          <circle cx="3" cy="8" r="1.5" />
+          <circle cx="8" cy="8" r="1.5" />
+          <circle cx="13" cy="8" r="1.5" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 min-w-[100px] bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl py-1">
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onDelete() }}
+            className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-neutral-800 transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function ColourLibrary({ initialColours }: { initialColours: Colour[] }) {
@@ -322,13 +364,7 @@ export default function ColourLibrary({ initialColours }: { initialColours: Colo
                             </span>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(colour.id, colour.colour_name)}
-                          className="text-xs text-neutral-600 hover:text-red-400 mt-2 opacity-0 group-hover:opacity-100 transition"
-                        >
-                          Delete
-                        </button>
+                        <ColourCardMenu onDelete={() => handleDelete(colour.id, colour.colour_name)} />
                       </div>
                     </div>
                   ))}
