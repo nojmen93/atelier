@@ -1,13 +1,8 @@
-import {
-  Nav,
-  Hero,
-  Philosophy,
-  Services,
-  Portfolio,
-  Process,
-  CTA,
-  Footer,
-} from './components'
+import Nav from './components/Nav'
+import Hero from './components/Hero'
+import Products from './components/Products'
+import QuoteForm from './components/QuoteForm'
+import Footer from './components/Footer'
 
 export default function Home() {
   return (
@@ -15,11 +10,8 @@ export default function Home() {
       <Nav />
       <main>
         <Hero />
-        <Philosophy />
-        <Services />
-        <Portfolio />
-        <Process />
-        <CTA />
+        <Products />
+        <QuoteForm />
       </main>
       <Footer />
     </>

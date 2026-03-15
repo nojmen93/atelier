@@ -7,7 +7,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "dev:web": "pnpm --filter web dev",
-    "dev:studio": "pnpm --filter studio dev",
+    "dev:admin": "pnpm --filter atelier-admin dev",
     "lint": "turbo lint"
   },
   "devDependencies": {

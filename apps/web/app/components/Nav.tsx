@@ -24,11 +24,9 @@ export default function Nav() {
   }, [mobileOpen])
 
   const navLinks = [
-    { href: '#philosophy', label: 'About' },
-    { href: '#services', label: 'Services' },
-    { href: '#portfolio', label: 'Work' },
+    { href: '#products', label: 'Products' },
     { href: '/journal', label: 'Journal' },
-    { href: '#process', label: 'Process' },
+    { href: '#quote', label: 'Contact' },
   ]
 
   return (
@@ -46,9 +44,9 @@ export default function Nav() {
                 </li>
               ))}
             </ul>
-            <Link href="/design" className="nav-cta">
-              Design Yours
-            </Link>
+            <a href="#quote" className="nav-cta">
+              Get a Quote
+            </a>
             <button
               className="mobile-toggle"
               onClick={() => setMobileOpen(true)}
@@ -78,9 +76,9 @@ export default function Nav() {
             </li>
           ))}
           <li>
-            <Link href="#contact" onClick={() => setMobileOpen(false)}>
-              Contact
-            </Link>
+            <a href="#quote" onClick={() => setMobileOpen(false)}>
+              Get a Quote
+            </a>
           </li>
         </ul>
       </div>

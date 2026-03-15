@@ -1,67 +1,67 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
-import { getQuoteBySecretId, urlFor, type Quote } from '@/lib/sanity'
+import { createClient } from '@supabase/supabase-js'
+import { getQuoteBySecretId, type ClientQuote } from '@/lib/supabase'
 import QuoteActions from './QuoteActions'
 import QuoteGallery from './QuoteGallery'
 
-// Demo quote for when Sanity isn't connected
-const demoQuote: Quote = {
-  _id: 'demo',
-  clientName: 'Acme Corporation',
-  clientEmail: 'hello@acme.com',
-  secretId: 'demo',
+// Demo quote for local development / testing without a real Supabase record
+const demoQuote: ClientQuote = {
+  id: 'demo',
+  secret_id: 'demo',
+  client_name: 'Acme Corporation',
+  client_email: 'hello@acme.com',
   status: 'sent',
-  introMessage: 'Thank you for your interest in working with us. We\'ve put together a custom proposal for your branded apparel based on our conversation.',
-  products: [
+  intro_message: "Thank you for your interest in working with us. We've put together a custom proposal for your branded apparel based on our conversation.",
+  items: [
     {
-      _key: '1',
+      id: '1',
+      quote_id: 'demo',
       name: 'Premium Embroidered Cap',
       description: '6-panel structured cap with premium embroidery on front panel. Adjustable strap with metal buckle.',
-      mockupImages: ['https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80'] as unknown as Quote['products'][0]['mockupImages'],
-      decorationType: 'embroidery',
+      mockup_image_urls: ['https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80'],
+      decoration_type: 'embroidery',
       colors: ['Black', 'Navy', 'Stone'],
       sizes: 'One Size',
       quantity: 100,
-      unitPrice: 18.50,
+      unit_price: 18.50,
+      sort_order: 0,
     },
     {
-      _key: '2',
+      id: '2',
+      quote_id: 'demo',
       name: 'Heavyweight Crew Sweatshirt',
       description: '400gsm organic cotton french terry. Relaxed fit with ribbed cuffs and hem. Embroidered chest logo.',
-      mockupImages: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80'] as unknown as Quote['products'][0]['mockupImages'],
-      decorationType: 'embroidery',
+      mockup_image_urls: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80'],
+      decoration_type: 'embroidery',
       colors: ['Black', 'Off-White'],
       sizes: 'XS - 3XL',
       quantity: 75,
-      unitPrice: 42.00,
+      unit_price: 42.00,
+      sort_order: 1,
     },
     {
-      _key: '3',
+      id: '3',
+      quote_id: 'demo',
       name: 'Classic Logo Tee',
       description: '220gsm ringspun cotton. Regular fit. Screen printed front and back.',
-      mockupImages: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80'] as unknown as Quote['products'][0]['mockupImages'],
-      decorationType: 'screenprint',
+      mockup_image_urls: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80'],
+      decoration_type: 'screenprint',
       colors: ['Black', 'White', 'Forest Green'],
       sizes: 'XS - 3XL',
       quantity: 200,
-      unitPrice: 14.00,
+      unit_price: 14.00,
+      sort_order: 2,
     },
   ],
-  deliveryTimeline: '2-3 weeks after approval',
-  validUntil: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  delivery_timeline: '2-3 weeks after approval',
+  valid_until: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   terms: `• 50% deposit required to begin production
 • Balance due before shipping
 • Delivery timeline begins after design approval
 • All sales are final for custom branded products
 • Prices exclude VAT (25%)`,
-  createdAt: new Date().toISOString(),
-}
-
-function getImageUrl(image: unknown): string {
-  if (typeof image === 'string') {
-    return image
-  }
-  return urlFor(image as Parameters<typeof urlFor>[0]).width(800).quality(85).url()
+  created_at: new Date().toISOString(),
 }
 
 function formatDate(dateString: string): string {
@@ -88,17 +88,25 @@ interface PageProps {
 
 export default async function QuotePage({ params }: PageProps) {
   const { id } = await params
-  
-  let quote: Quote | null = null
 
-  // Use demo quote for demo ID
+  let quote: ClientQuote | null = null
+
   if (id === 'demo') {
     quote = demoQuote
   } else {
-    try {
-      quote = await getQuoteBySecretId(id)
-    } catch {
-      // Sanity not configured
+    quote = await getQuoteBySecretId(id)
+
+    // Mark as viewed if it was in 'sent' state
+    if (quote && quote.status === 'sent') {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      await supabase
+        .from('client_quotes')
+        .update({ status: 'viewed', viewed_at: new Date().toISOString() })
+        .eq('id', quote.id)
+      quote = { ...quote, status: 'viewed' }
     }
   }
 
@@ -106,11 +114,9 @@ export default async function QuotePage({ params }: PageProps) {
     notFound()
   }
 
-  // Check if expired
-  const isExpired = quote.validUntil && new Date(quote.validUntil) < new Date()
-  
-  // Calculate totals
-  const subtotal = quote.products.reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0)
+  const isExpired = quote.valid_until && new Date(quote.valid_until) < new Date()
+
+  const subtotal = quote.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0)
   const vat = subtotal * 0.25
   const total = subtotal + vat
 
@@ -122,20 +128,20 @@ export default async function QuotePage({ params }: PageProps) {
           <div className="quote-brand">ATELIER</div>
           <div className="quote-meta">
             <span>Proposal for</span>
-            <strong>{quote.clientName}</strong>
+            <strong>{quote.client_name}</strong>
           </div>
         </div>
       </header>
 
       <main className="quote-main">
         <div className="quote-container">
-          {/* Status Banner */}
+          {/* Status Banners */}
           {isExpired && (
             <div className="quote-banner quote-banner--expired">
-              This quote expired on {formatDate(quote.validUntil!)}. Please contact us for an updated proposal.
+              This quote expired on {formatDate(quote.valid_until!)}. Please contact us for an updated proposal.
             </div>
           )}
-          
+
           {quote.status === 'approved' && (
             <div className="quote-banner quote-banner--approved">
               This quote has been approved. We&apos;ll be in touch shortly to begin production.
@@ -144,11 +150,11 @@ export default async function QuotePage({ params }: PageProps) {
 
           {/* Intro */}
           <section className="quote-intro">
-            {quote.clientLogo && (
+            {quote.client_logo_url && (
               <div className="quote-client-logo">
                 <Image
-                  src={getImageUrl(quote.clientLogo)}
-                  alt={quote.clientName}
+                  src={quote.client_logo_url}
+                  alt={quote.client_name}
                   width={120}
                   height={60}
                   style={{ objectFit: 'contain' }}
@@ -156,24 +162,24 @@ export default async function QuotePage({ params }: PageProps) {
               </div>
             )}
             <h1 className="quote-title">Your Custom Apparel Proposal</h1>
-            {quote.introMessage && (
-              <p className="quote-intro-text">{quote.introMessage}</p>
+            {quote.intro_message && (
+              <p className="quote-intro-text">{quote.intro_message}</p>
             )}
             <div className="quote-details">
               <div className="quote-detail">
                 <span className="quote-detail-label">Quote Date</span>
-                <span className="quote-detail-value">{formatDate(quote.createdAt)}</span>
+                <span className="quote-detail-value">{formatDate(quote.created_at)}</span>
               </div>
-              {quote.validUntil && (
+              {quote.valid_until && (
                 <div className="quote-detail">
                   <span className="quote-detail-label">Valid Until</span>
-                  <span className="quote-detail-value">{formatDate(quote.validUntil)}</span>
+                  <span className="quote-detail-value">{formatDate(quote.valid_until)}</span>
                 </div>
               )}
-              {quote.deliveryTimeline && (
+              {quote.delivery_timeline && (
                 <div className="quote-detail">
                   <span className="quote-detail-label">Delivery</span>
-                  <span className="quote-detail-value">{quote.deliveryTimeline}</span>
+                  <span className="quote-detail-value">{quote.delivery_timeline}</span>
                 </div>
               )}
             </div>
@@ -182,59 +188,59 @@ export default async function QuotePage({ params }: PageProps) {
           {/* Products */}
           <section className="quote-products">
             <h2 className="quote-section-title">Proposed Items</h2>
-            
+
             <div className="quote-products-list">
-              {quote.products.map((product, index) => (
-                <div key={product._key} className="quote-product">
+              {quote.items.map((item, index) => (
+                <div key={item.id} className="quote-product">
                   <div className="quote-product-number">{String(index + 1).padStart(2, '0')}</div>
-                  
+
                   <div className="quote-product-gallery">
-                    <QuoteGallery 
-                      images={product.mockupImages.map(img => getImageUrl(img))}
-                      productName={product.name}
+                    <QuoteGallery
+                      images={item.mockup_image_urls}
+                      productName={item.name}
                     />
                   </div>
-                  
+
                   <div className="quote-product-info">
-                    <h3 className="quote-product-name">{product.name}</h3>
-                    {product.description && (
-                      <p className="quote-product-desc">{product.description}</p>
+                    <h3 className="quote-product-name">{item.name}</h3>
+                    {item.description && (
+                      <p className="quote-product-desc">{item.description}</p>
                     )}
-                    
+
                     <div className="quote-product-specs">
-                      {product.decorationType && (
+                      {item.decoration_type && (
                         <div className="quote-product-spec">
                           <span className="spec-label">Method</span>
-                          <span className="spec-value">{getDecorationLabel(product.decorationType)}</span>
+                          <span className="spec-value">{getDecorationLabel(item.decoration_type)}</span>
                         </div>
                       )}
-                      {product.colors && product.colors.length > 0 && (
+                      {item.colors && item.colors.length > 0 && (
                         <div className="quote-product-spec">
                           <span className="spec-label">Colors</span>
-                          <span className="spec-value">{product.colors.join(', ')}</span>
+                          <span className="spec-value">{item.colors.join(', ')}</span>
                         </div>
                       )}
-                      {product.sizes && (
+                      {item.sizes && (
                         <div className="quote-product-spec">
                           <span className="spec-label">Sizes</span>
-                          <span className="spec-value">{product.sizes}</span>
+                          <span className="spec-value">{item.sizes}</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="quote-product-pricing">
                     <div className="quote-price-row">
                       <span>Unit Price</span>
-                      <span>€{product.unitPrice.toFixed(2)}</span>
+                      <span>€{item.unit_price.toFixed(2)}</span>
                     </div>
                     <div className="quote-price-row">
                       <span>Quantity</span>
-                      <span>{product.quantity}</span>
+                      <span>{item.quantity}</span>
                     </div>
                     <div className="quote-price-row quote-price-total">
                       <span>Subtotal</span>
-                      <span>€{(product.quantity * product.unitPrice).toFixed(2)}</span>
+                      <span>€{(item.quantity * item.unit_price).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -245,11 +251,11 @@ export default async function QuotePage({ params }: PageProps) {
           {/* Summary */}
           <section className="quote-summary">
             <h2 className="quote-section-title">Order Summary</h2>
-            
+
             <div className="quote-summary-grid">
               <div className="quote-summary-breakdown">
                 <div className="quote-summary-row">
-                  <span>Subtotal ({quote.products.length} items)</span>
+                  <span>Subtotal ({quote.items.length} items)</span>
                   <span>€{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="quote-summary-row">
@@ -261,7 +267,7 @@ export default async function QuotePage({ params }: PageProps) {
                   <span>€{total.toFixed(2)}</span>
                 </div>
               </div>
-              
+
               {quote.terms && (
                 <div className="quote-terms">
                   <h4>Terms & Conditions</h4>
@@ -273,7 +279,7 @@ export default async function QuotePage({ params }: PageProps) {
 
           {/* Actions */}
           {!isExpired && quote.status !== 'approved' && quote.status !== 'declined' && (
-            <QuoteActions quoteId={quote._id} secretId={quote.secretId} />
+            <QuoteActions quoteId={quote.id} secretId={quote.secret_id} />
           )}
         </div>
       </main>

@@ -1,10 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getProjects, urlFor, type Project } from '@/lib/sanity'
 import RevealOnScroll from './RevealOnScroll'
 
-// Fallback data for when Sanity isn't configured
-const fallbackProjects = [
+const projects = [
   {
     _id: '1',
     title: 'NØRD Collective',
@@ -39,23 +37,7 @@ const fallbackProjects = [
   },
 ]
 
-function getImageUrl(project: Project | typeof fallbackProjects[0]): string {
-  if (typeof project.image === 'string') {
-    return project.image
-  }
-  return urlFor(project.image).width(1200).quality(80).url()
-}
-
-export default async function Portfolio() {
-  let projects: (Project | typeof fallbackProjects[0])[]
-
-  try {
-    const sanityProjects = await getProjects()
-    projects = sanityProjects.length > 0 ? sanityProjects : fallbackProjects
-  } catch {
-    projects = fallbackProjects
-  }
-
+export default function Portfolio() {
   return (
     <section className="portfolio section" id="portfolio">
       <div className="container">
@@ -90,7 +72,7 @@ export default async function Portfolio() {
               className="portfolio-item"
             >
               <Image
-                src={getImageUrl(project)}
+                src={project.image}
                 alt={project.title}
                 fill
                 className="portfolio-image"

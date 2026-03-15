@@ -1,17 +1,27 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getPosts, urlFor, type Post } from '@/lib/sanity'
 import Nav from '../components/Nav'
 import Footer from '../components/Footer'
 
-// Fallback articles for when Sanity isn't configured
-const fallbackPosts: Post[] = [
+interface Post {
+  _id: string
+  title: string
+  slug: { current: string }
+  excerpt: string
+  coverImage: string
+  category: string
+  publishedAt: string
+  readTime: number
+  featured?: boolean
+}
+
+const posts: Post[] = [
   {
     _id: '1',
     title: 'Why Your Merch Strategy Is Failing (And How to Fix It)',
     slug: { current: 'why-your-merch-strategy-is-failing' },
-    excerpt: 'Most brands treat merchandise as an afterthought. Here\'s why that\'s costing you more than revenue.',
-    coverImage: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1200&q=80' as unknown as Post['coverImage'],
+    excerpt: "Most brands treat merchandise as an afterthought. Here's why that's costing you more than revenue.",
+    coverImage: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1200&q=80',
     category: 'strategy',
     publishedAt: '2025-02-15T10:00:00Z',
     readTime: 6,
@@ -22,7 +32,7 @@ const fallbackPosts: Post[] = [
     title: 'The Psychology of Premium: Why People Pay More for Branded Apparel',
     slug: { current: 'psychology-of-premium-branded-apparel' },
     excerpt: 'Understanding the signals that transform a $15 shirt into a $75 statement piece.',
-    coverImage: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1200&q=80' as unknown as Post['coverImage'],
+    coverImage: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1200&q=80',
     category: 'insights',
     publishedAt: '2025-02-08T10:00:00Z',
     readTime: 8,
@@ -33,7 +43,7 @@ const fallbackPosts: Post[] = [
     title: 'Embroidery vs. Screen Print: Choosing the Right Technique',
     slug: { current: 'embroidery-vs-screen-print' },
     excerpt: 'A technical breakdown of when to use each method — and why it matters for your brand perception.',
-    coverImage: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1200&q=80' as unknown as Post['coverImage'],
+    coverImage: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1200&q=80',
     category: 'production',
     publishedAt: '2025-01-28T10:00:00Z',
     readTime: 5,
@@ -44,20 +54,13 @@ const fallbackPosts: Post[] = [
     title: 'Building a Capsule Collection: From Concept to Drop',
     slug: { current: 'building-capsule-collection' },
     excerpt: 'The step-by-step process we use to create cohesive, sell-out worthy merchandise lines.',
-    coverImage: 'https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?w=1200&q=80' as unknown as Post['coverImage'],
+    coverImage: 'https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?w=1200&q=80',
     category: 'design',
     publishedAt: '2025-01-20T10:00:00Z',
     readTime: 7,
     featured: false,
   },
 ]
-
-function getImageUrl(post: Post): string {
-  if (typeof post.coverImage === 'string') {
-    return post.coverImage
-  }
-  return urlFor(post.coverImage).width(1200).quality(80).url()
-}
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -78,16 +81,7 @@ function getCategoryLabel(category: string): string {
   return labels[category] || category
 }
 
-export default async function JournalPage() {
-  let posts: Post[]
-
-  try {
-    const sanityPosts = await getPosts()
-    posts = sanityPosts.length > 0 ? sanityPosts : fallbackPosts
-  } catch {
-    posts = fallbackPosts
-  }
-
+export default function JournalPage() {
   const featuredPost = posts.find((p) => p.featured) || posts[0]
   const otherPosts = posts.filter((p) => p._id !== featuredPost._id)
 
@@ -109,7 +103,7 @@ export default async function JournalPage() {
             <Link href={`/journal/${featuredPost.slug.current}`} className="featured-card">
               <div className="featured-image">
                 <Image
-                  src={getImageUrl(featuredPost)}
+                  src={featuredPost.coverImage}
                   alt={featuredPost.title}
                   fill
                   className="featured-img"
@@ -143,7 +137,7 @@ export default async function JournalPage() {
                 >
                   <div className="post-image">
                     <Image
-                      src={getImageUrl(post)}
+                      src={post.coverImage}
                       alt={post.title}
                       fill
                       className="post-img"
