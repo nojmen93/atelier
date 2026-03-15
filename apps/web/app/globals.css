@@ -2178,3 +2178,713 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ========================================
+   HOME PAGE — White/Black Redesign
+   Single-viewport, no-scroll layout
+======================================== */
+
+:root {
+  --nav-h: 64px;
+  --border: #e8e8e8;
+  --text-muted: #888888;
+}
+
+/* ── Global overrides for homepage theme ── */
+.page-home {
+  background: #ffffff;
+  color: #0a0a0a;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav (white theme) ── */
+.page-home .nav {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  z-index: 100;
+}
+
+.page-home .nav.scrolled {
+  background: #ffffff;
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+
+.page-home .logo {
+  color: #0a0a0a;
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+}
+
+.page-home .nav-links a {
+  color: #0a0a0a;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.page-home .nav-links a:hover {
+  opacity: 1;
+}
+
+.page-home .nav-links a::after {
+  background: #0a0a0a;
+}
+
+.page-home .nav-cta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.7rem 1.5rem;
+  background: #0a0a0a;
+  color: #ffffff;
+  border: 1px solid #0a0a0a;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+}
+
+.page-home .nav-cta:hover {
+  background: #ffffff;
+  color: #0a0a0a;
+}
+
+.page-home .mobile-toggle span {
+  background: #0a0a0a;
+}
+
+/* ── Landing split layout ── */
+.landing {
+  display: grid;
+  grid-template-columns: 42% 58%;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── LEFT panel ── */
+.landing-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.75rem, 3vw, 3rem) clamp(1.5rem, 3vw, 3.5rem);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.landing-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #888888;
+}
+
+.landing-headline {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 8.5vw, 10.5rem);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.landing-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.landing-sub {
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+  color: #666666;
+  line-height: 1.7;
+  max-width: 360px;
+}
+
+.landing-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.landing-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.landing-stat-num {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #0a0a0a;
+}
+
+.landing-stat-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #999999;
+}
+
+.landing-stat-div {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── RIGHT panel ── */
+.landing-right {
+  display: grid;
+  grid-template-rows: var(--nav-h) 1fr auto auto;
+  overflow: hidden;
+}
+
+/* ── Product tabs ── */
+.product-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  height: var(--nav-h);
+  align-items: stretch;
+}
+
+.product-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #aaaaaa;
+  transition: color 0.2s, background 0.2s;
+  position: relative;
+  padding-bottom: 0;
+}
+
+.product-tab:last-child {
+  border-right: none;
+}
+
+.product-tab.active {
+  color: #0a0a0a;
+  background: #fafafa;
+}
+
+.product-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #0a0a0a;
+}
+
+.product-tab:hover:not(.active) {
+  color: #444444;
+}
+
+/* ── Product image showcase ── */
+.product-showcase {
+  position: relative;
+  overflow: hidden;
+  background: #f8f8f8;
+}
+
+.product-showcase-img {
+  object-fit: cover;
+  object-position: center top;
+}
+
+/* ── Product info bar ── */
+.product-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 1.75rem;
+  height: 72px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.product-info-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-info-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0a0a0a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-info-spec {
+  font-size: 0.7rem;
+  color: #999999;
+  letter-spacing: 0.05em;
+  margin-top: 1px;
+}
+
+.product-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  outline: none;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch.active {
+  border-color: #0a0a0a;
+  transform: scale(1.1);
+}
+
+.color-swatch-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #999999;
+  min-width: 36px;
+}
+
+.landing-quote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #0a0a0a;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.4rem;
+  transition: background 0.25s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.landing-quote-btn svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.25s var(--ease-out-expo);
+  flex-shrink: 0;
+}
+
+.landing-quote-btn:hover {
+  background: #222222;
+}
+
+.landing-quote-btn:hover svg {
+  transform: translateX(3px);
+}
+
+/* ── Techniques strip ── */
+.techniques-strip {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  height: 40px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #fafafa;
+}
+
+.technique-tag {
+  flex: 1;
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #bbbbbb;
+  border-right: 1px solid var(--border);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.technique-tag:last-child {
+  border-right: none;
+}
+
+/* ========================================
+   Quote Modal
+======================================== */
+.qmodal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 2000;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+  transition: background 0.35s ease;
+}
+
+.qmodal-overlay.open {
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.qmodal {
+  width: min(520px, 100vw);
+  height: 100vh;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.4s var(--ease-out-expo);
+  border-left: 1px solid var(--border);
+}
+
+.qmodal.open {
+  transform: translateX(0);
+}
+
+.qmodal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 2rem 2.5rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.qmodal-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #888888;
+  margin-bottom: 0.35rem;
+}
+
+.qmodal-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+}
+
+.qmodal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: #0a0a0a;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.qmodal-close:hover {
+  opacity: 1;
+}
+
+.qmodal-close svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.qmodal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 2rem 2.5rem 2.5rem;
+  flex: 1;
+}
+
+.qmodal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.qmodal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.qmodal-field label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #555555;
+}
+
+.qmodal-required {
+  color: #0a0a0a;
+}
+
+.qmodal-field input,
+.qmodal-field select,
+.qmodal-field textarea {
+  background: #f9f9f9;
+  border: 1px solid #e8e8e8;
+  color: #0a0a0a;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+}
+
+.qmodal-field input:focus,
+.qmodal-field select:focus,
+.qmodal-field textarea:focus {
+  border-color: #0a0a0a;
+  background: #ffffff;
+}
+
+.qmodal-field input::placeholder,
+.qmodal-field textarea::placeholder {
+  color: #bbbbbb;
+}
+
+.qmodal-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.qmodal-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: #0a0a0a;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 1rem 2rem;
+  width: 100%;
+  transition: background 0.25s;
+  margin-top: 0.5rem;
+}
+
+.qmodal-submit:hover:not(:disabled) {
+  background: #222222;
+}
+
+.qmodal-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qmodal-submit svg {
+  width: 15px;
+  height: 15px;
+  transition: transform 0.25s;
+  flex-shrink: 0;
+}
+
+.qmodal-submit:hover svg {
+  transform: translateX(3px);
+}
+
+.qmodal-promise {
+  font-size: 0.68rem;
+  color: #aaaaaa;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.qmodal-error {
+  font-size: 0.8rem;
+  color: #cc0000;
+  padding: 0.75rem 1rem;
+  background: #fff5f5;
+  border: 1px solid #ffcccc;
+}
+
+/* Modal success state */
+.qmodal-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex: 1;
+  padding: 3rem 2.5rem;
+  text-align: center;
+}
+
+.qmodal-success-icon {
+  width: 56px;
+  height: 56px;
+  background: #0a0a0a;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.qmodal-success-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.qmodal-success h3 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+}
+
+.qmodal-success p {
+  color: #666666;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.qmodal-done-btn {
+  background: none;
+  border: 1px solid #0a0a0a;
+  color: #0a0a0a;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.75rem 2rem;
+  margin-top: 0.5rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.qmodal-done-btn:hover {
+  background: #0a0a0a;
+  color: #ffffff;
+}
+
+/* ========================================
+   Responsive — Landing
+======================================== */
+@media (max-width: 1024px) {
+  .landing {
+    grid-template-columns: 40% 60%;
+  }
+
+  .landing-headline {
+    font-size: clamp(3.5rem, 8vw, 8rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-home {
+    height: auto;
+    overflow: auto;
+  }
+
+  .landing {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+  }
+
+  .landing-left {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    min-height: 50vh;
+  }
+
+  .landing-headline {
+    font-size: clamp(4rem, 15vw, 7rem);
+    margin: 1.5rem 0;
+    justify-content: flex-start;
+  }
+
+  .landing-right {
+    grid-template-rows: 56px 60vw auto auto;
+  }
+
+  .product-tabs {
+    height: 56px;
+  }
+
+  .product-info-bar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .landing-quote-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .qmodal {
+    width: 100vw;
+  }
+
+  .qmodal-row {
+    grid-template-columns: 1fr;
+  }
+}
