@@ -248,6 +248,7 @@ export default function HomeLanding({ onOpenQuote }: Props) {
 
           {/* Image */}
           <div className="bw-showcase">
+            {products.length === 0 && <div className="bw-img-skeleton" />}
             {image ? (
               <Image
                 src={image}
@@ -258,7 +259,7 @@ export default function HomeLanding({ onOpenQuote }: Props) {
                 priority
               />
             ) : (
-              <div className={`bw-img${imgVisible ? ' bw-img-on' : ''}`} style={{ background: 'var(--dark-gray, #1a1a1a)' }} />
+              products.length > 0 && <div className={`bw-img${imgVisible ? ' bw-img-on' : ''}`} style={{ background: '#F0EFE9' }} />
             )}
           </div>
 

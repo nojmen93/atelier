@@ -2843,7 +2843,7 @@ a {
 
 .bw-tab.bw-tab-on {
   color: #111010;
-  border-bottom-color: #111010;
+  border-bottom-color: #CA8A04;
 }
 
 .bw-tab:hover:not(.bw-tab-on) {
@@ -2866,19 +2866,38 @@ a {
 .bw-showcase {
   position: relative;
   overflow: hidden;
-  background: #E5E5E1;
+  background: #F7F6F2;
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(202,138,4,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(28,25,23,0.04) 0%, transparent 60%);
 }
 
 .bw-img {
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
+  object-position: center center;
+  padding: 1.5rem;
   opacity: 0;
-  transition: opacity 0.38s ease;
-  filter: grayscale(100%) contrast(1.15) brightness(0.92);
+  transition: opacity 0.42s ease, transform 0.42s cubic-bezier(0.16,1,0.3,1);
+  transform: scale(0.97);
 }
 
 .bw-img.bw-img-on {
   opacity: 1;
+  transform: scale(1);
+}
+
+/* Skeleton loader while products fetch */
+.bw-img-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #EEEDE9 25%, #E5E4E0 50%, #EEEDE9 75%);
+  background-size: 200% 100%;
+  animation: bwSkeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes bwSkeleton {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Info bar */
@@ -2962,10 +2981,10 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  background: #111010;
-  border: 1px solid #111010;
-  color: #F0F0EC;
+  padding: 0.5rem 1.1rem;
+  background: #CA8A04;
+  border: 1px solid #CA8A04;
+  color: #fff;
   cursor: none;
   flex-shrink: 0;
   font-family: system-ui, sans-serif;
@@ -2973,13 +2992,14 @@ a {
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  transition: background 0.25s ease, color 0.25s ease;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   white-space: nowrap;
 }
 
 .bw-qbtn:hover {
-  background: transparent;
-  color: #111010;
+  background: #92400E;
+  border-color: #92400E;
+  color: #fff;
 }
 
 .bw-qbtn svg {
