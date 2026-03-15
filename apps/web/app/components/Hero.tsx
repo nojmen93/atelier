@@ -1,38 +1,30 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 
-const featuredProducts = [
-  {
-    id: 'sweater',
-    name: 'Crewneck Sweater',
-    category: 'Sweater',
-    image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=85',
-  },
-  {
-    id: 'tshirt',
-    name: 'Classic T-Shirt',
-    category: 'Tee',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=85',
-  },
-  {
-    id: 'hoodie',
-    name: 'Pullover Hoodie',
-    category: 'Hoodie',
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=85',
-  },
-]
+interface Product {
+  id: string
+  name: string
+  display_name: string | null
+  description: string | null
+  material: string | null
+  images: string[] | null
+  categories: { name: string } | null
+}
 
 function HeroProductCard({
   product,
   position,
 }: {
-  product: (typeof featuredProducts)[0]
+  product: Product
   position: 'left' | 'center' | 'right'
 }) {
   const outerRef = useRef<HTMLDivElement>(null)
   const tiltRef = useRef<HTMLDivElement>(null)
+  const displayName = product.display_name || product.name
+  const image = product.images?.[0] ?? null
+  const category = product.categories?.name ?? null
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!outerRef.current || !tiltRef.current) return
@@ -76,16 +68,20 @@ function HeroProductCard({
         >
           <div className="hero-product-card">
             <div className="hero-product-shine" />
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="hero-product-img"
-              sizes="(max-width: 768px) 80vw, 30vw"
-            />
+            {image ? (
+              <Image
+                src={image}
+                alt={displayName}
+                fill
+                className="hero-product-img"
+                sizes="(max-width: 768px) 80vw, 30vw"
+              />
+            ) : (
+              <div className="hero-product-img" style={{ background: 'var(--dark-gray)' }} />
+            )}
             <div className="hero-product-info">
-              <span className="hero-product-category">{product.category}</span>
-              <span className="hero-product-name">{product.name}</span>
+              {category && <span className="hero-product-category">{category}</span>}
+              <span className="hero-product-name">{displayName}</span>
             </div>
           </div>
           <div className="hero-product-glow" />
@@ -126,7 +122,18 @@ function MagneticBtn({
   )
 }
 
+const POSITIONS = ['left', 'center', 'right'] as const
+
 export default function Hero() {
+  const [products, setProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    fetch('/api/products/public')
+      .then((r) => r.json())
+      .then((data: Product[]) => setProducts(Array.isArray(data) ? data.slice(0, 3) : []))
+      .catch(() => setProducts([]))
+  }, [])
+
   return (
     <section className="hero">
       <div className="hero-bg">
@@ -150,10 +157,13 @@ export default function Hero() {
       </div>
 
       <div className="hero-showcase">
-        {featuredProducts.map((product, i) => {
-          const pos = (['left', 'center', 'right'] as const)[i]
-          return <HeroProductCard key={product.id} product={product} position={pos} />
-        })}
+        {products.map((product, i) => (
+          <HeroProductCard
+            key={product.id}
+            product={product}
+            position={POSITIONS[i] ?? 'center'}
+          />
+        ))}
       </div>
 
       <div className="hero-bottom">
