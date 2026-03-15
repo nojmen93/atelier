@@ -3389,3 +3389,181 @@ a {
 }
 
 .apage-cta:hover svg { transform: translateX(3px); }
+
+/* ========================================
+   Journal — Enhanced Effects (v2)
+======================================== */
+
+/* Dark right panel */
+.jright {
+  background: #0a0a0a !important;
+}
+
+/* Ghost watermark counter */
+.j-ghost-count {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: clamp(7rem, 18vw, 16rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: rgba(10,10,10,0.06);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Entrance stagger animations */
+.jleft { position: relative; }
+
+.j-fade-item {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.55s var(--ease-out-expo), transform 0.55s var(--ease-out-expo);
+  transition-delay: calc(var(--ji, 0) * 90ms + 60ms);
+}
+
+.j-entered .j-fade-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Title words stacked */
+.jtitle-word {
+  display: block;
+}
+
+/* Gold accent on article hover */
+.jarticle.active {
+  background: #0a0a0a !important;
+  color: #ffffff !important;
+  border-left: 2px solid #CA8A04;
+  padding-left: 0.6rem !important;
+}
+
+.jarticle.active .jarticle-cat {
+  color: #CA8A04 !important;
+}
+
+.jarticle.active .jarticle-num {
+  color: #CA8A04 !important;
+}
+
+/* Counter gold accent */
+.jcount-num {
+  color: #0a0a0a !important;
+}
+
+/* Hint text on dark panel */
+.jhint {
+  color: rgba(255,255,255,0.25) !important;
+}
+
+/* Corner interactive label */
+.j-corner-label {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #CA8A04;
+  pointer-events: none;
+  user-select: none;
+}
+
+.j-corner-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #CA8A04;
+  animation: cornerPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes cornerPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* Canvas thread count overlay */
+.j-canvas-count {
+  position: absolute;
+  bottom: 5.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.j-canvas-count-num {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: rgba(202,138,4,0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.j-canvas-count-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(202,138,4,0.35);
+}
+
+/* Marquee strip */
+.j-marquee {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.j-marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: marqueeScroll 28s linear infinite;
+}
+
+.j-marquee-inner {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+  padding-right: 0;
+}
+
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* hint on dark panel */
+.jright .jhint {
+  color: rgba(255,255,255,0.22) !important;
+}
+
+/* Clear button on light panel */
+.jreset:hover { color: #CA8A04 !important; }
+
