@@ -39,7 +39,7 @@ export default function NewQuotePage() {
     supabase
       .from('styles')
       .select('id, name')
-      .neq('status', 'archived')
+      .eq('active', true)
       .order('name')
       .then(({ data }) => { if (data) setStyles(data) })
   }, [supabase])

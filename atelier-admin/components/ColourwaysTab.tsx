@@ -153,29 +153,46 @@ export default function ColourwaysTab({ styleId }: { styleId: string }) {
           No colours assigned to this product yet.
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {assignedColours.map((colour) => (
-            <div
-              key={colour.id}
-              className="group border border-neutral-800 rounded-lg overflow-hidden"
-            >
-              <div
-                className="h-16 w-full"
-                style={{ backgroundColor: colour.hex_value || '#333' }}
-              />
-              <div className="px-3 py-2">
-                <div className="text-sm text-white font-medium">{colour.colour_name}</div>
-                <div className="text-xs text-neutral-500 font-mono mt-0.5">{colour.colour_code}</div>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(colour.id)}
-                  className="text-xs text-neutral-600 hover:text-red-400 mt-1.5 opacity-0 group-hover:opacity-100 transition"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="border border-neutral-800 rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-neutral-800 text-neutral-500 text-xs">
+                <th className="text-left px-4 py-2.5 font-medium w-10"></th>
+                <th className="text-left px-4 py-2.5 font-medium">Name</th>
+                <th className="text-left px-4 py-2.5 font-medium">Code</th>
+                <th className="text-left px-4 py-2.5 font-medium">Family</th>
+                <th className="text-left px-4 py-2.5 font-medium">Hex</th>
+                <th className="text-right px-4 py-2.5 font-medium w-20"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {assignedColours.map((colour) => (
+                <tr key={colour.id} className="border-b border-neutral-800/50 hover:bg-neutral-900/50">
+                  <td className="px-4 py-2.5">
+                    <div
+                      className="w-6 h-6 rounded border border-neutral-700"
+                      style={{ backgroundColor: colour.hex_value || '#333' }}
+                    />
+                  </td>
+                  <td className="px-4 py-2.5 text-white font-medium">{colour.colour_name}</td>
+                  <td className="px-4 py-2.5 text-neutral-400 font-mono text-xs">{colour.colour_code}</td>
+                  <td className="px-4 py-2.5 text-neutral-500 text-xs">
+                    {COLOUR_FAMILIES.find((f) => f.code === colour.colour_family_code)?.label || colour.colour_family_code || '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-neutral-500 font-mono text-xs">{colour.hex_value || '—'}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(colour.id)}
+                      className="text-xs text-neutral-500 hover:text-red-400 transition"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

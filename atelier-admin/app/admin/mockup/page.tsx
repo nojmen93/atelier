@@ -65,31 +65,6 @@ const PRODUCT_TEMPLATES = {
       },
     ],
   },
-  totebag: {
-    name: 'Tote Bag',
-    variants: [
-      {
-        id: 'tote-natural-front',
-        name: 'Natural - Front',
-        color: 'Natural',
-        image: 'https://images.unsplash.com/photo-1597633425046-08f5110420b5?w=1200&q=90',
-        printZone: { x: 22, y: 20, width: 56, height: 50 },
-        perspective: { skewX: 0, skewY: 0, curve: 0.01 },
-        blendMode: 'multiply' as const,
-        opacity: 0.92,
-      },
-      {
-        id: 'tote-black-front',
-        name: 'Black - Front',
-        color: 'Black',
-        image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=1200&q=90',
-        printZone: { x: 20, y: 18, width: 60, height: 55 },
-        perspective: { skewX: 0, skewY: 0, curve: 0.01 },
-        blendMode: 'screen' as const,
-        opacity: 0.9,
-      },
-    ],
-  },
 } as const
 
 type ProductType = keyof typeof PRODUCT_TEMPLATES
@@ -126,7 +101,6 @@ const SWATCH_COLORS: Record<string, string> = {
   White: '#f5f5f5',
   Black: '#0a0a0a',
   Gray: '#6b6b6b',
-  Natural: '#e8e0d5',
 }
 
 export default function MockupGeneratorPage() {

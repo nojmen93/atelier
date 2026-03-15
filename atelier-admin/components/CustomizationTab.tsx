@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { Logo } from '@/app/admin/styles/[id]/StyleEditForm'
+import RowActions from './RowActions'
 
 const PLACEMENTS = [
   { value: 'center_front', label: 'Center Front', x: 50, y: 20 },
@@ -596,18 +597,11 @@ export default function CustomizationTab({ styleId, images, logos }: Customizati
                           ? `${Number(c.width_cm).toFixed(1)} x ${Number(c.height_cm).toFixed(1)} cm`
                           : '\u2014'}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => handleEdit(c)} className="px-3 py-1 text-xs text-neutral-400 hover:text-white border border-neutral-700 rounded hover:border-neutral-500 transition">Edit</button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(c.id)}
-                            disabled={deletingId === c.id}
-                            className="px-3 py-1 text-xs text-red-400 hover:text-red-300 border border-red-900/50 rounded hover:border-red-700 transition"
-                          >
-                            {deletingId === c.id ? '...' : 'Delete'}
-                          </button>
-                        </div>
+                      <td className="px-4 py-3">
+                        <RowActions
+                          onEdit={() => handleEdit(c)}
+                          onDelete={() => handleDelete(c.id)}
+                        />
                       </td>
                     </tr>
                   )
