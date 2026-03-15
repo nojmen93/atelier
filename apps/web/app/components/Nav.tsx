@@ -23,6 +23,9 @@ export default function Nav({ onOpenQuote }: Props) {
 
             <ul className="nav-links">
               <li>
+                <Link href="/collection">Collection</Link>
+              </li>
+              <li>
                 <Link href="/journal">Journal</Link>
               </li>
               <li>
@@ -61,6 +64,9 @@ export default function Nav({ onOpenQuote }: Props) {
           type="button"
         />
         <ul className="mobile-menu-links">
+          <li>
+            <Link href="/collection" onClick={closeMobile}>Collection</Link>
+          </li>
           <li>
             <Link href="/journal" onClick={closeMobile}>Journal</Link>
           </li>

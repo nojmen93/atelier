@@ -4177,3 +4177,295 @@ a {
 /* Clear button on light panel */
 .jreset:hover { color: #CA8A04 !important; }
 
+
+/* ============================================================
+   COLLECTION PAGE (/collection)
+   ============================================================ */
+
+.col-page {
+  min-height: 100vh;
+  background: #FAFAF9;
+  color: #0C0A09;
+}
+
+/* ── Header ────────────────────────────────── */
+.col-header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(5rem, 8vw, 7rem) clamp(1.25rem, 4vw, 3rem) clamp(2rem, 4vw, 3rem);
+  position: relative;
+}
+
+.col-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.4);
+  text-decoration: none;
+  margin-bottom: 2.5rem;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.col-back:hover { color: #CA8A04; }
+.col-back svg { width: 14px; height: 14px; }
+
+.col-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #CA8A04;
+  margin-bottom: 0.75rem;
+}
+
+.col-title {
+  font-family: var(--font-display, system-ui);
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #1C1917;
+  line-height: 0.95;
+  margin-bottom: 1.25rem;
+}
+
+.col-sub {
+  font-size: 0.95rem;
+  color: rgba(0,0,0,0.5);
+  max-width: 480px;
+  line-height: 1.65;
+}
+
+/* ── Category filters ──────────────────────── */
+.col-filters {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(1.25rem, 4vw, 3rem) 2rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  margin-bottom: 3rem;
+}
+
+.col-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.15);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.45);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.col-filter-btn:hover {
+  border-color: rgba(0,0,0,0.35);
+  color: #1C1917;
+}
+
+.col-filter-btn.active {
+  background: #1C1917;
+  border-color: #1C1917;
+  color: #FAFAF9;
+}
+
+.col-filter-count {
+  font-size: 0.52rem;
+  opacity: 0.6;
+}
+
+/* ── Product grid ──────────────────────────── */
+.col-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(1.25rem, 4vw, 3rem) 4rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+/* ── Product card ──────────────────────────── */
+.col-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.07);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.col-card:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+  transform: translateY(-3px);
+}
+
+.col-card-img-wrap {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background: #F7F6F2;
+  background-image: radial-gradient(ellipse at 30% 20%, rgba(202,138,4,0.05) 0%, transparent 60%);
+  overflow: hidden;
+}
+
+.col-card-img {
+  object-fit: contain;
+  object-position: center;
+  padding: 1rem;
+  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+
+.col-card:hover .col-card-img {
+  transform: scale(1.04);
+}
+
+.col-card-img-empty {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #F0EFE9, #E8E7E2);
+}
+
+.col-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(28,25,23,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.col-card:hover .col-card-overlay {
+  opacity: 1;
+}
+
+.col-card-quote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  background: #CA8A04;
+  border: none;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.col-card-quote-btn:hover { background: #92400E; }
+.col-card-quote-btn svg { width: 12px; height: 12px; }
+
+.col-card-body {
+  padding: 1rem 1.1rem 1.25rem;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+.col-card-category {
+  display: block;
+  font-size: 0.52rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #CA8A04;
+  margin-bottom: 0.35rem;
+}
+
+.col-card-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1C1917;
+  margin-bottom: 0.3rem;
+}
+
+.col-card-spec {
+  font-size: 0.72rem;
+  color: rgba(0,0,0,0.42);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Skeleton ──────────────────────────────── */
+.col-card-skeleton {
+  aspect-ratio: 3 / 5;
+  background: linear-gradient(90deg, #EEEDE9 25%, #E5E4E0 50%, #EEEDE9 75%);
+  background-size: 200% 100%;
+  animation: bwSkeleton 1.4s ease-in-out infinite;
+}
+
+/* ── Empty state ───────────────────────────── */
+.col-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 5rem 0;
+  color: rgba(0,0,0,0.35);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+}
+
+/* ── Footer CTA ────────────────────────────── */
+.col-footer-cta {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem clamp(1.25rem, 4vw, 3rem) 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  flex-wrap: wrap;
+}
+
+.col-footer-cta p {
+  font-size: 0.9rem;
+  color: rgba(0,0,0,0.45);
+}
+
+.col-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: #1C1917;
+  color: #FAFAF9;
+  text-decoration: none;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: background 0.25s ease;
+  cursor: pointer;
+}
+
+.col-cta-btn:hover { background: #CA8A04; }
+.col-cta-btn svg { width: 13px; height: 13px; transition: transform 0.2s ease; }
+.col-cta-btn:hover svg { transform: translateX(3px); }
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 640px) {
+  .col-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .col-footer-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
