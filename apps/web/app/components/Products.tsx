@@ -1,57 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 
-type Color = 'white' | 'black' | 'blue'
+interface Product {
+  id: string
+  name: string
+  display_name: string | null
+  description: string | null
+  material: string | null
+  images: string[] | null
+  categories: { name: string } | null
+}
 
-const colors: { id: Color; label: string; hex: string }[] = [
-  { id: 'white', label: 'White', hex: '#f5f5f3' },
-  { id: 'black', label: 'Black', hex: '#1a1a1a' },
-  { id: 'blue', label: 'Blue', hex: '#2a4a7f' },
-]
-
-const products = [
-  {
-    id: 'tshirt',
-    name: 'Classic T-Shirt',
-    category: 'Tee',
-    description: '220gsm ringspun cotton. Regular fit. Available in embroidery or screen print.',
-    images: {
-      white: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=85',
-      black: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=800&q=85',
-      blue: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&q=85',
-    },
-  },
-  {
-    id: 'sweater',
-    name: 'Crewneck Sweater',
-    category: 'Sweater',
-    description: '380gsm fleece. Relaxed fit. Embroidered logo placement on chest or sleeve.',
-    images: {
-      white: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=85',
-      black: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=85',
-      blue: 'https://images.unsplash.com/photo-1607345366928-199ea26cfe3e?w=800&q=85',
-    },
-  },
-  {
-    id: 'hoodie',
-    name: 'Pullover Hoodie',
-    category: 'Hoodie',
-    description: '420gsm heavy fleece. Oversized fit. Kangaroo pocket. Embroidery or DTG.',
-    images: {
-      white: 'https://images.unsplash.com/photo-1505022610485-0249ba5b3675?w=800&q=85',
-      black: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=85',
-      blue: 'https://images.unsplash.com/photo-1571945153237-4929e783af4a?w=800&q=85',
-    },
-  },
-]
-
-function ProductCard({ product }: { product: typeof products[0] }) {
-  const [activeColor, setActiveColor] = useState<Color>('white')
+function ProductCard({ product }: { product: Product }) {
+  const displayName = product.display_name || product.name
+  const image = product.images?.[0] ?? null
+  const category = product.categories?.name ?? null
 
   const handleQuote = () => {
-    window.dispatchEvent(new CustomEvent('productinterest', { detail: product.name }))
+    window.dispatchEvent(new CustomEvent('productinterest', { detail: displayName }))
     const section = document.getElementById('quote')
     if (section) section.scrollIntoView({ behavior: 'smooth' })
   }
@@ -59,39 +27,31 @@ function ProductCard({ product }: { product: typeof products[0] }) {
   return (
     <div className="product-card">
       <div className="product-card-image">
-        <Image
-          src={product.images[activeColor]}
-          alt={`${product.name} in ${activeColor}`}
-          fill
-          className="product-card-img"
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
-        <div className="product-card-tag">{product.category}</div>
+        {image ? (
+          <Image
+            src={image}
+            alt={displayName}
+            fill
+            className="product-card-img"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        ) : (
+          <div className="product-card-placeholder" />
+        )}
+        {category && <div className="product-card-tag">{category}</div>}
       </div>
 
       <div className="product-card-body">
         <div className="product-card-top">
-          <h3 className="product-card-name">{product.name}</h3>
-          <p className="product-card-desc">{product.description}</p>
+          <h3 className="product-card-name">{displayName}</h3>
+          {(product.description || product.material) && (
+            <p className="product-card-desc">
+              {product.description || product.material}
+            </p>
+          )}
         </div>
 
         <div className="product-card-footer">
-          <div className="product-colors">
-            {colors.map((color) => (
-              <button
-                key={color.id}
-                className={`product-color-dot ${activeColor === color.id ? 'active' : ''}`}
-                style={{ background: color.hex }}
-                onClick={() => setActiveColor(color.id)}
-                aria-label={color.label}
-                title={color.label}
-              />
-            ))}
-            <span className="product-color-label">
-              {colors.find(c => c.id === activeColor)?.label}
-            </span>
-          </div>
-
           <button className="product-quote-btn" onClick={handleQuote}>
             Get a Quote
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -105,6 +65,17 @@ function ProductCard({ product }: { product: typeof products[0] }) {
 }
 
 export default function Products() {
+  const [products, setProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    fetch('/api/products/public')
+      .then((r) => r.json())
+      .then((data: Product[]) => setProducts(Array.isArray(data) ? data : []))
+      .catch(() => setProducts([]))
+  }, [])
+
+  if (products.length === 0) return null
+
   return (
     <section className="products section" id="products">
       <div className="container">
