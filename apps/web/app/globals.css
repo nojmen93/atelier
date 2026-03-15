@@ -13,6 +13,8 @@
 
   --font-display: 'Bebas Neue', sans-serif;
   --font-body: 'Outfit', sans-serif;
+  --font-editorial: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: 'Jost', system-ui, sans-serif;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -2419,8 +2421,8 @@ a {
 
 /* ── Global overrides for homepage theme ── */
 .page-home {
-  background: #0a0a0a;
-  color: #f5f5f3;
+  background: #F6F3EE;
+  color: #2A1E17;
   height: 100vh;
   overflow: hidden;
   display: flex;
@@ -2496,7 +2498,538 @@ a {
   background: #f5f5f3;
 }
 
-/* ── Landing split layout ── */
+/* ========================================
+   HERO — Editorial Split (HomeLanding v2)
+   Design: Quiet luxury, 2026 fashion brand
+   Fonts: Cormorant Garamond + Jost
+   Colors: #2A1E17 dark / #F6F3EE creme
+======================================== */
+
+/* Root grid */
+.hl-root {
+  display: grid;
+  grid-template-columns: 42% 58%;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ── */
+.hl-left {
+  background: #2A1E17;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Subtle grain overlay */
+.hl-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hl-left-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: clamp(1.75rem, 3vw, 2.75rem) clamp(2rem, 4vw, 3.5rem);
+}
+
+/* Brand mark row */
+.hl-brand-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.hl-brand-name {
+  font-family: var(--font-editorial);
+  font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+  font-weight: 400;
+  letter-spacing: 0.48em;
+  text-transform: uppercase;
+  color: #F6F3EE;
+}
+
+.hl-brand-est {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  font-weight: 300;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(246, 243, 238, 0.35);
+}
+
+/* Editorial headline */
+.hl-headline {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: var(--font-editorial);
+  font-size: clamp(3.8rem, 7.5vw, 10rem);
+  font-weight: 300;
+  line-height: 0.88;
+  color: #F6F3EE;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* Word slide-up: overflow clip + transform */
+.hl-word-wrap {
+  display: block;
+  overflow: hidden;
+  line-height: 1.06;
+}
+
+.hl-word {
+  display: block;
+  transform: translateY(105%);
+  opacity: 0;
+  transition: transform 0.78s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.55s ease;
+}
+
+.hl-mounted .hl-word {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Last word warm accent */
+.hl-headline .hl-word-wrap:last-child .hl-word {
+  color: #C5A882;
+}
+
+/* Tagline */
+.hl-tagline {
+  font-family: var(--font-ui);
+  font-size: clamp(0.68rem, 0.82vw, 0.8rem);
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  line-height: 1.9;
+  color: rgba(246, 243, 238, 0.42);
+  text-transform: uppercase;
+  margin-bottom: 1.75rem;
+  flex-shrink: 0;
+}
+
+/* Primary CTA — underline reveal */
+.hl-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 2.5rem;
+  width: fit-content;
+  flex-shrink: 0;
+}
+
+/* base underline (dim) */
+.hl-cta::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: rgba(246, 243, 238, 0.2);
+}
+
+/* hover underline (bright, animates in) */
+.hl-cta::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #F6F3EE;
+  transition: width 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+.hl-cta:hover::before {
+  width: 100%;
+}
+
+.hl-cta-text {
+  font-family: var(--font-ui);
+  font-size: 0.66rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #F6F3EE;
+}
+
+.hl-cta-arrow {
+  display: flex;
+  align-items: center;
+  color: rgba(246, 243, 238, 0.55);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.hl-cta-arrow svg {
+  width: 13px;
+  height: 13px;
+}
+
+.hl-cta:hover .hl-cta-arrow {
+  transform: translateX(5px);
+  color: #F6F3EE;
+}
+
+/* Stats */
+.hl-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(246, 243, 238, 0.1);
+  flex-shrink: 0;
+}
+
+.hl-stat-group {
+  display: flex;
+  align-items: center;
+}
+
+.hl-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0 1.25rem;
+}
+
+.hl-stat-group:first-child .hl-stat {
+  padding-left: 0;
+}
+
+.hl-stat-num {
+  font-family: var(--font-editorial);
+  font-size: clamp(1.4rem, 2vw, 1.85rem);
+  font-weight: 500;
+  line-height: 1;
+  color: #F6F3EE;
+}
+
+.hl-stat-label {
+  font-family: var(--font-ui);
+  font-size: 0.52rem;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(246, 243, 238, 0.35);
+}
+
+.hl-stat-sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(246, 243, 238, 0.1);
+  flex-shrink: 0;
+}
+
+/* Entry fade-up for tagline / cta / stats */
+.hl-tagline,
+.hl-cta,
+.hl-stats {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hl-mounted .hl-delay-500 {
+  opacity: 1;
+  transform: none;
+  transition-delay: 500ms;
+}
+
+.hl-mounted .hl-delay-660 {
+  opacity: 1;
+  transform: none;
+  transition-delay: 660ms;
+}
+
+.hl-mounted .hl-delay-800 {
+  opacity: 1;
+  transform: none;
+  transition-delay: 800ms;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .hl-word,
+  .hl-tagline,
+  .hl-cta,
+  .hl-stats {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+  .hl-mounted .hl-word {
+    transform: none;
+    opacity: 1;
+  }
+  .hl-mounted .hl-delay-500,
+  .hl-mounted .hl-delay-660,
+  .hl-mounted .hl-delay-800 {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── RIGHT PANEL ── */
+.hl-right {
+  background: #F6F3EE;
+  display: grid;
+  grid-template-rows: var(--nav-h, 64px) 1fr auto auto;
+  overflow: hidden;
+}
+
+/* Product tabs */
+.hl-tabs {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid #dddbd6;
+}
+
+.hl-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0 1.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #a09890;
+  cursor: pointer;
+  transition: color 0.22s ease, border-color 0.22s ease;
+}
+
+.hl-tab.hl-tab-active {
+  color: #2A1E17;
+  border-bottom-color: #2A1E17;
+}
+
+.hl-tab:hover:not(.hl-tab-active) {
+  color: #5a4e46;
+}
+
+/* Image showcase */
+.hl-showcase {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Slightly oversized wrap for parallax room */
+.hl-img-wrap {
+  position: absolute;
+  inset: -20px;
+  will-change: transform;
+}
+
+.hl-img {
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0;
+  transition: opacity 0.38s ease;
+}
+
+.hl-img.hl-img-visible {
+  opacity: 1;
+}
+
+/* Product info bar */
+.hl-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: clamp(0.65rem, 1.1vw, 0.95rem) clamp(1rem, 2.5vw, 2rem);
+  border-top: 1px solid #dddbd6;
+  background: #F6F3EE;
+}
+
+.hl-info-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.hl-info-name {
+  font-family: var(--font-editorial);
+  font-size: clamp(0.95rem, 1.3vw, 1.15rem);
+  font-weight: 500;
+  color: #2A1E17;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hl-info-spec {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  color: #9a8e85;
+  text-transform: uppercase;
+  margin-top: 0.18rem;
+}
+
+/* Color swatches */
+.hl-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.hl-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--swatch-color);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  outline: none;
+}
+
+.hl-swatch.hl-swatch-active {
+  box-shadow: 0 0 0 1.5px #2A1E17;
+  transform: scale(1.18);
+}
+
+.hl-swatch:hover:not(.hl-swatch-active) {
+  transform: scale(1.1);
+}
+
+.hl-color-label {
+  font-family: var(--font-ui);
+  font-size: 0.56rem;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #9a8e85;
+  margin-left: 0.25rem;
+}
+
+/* Get a Quote button — fill reveal */
+.hl-quote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: #2A1E17;
+  border: 1px solid #2A1E17;
+  color: #F6F3EE;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.32s ease;
+}
+
+.hl-quote-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #F6F3EE;
+  transform: translateX(-101%);
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hl-quote-btn span,
+.hl-quote-btn svg {
+  position: relative;
+  z-index: 1;
+}
+
+.hl-quote-btn:hover {
+  color: #2A1E17;
+}
+
+.hl-quote-btn:hover::before {
+  transform: translateX(0);
+}
+
+.hl-quote-btn svg {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.25s ease;
+}
+
+.hl-quote-btn:hover svg {
+  transform: translateX(3px);
+}
+
+/* Techniques marquee */
+.hl-marquee-strip {
+  height: 36px;
+  border-top: 1px solid #dddbd6;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.hl-marquee-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  width: max-content;
+  animation: hlMarquee 22s linear infinite;
+}
+
+.hl-marquee-strip:hover .hl-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes hlMarquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.hl-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0 1.8rem;
+  font-family: var(--font-ui);
+  font-size: 0.56rem;
+  font-weight: 300;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #9a8e85;
+}
+
+.hl-marquee-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #C5A882;
+  flex-shrink: 0;
+}
+
+/* ── OLD landing classes (superseded by hl-* above) ── */
+/* ─────────────────────────────────────────────────── */
 .landing {
   display: grid;
   grid-template-columns: 44% 56%;
@@ -3216,9 +3749,18 @@ a {
 }
 
 /* ========================================
-   Responsive — Landing
+   Responsive — Hero + Landing
 ======================================== */
 @media (max-width: 1024px) {
+  .hl-root {
+    grid-template-columns: 40% 60%;
+  }
+
+  .hl-headline {
+    font-size: clamp(3rem, 8vw, 8rem);
+  }
+
+  /* legacy */
   .landing {
     grid-template-columns: 40% 60%;
   }
@@ -3234,6 +3776,46 @@ a {
     overflow: auto;
   }
 
+  /* hl-* mobile */
+  .hl-root {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+  }
+
+  .hl-left {
+    min-height: 55vh;
+  }
+
+  .hl-headline {
+    font-size: clamp(3.8rem, 15vw, 7rem);
+  }
+
+  .hl-cta {
+    align-self: stretch;
+  }
+
+  .hl-right {
+    grid-template-rows: 56px 65vw auto auto;
+  }
+
+  .hl-tabs {
+    height: 56px;
+  }
+
+  .hl-info-bar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .hl-quote-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* legacy */
   .landing {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;

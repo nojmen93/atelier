@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 
 type Color = 'white' | 'black' | 'blue'
@@ -57,10 +57,53 @@ export default function HomeLanding({ onOpenQuote }: Props) {
   const [activeProduct, setActiveProduct] = useState(0)
   const [activeColor, setActiveColor] = useState<Color>('black')
   const [imgVisible, setImgVisible] = useState(true)
+  const [mounted, setMounted] = useState(false)
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const rightPanelRef = useRef<HTMLDivElement>(null)
+  const imgWrapRef = useRef<HTMLDivElement>(null)
+  const rafRef = useRef<number>()
+  const mouseTarget = useRef({ x: 0, y: 0 })
+  const mouseCurrent = useRef({ x: 0, y: 0 })
 
   const current = products[activeProduct]
   const colorData = colors.find((c) => c.id === activeColor)!
+  const marqueeItems = [...techniques, ...techniques]
+
+  useEffect(() => {
+    setMounted(true)
+    return () => {
+      clearTimeout(timeoutRef.current)
+      cancelAnimationFrame(rafRef.current!)
+    }
+  }, [])
+
+  // Smooth parallax loop via lerp
+  useEffect(() => {
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+    const tick = () => {
+      mouseCurrent.current.x = lerp(mouseCurrent.current.x, mouseTarget.current.x, 0.055)
+      mouseCurrent.current.y = lerp(mouseCurrent.current.y, mouseTarget.current.y, 0.055)
+      if (imgWrapRef.current) {
+        imgWrapRef.current.style.transform = `translate(${mouseCurrent.current.x}px, ${mouseCurrent.current.y}px)`
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current!)
+  }, [])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = rightPanelRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const cx = (e.clientX - rect.left) / rect.width - 0.5
+    const cy = (e.clientY - rect.top) / rect.height - 0.5
+    mouseTarget.current = { x: cx * -14, y: cy * -9 }
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    mouseTarget.current = { x: 0, y: 0 }
+  }, [])
 
   const changeProduct = (i: number) => {
     if (i === activeProduct) return
@@ -83,79 +126,92 @@ export default function HomeLanding({ onOpenQuote }: Props) {
     }, 180)
   }
 
-  useEffect(() => () => clearTimeout(timeoutRef.current), [])
-
-  // Duplicate for seamless marquee loop
-  const marqueeItems = [...techniques, ...techniques]
-
   return (
-    <div className="landing">
+    <div className={`hl-root${mounted ? ' hl-mounted' : ''}`}>
 
-      {/* ════════════════════════════════
+      {/* ═══════════════════════════════
           LEFT PANEL — dark editorial
-      ════════════════════════════════ */}
-      <div className="landing-left">
+      ═══════════════════════════════ */}
+      <div className="hl-left">
+        <div className="hl-left-inner">
 
-        {/* Top row: eyebrow + index */}
-        <div className="landing-top-row">
-          <span className="landing-eyebrow">Premium Custom Apparel</span>
-          <span className="landing-index">Est. 2012</span>
-        </div>
+          {/* Brand mark */}
+          <div className="hl-brand-row">
+            <span className="hl-brand-name">Atelier</span>
+            <span className="hl-brand-est">Est. 2012</span>
+          </div>
 
-        {/* Massive display headline */}
-        <h1 className="landing-headline" aria-label="Clothes That Build Brands">
-          <span>Clothes</span>
-          <span>That</span>
-          <span>Build</span>
-          <span className="landing-headline-accent">Brands.</span>
-        </h1>
+          {/* Editorial headline — each word reveals upward */}
+          <h1 className="hl-headline" aria-label="Clothes That Build Brands">
+            {['Clothes', 'That', 'Build', 'Brands.'].map((word, i) => (
+              <span key={word} className="hl-word-wrap">
+                <span
+                  className="hl-word"
+                  style={{ transitionDelay: `${i * 95 + 60}ms` }}
+                >
+                  {word}
+                </span>
+              </span>
+            ))}
+          </h1>
 
-        {/* Bottom block: sub + CTA + stats */}
-        <div className="landing-bottom">
-          <p className="landing-sub">
-            Premium branded apparel for companies that refuse to blend in.
-            Embroidery, screen print, and everything between — done right.
+          {/* Tagline */}
+          <p className="hl-tagline hl-delay-500">
+            Premium branded apparel for brands<br />
+            that refuse to blend in.
           </p>
 
-          <button className="landing-cta-btn" onClick={() => onOpenQuote()}>
-            <span>Request a Quote</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+          {/* Primary CTA */}
+          <button
+            className="hl-cta hl-delay-660"
+            onClick={() => onOpenQuote()}
+            aria-label="Enter Collection"
+          >
+            <span className="hl-cta-text">Enter Collection</span>
+            <span className="hl-cta-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </span>
           </button>
 
-          <div className="landing-stats">
-            <div className="landing-stat">
-              <span className="landing-stat-num">500+</span>
-              <span className="landing-stat-label">Brands Served</span>
-            </div>
-            <div className="landing-stat-div" />
-            <div className="landing-stat">
-              <span className="landing-stat-num">12+</span>
-              <span className="landing-stat-label">Years</span>
-            </div>
-            <div className="landing-stat-div" />
-            <div className="landing-stat">
-              <span className="landing-stat-num">100%</span>
-              <span className="landing-stat-label">Quality</span>
-            </div>
+          {/* Stats */}
+          <div className="hl-stats hl-delay-800">
+            {[
+              { num: '500+', label: 'Brands Served' },
+              { num: '12+', label: 'Years' },
+              { num: '100%', label: 'Quality' },
+            ].map((s, i) => (
+              <div key={s.label} className="hl-stat-group">
+                {i > 0 && <div className="hl-stat-sep" aria-hidden="true" />}
+                <div className="hl-stat">
+                  <span className="hl-stat-num">{s.num}</span>
+                  <span className="hl-stat-label">{s.label}</span>
+                </div>
+              </div>
+            ))}
           </div>
+
         </div>
       </div>
 
-      {/* ════════════════════════════════
-          RIGHT PANEL — light product
-      ════════════════════════════════ */}
-      <div className="landing-right">
-
+      {/* ═══════════════════════════════
+          RIGHT PANEL — creme product
+      ═══════════════════════════════ */}
+      <div
+        className="hl-right"
+        ref={rightPanelRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
         {/* Product tabs */}
-        <div className="product-tabs" role="tablist">
+        <div className="hl-tabs" role="tablist">
           {products.map((p, i) => (
             <button
               key={p.id}
               role="tab"
               aria-selected={activeProduct === i}
-              className={`product-tab${activeProduct === i ? ' active' : ''}`}
+              className={`hl-tab${activeProduct === i ? ' hl-tab-active' : ''}`}
               onClick={() => changeProduct(i)}
             >
               {p.category}
@@ -163,62 +219,65 @@ export default function HomeLanding({ onOpenQuote }: Props) {
           ))}
         </div>
 
-        {/* Product image */}
-        <div className="product-showcase">
-          <Image
-            src={current.images[activeColor]}
-            alt={`${current.name} in ${colorData.label}`}
-            fill
-            className={`product-showcase-img${imgVisible ? ' visible' : ''}`}
-            sizes="(max-width: 768px) 100vw, 56vw"
-            priority
-          />
+        {/* Product image with parallax */}
+        <div className="hl-showcase">
+          <div className="hl-img-wrap" ref={imgWrapRef}>
+            <Image
+              src={current.images[activeColor]}
+              alt={`${current.name} in ${colorData.label}`}
+              fill
+              className={`hl-img${imgVisible ? ' hl-img-visible' : ''}`}
+              sizes="(max-width: 768px) 100vw, 58vw"
+              priority
+            />
+          </div>
         </div>
 
         {/* Product info bar */}
-        <div className="product-info-bar">
-          <div className="product-info-meta">
-            <div className="product-info-name">{current.name}</div>
-            <div className="product-info-spec">{current.spec}</div>
+        <div className="hl-info-bar">
+          <div className="hl-info-meta">
+            <div className="hl-info-name">{current.name}</div>
+            <div className="hl-info-spec">{current.spec}</div>
           </div>
 
-          <div className="product-color-row">
+          <div className="hl-color-row">
             {colors.map((c) => (
               <button
                 key={c.id}
-                className={`color-swatch${activeColor === c.id ? ' active' : ''}`}
-                style={{ background: c.hex }}
+                className={`hl-swatch${activeColor === c.id ? ' hl-swatch-active' : ''}`}
+                style={{ '--swatch-color': c.hex } as React.CSSProperties}
                 onClick={() => changeColor(c.id)}
                 aria-label={c.label}
                 title={c.label}
               />
             ))}
-            <span className="color-swatch-label">{colorData.label}</span>
+            <span className="hl-color-label">{colorData.label}</span>
           </div>
 
           <button
-            className="landing-quote-btn"
+            className="hl-quote-btn"
             onClick={() => onOpenQuote(`${current.name} (${colorData.label})`)}
           >
             <span>Get a Quote</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </button>
         </div>
 
         {/* Techniques marquee */}
-        <div className="techniques-strip" aria-hidden="true">
-          <div className="techniques-track">
+        <div className="hl-marquee-strip" aria-hidden="true">
+          <div className="hl-marquee-track">
             {marqueeItems.map((t, i) => (
-              <span key={i} className="technique-tag">
-                <span className="technique-dot" />
+              <span key={i} className="hl-marquee-item">
+                <span className="hl-marquee-dot" />
                 {t}
               </span>
             ))}
           </div>
         </div>
       </div>
+
     </div>
   )
 }

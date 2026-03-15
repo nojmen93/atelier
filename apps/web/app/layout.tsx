@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Bebas_Neue, Outfit } from 'next/font/google'
+import { Bebas_Neue, Outfit, Cormorant_Garamond, Jost } from 'next/font/google'
 import './globals.css'
 
 const bebasNeue = Bebas_Neue({
@@ -12,6 +12,20 @@ const bebasNeue = Bebas_Neue({
 const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-body',
+  display: 'swap',
+})
+
+const cormorant = Cormorant_Garamond({
+  weight: ['300', '400', '500', '600'],
+  subsets: ['latin'],
+  variable: '--font-editorial',
+  display: 'swap',
+})
+
+const jost = Jost({
+  weight: ['300', '400', '500'],
+  subsets: ['latin'],
+  variable: '--font-ui',
   display: 'swap',
 })
 
@@ -41,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${bebasNeue.variable} ${outfit.variable}`}>
+    <html lang="en" className={`${bebasNeue.variable} ${outfit.variable} ${cormorant.variable} ${jost.variable}`}>
       <body>{children}</body>
     </html>
   )
