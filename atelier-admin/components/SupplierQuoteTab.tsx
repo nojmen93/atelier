@@ -300,16 +300,16 @@ export default function SupplierQuoteTab({
 
   // Calculate derived values for a saved quote row
   const quoteCalc = (q: SupplierQuote) => {
-    const vp = q.vendor_price || 0
-    const er = q.exchange_rate || 1
-    const duty = q.duty_pct || 0
-    const freight = q.freight_cost || 0
-    const sc = q.surcharge || 0
-    const mc = q.material_cost || 0
+    const vp = Number(q.vendor_price) || 0
+    const er = Number(q.exchange_rate) || 1
+    const duty = Number(q.duty_pct) || 0
+    const freight = Number(q.freight_cost) || 0
+    const sc = Number(q.surcharge) || 0
+    const mc = Number(q.material_cost) || 0
     const pm = q.pricing_method || 'FOB'
     const { landedExclCustoms, inboundCustoms, landedCost } = calcLanded(vp, er, duty, freight, sc, pm, mc)
-    const calculatedRetail = q.target_margin_pct ? calcRetailPrice(landedCost, q.target_margin_pct) : 0
-    const calculatedMargin = q.target_retail_price ? calcMargin(landedCost, q.target_retail_price) : 0
+    const calculatedRetail = q.target_margin_pct ? calcRetailPrice(landedCost, Number(q.target_margin_pct)) : 0
+    const calculatedMargin = q.target_retail_price ? calcMargin(landedCost, Number(q.target_retail_price)) : 0
     return { landedExclCustoms, inboundCustoms, landedCost, calculatedRetail, calculatedMargin }
   }
 
@@ -563,16 +563,16 @@ export default function SupplierQuoteTab({
                     </td>
                     <td className="px-3 py-2.5 text-neutral-400 text-xs">{q.pricing_method || 'FOB'}</td>
                     <td className="px-3 py-2.5 text-right text-neutral-300 font-mono text-xs">
-                      {q.vendor_price != null ? `${q.currency} ${q.vendor_price.toFixed(2)}` : '—'}
+                      {q.vendor_price != null ? `${q.currency} ${Number(q.vendor_price).toFixed(2)}` : '—'}
                     </td>
                     {hasCmt && (
                       <td className="px-3 py-2.5 text-right text-neutral-400 font-mono text-xs">
-                        {q.material_cost != null ? `${q.material_cost_currency || q.currency} ${q.material_cost.toFixed(2)}` : '—'}
+                        {q.material_cost != null ? `${q.material_cost_currency || q.currency} ${Number(q.material_cost).toFixed(2)}` : '—'}
                       </td>
                     )}
                     <td className="px-3 py-2.5 text-right text-neutral-500 font-mono text-xs">{q.exchange_rate ?? '—'}</td>
                     <td className="px-3 py-2.5 text-right text-neutral-500 font-mono text-xs">{q.duty_pct != null ? `${q.duty_pct}%` : '—'}</td>
-                    <td className="px-3 py-2.5 text-right text-neutral-500 font-mono text-xs">{q.freight_cost != null ? `€${q.freight_cost.toFixed(2)}` : '—'}</td>
+                    <td className="px-3 py-2.5 text-right text-neutral-500 font-mono text-xs">{q.freight_cost != null ? `€${Number(q.freight_cost).toFixed(2)}` : '—'}</td>
                     <td className="px-3 py-2.5 text-right text-neutral-400 font-mono text-xs">
                       {qc.landedExclCustoms > 0 ? `€${qc.landedExclCustoms.toFixed(2)}` : '—'}
                     </td>
@@ -589,7 +589,7 @@ export default function SupplierQuoteTab({
                       {qc.calculatedRetail > 0 ? `€${qc.calculatedRetail.toFixed(0)}` : '—'}
                     </td>
                     <td className="px-3 py-2.5 text-right text-white font-mono text-xs">
-                      {q.target_retail_price != null ? `€${q.target_retail_price.toFixed(0)}` : '—'}
+                      {q.target_retail_price != null ? `€${Number(q.target_retail_price).toFixed(0)}` : '—'}
                     </td>
                     <td className={`px-3 py-2.5 text-right font-mono text-xs font-medium ${belowTarget ? 'text-yellow-400' : 'text-neutral-300'}`}>
                       {qc.calculatedMargin > 0 ? `${qc.calculatedMargin.toFixed(1)}%` : '—'}

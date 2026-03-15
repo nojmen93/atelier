@@ -72,8 +72,16 @@ export default function SKUTab({ styleId, styleName }: { styleId: string; styleN
         : []
       setProductColours(colours)
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
   }, [styleId])
+
+  // Close modal on ESC
+  useEffect(() => {
+    if (!showModal) return
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowModal(false) }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [showModal])
 
   const refreshSkus = async () => {
     const res = await fetch(`/api/product-skus?styleId=${styleId}`)
@@ -113,7 +121,10 @@ export default function SKUTab({ styleId, styleName }: { styleId: string; styleN
 
     setSaving(true)
 
-    const rows = selectedColourIds.flatMap((colourId) => {
+    // Collect existing SKU codes to avoid UNIQUE constraint violations
+    const existingCodes = new Set(skus.map((s) => s.sku_code))
+
+    const allRows = selectedColourIds.flatMap((colourId) => {
       const colour = productColours.find((c) => c.id === colourId)
       if (!colour) return []
 
@@ -131,6 +142,17 @@ export default function SKUTab({ styleId, styleName }: { styleId: string; styleN
       }))
     })
 
+    // Filter out SKUs that already exist
+    const rows = allRows.filter((r) => !existingCodes.has(r.sku_code))
+
+    if (rows.length === 0) {
+      toast.error('All selected SKU combinations already exist')
+      setSaving(false)
+      return
+    }
+
+    const skipped = allRows.length - rows.length
+
     const res = await fetch('/api/product-skus', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -138,7 +160,10 @@ export default function SKUTab({ styleId, styleName }: { styleId: string; styleN
     })
 
     if (res.ok) {
-      toast.success(`${rows.length} SKU${rows.length !== 1 ? 's' : ''} created`)
+      const msg = skipped > 0
+        ? `${rows.length} SKU${rows.length !== 1 ? 's' : ''} created (${skipped} already existed)`
+        : `${rows.length} SKU${rows.length !== 1 ? 's' : ''} created`
+      toast.success(msg)
       setShowModal(false)
       await refreshSkus()
     } else {
