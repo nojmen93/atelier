@@ -22,11 +22,65 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Navigate to `/admin` while logged out → redirects to `/login`
 - [ ] Navigate to `/admin/styles` while logged out → redirects to `/login`
 - [ ] Navigate to `/admin/logos` while logged out → redirects to `/login`
+- [ ] Navigate to `/admin/quotes` while logged out → redirects to `/login`
 - [ ] No flash of protected content before redirect
 
 **Common issues:**
 - Server-side Supabase client not configured (missing env vars)
 - Cookie not set properly (check `@supabase/ssr` setup)
+
+### Sign Out
+- [ ] "Sign Out" button appears in sidebar footer
+- [ ] Clicking Sign Out ends the session
+- [ ] After sign out, visiting `/admin` redirects to `/login`
+
+---
+
+## Navigation (Sidebar)
+
+- [ ] Sidebar visible on all `/admin/*` pages
+- [ ] "Atelier" brand link in sidebar header navigates to `/admin`
+- [ ] **Dashboard** direct link works → `/admin`
+- [ ] **Product** section expands/collapses on click
+  - [ ] Hierarchy → `/admin/styles/hierarchy`
+  - [ ] Product → `/admin/styles`
+  - [ ] Colour Library → `/admin/styles/colours`
+  - [ ] Specification → `/admin/styles/specification`
+- [ ] **Production** section expands/collapses
+  - [ ] Quote Requests → `/admin/quotes`
+  - [ ] Orders → `/admin/orders`
+  - [ ] Suppliers → `/admin/suppliers`
+  - [ ] Factories → `/admin/factories`
+- [ ] **Logos** section expands/collapses
+  - [ ] Logo Library → `/admin/logos`
+  - [ ] Upload Logo → `/admin/logos/new`
+  - [ ] Mockup Generator → `/admin/mockup`
+- [ ] **Views** section expands/collapses
+  - [ ] All Views → `/admin/views`
+  - [ ] New View → `/admin/views/new`
+- [ ] **Settings** link in footer → `/admin/settings`
+- [ ] Active page highlighted (white text + neutral-900 bg for direct links)
+- [ ] Active section auto-expands on page load
+
+---
+
+## Dashboard
+
+- [ ] "Dashboard" heading visible
+- [ ] **Styles section** (3 cards): Total Styles, Active Styles, Concepts
+- [ ] Total Styles card links to `/admin/styles`
+- [ ] **Production section** (3 cards): Suppliers, Active Orders (blue), Pending Quotes (blue)
+- [ ] Active Orders card links to `/admin/orders`
+- [ ] Pending Quotes card links to `/admin/quotes`
+- [ ] **Quote Requests section** (4 cards): Pending Review, Total Quotes, Accepted/Converted, Conversion Rate
+- [ ] Pending Review card links to `/admin/quotes`
+- [ ] Accepted/Converted count shown in green
+- [ ] Conversion Rate calculated correctly (accepted ÷ quoted × 100)
+- [ ] **Recent Quotes table** shows last 5 quotes (when quotes exist)
+  - [ ] Columns: date, customer name, company, product, quantity, status badge, View link
+  - [ ] "View all →" link navigates to `/admin/quotes`
+  - [ ] Status badges color-coded correctly
+  - [ ] Table hidden when no quotes exist
 
 ---
 
@@ -36,7 +90,7 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Displays all non-archived styles
 - [ ] Archived styles (`status = 'archived'`) are hidden
 - [ ] Empty state shown when no styles exist (icon + CTA)
-- [ ] Each card shows: name, status badge, category info, variant count
+- [ ] Each card shows: name, status badge, concept/category, variant count
 - [ ] "New Style" button links to `/admin/styles/new`
 
 ### Create Style (`/admin/styles/new`)
@@ -49,9 +103,9 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Collection type options: Editorial, Signature, Foundation, Special Projects
 - [ ] Product capability options: None, Simple Customizable, Quote Only, Both
 - [ ] Status options: Development, Active, Archived
-- [ ] Optional fields accept empty values: description, material, base cost, lead time, supplier, customization mode
+- [ ] Optional fields accept empty values
 - [ ] Save button shows "Saving..." while submitting
-- [ ] Success toast: "Changes saved"
+- [ ] Success toast on save
 - [ ] Redirects to `/admin/styles` after save
 
 ### Edit Style (`/admin/styles/[id]`)
@@ -61,10 +115,9 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Status dropdown in top-right shows color-coded badge
   - [ ] Active → green
   - [ ] Development → yellow
-  - [ ] Archived → red
+  - [ ] Archived → red/neutral
 - [ ] `Cmd/Ctrl + S` triggers save (Details tab only)
 - [ ] Save shows success toast
-- [ ] Redirects to styles list after save
 
 ### Images
 - [ ] Upload area visible in the Details tab
@@ -84,18 +137,14 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] "Quick Add" opens the bulk creation modal
 - [ ] Bulk modal: checkboxes for sizes (XS through XXL)
 - [ ] Bulk modal: color presets + custom color input
-- [ ] SKUs auto-generated: `{STYLE-NAME}-{SIZE}-{COLOR}`
+- [ ] SKUs auto-generated from style name + size + color
 - [ ] Pressing Escape closes the Quick Add modal
 - [ ] Generated variants appear in the table
 
-**Common issues:**
-- SKU uniqueness not enforced client-side (may fail on server)
-- Empty size/color generates malformed SKU
-
 ### Archive (Soft Delete)
 - [ ] Click "Archive" button at bottom of edit form
-- [ ] Confirmation prompt appears: "Archive this style?"
-- [ ] "Yes, Archive" button sets status to `archived`
+- [ ] Confirmation prompt appears
+- [ ] Confirming sets status to `archived`
 - [ ] "Cancel" dismisses the confirmation
 - [ ] Toast: "Style archived"
 - [ ] Style disappears from list (filtered out)
@@ -107,14 +156,13 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Dragging shows opacity change on source item
 - [ ] Drop saves new order immediately to database
 - [ ] Page refresh maintains the new order
-- [ ] Works with keyboard (if @dnd-kit keyboard sensor enabled)
 
 ---
 
 ## Suppliers
 
 ### List Page (`/admin/suppliers`)
-- [ ] Displays all suppliers sorted by name
+- [ ] Displays all suppliers
 - [ ] Each card shows: name, MOQ, lead time, location, contact email
 - [ ] Empty state with icon and "Add First Supplier" CTA
 - [ ] Clicking a supplier card navigates to edit page
@@ -128,11 +176,21 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] All fields pre-populated
 - [ ] Can update any field
 - [ ] Delete with confirmation dialog
-- [ ] Delete removes supplier from database
 - [ ] Toast notifications on save/delete
 
-**Common issues:**
-- Deleting a supplier linked to styles may cause FK constraint errors (depends on DB setup)
+---
+
+## Factories
+
+### List Page (`/admin/factories`)
+- [ ] Displays all factories
+- [ ] Empty state shown when none exist
+- [ ] Clicking a factory navigates to edit page
+
+### Create/Edit Factory
+- [ ] Name is required
+- [ ] Save success → toast + redirect to list
+- [ ] Delete with confirmation
 
 ---
 
@@ -154,7 +212,7 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Categories section shows linked categories
 - [ ] "New Category" button links to category creation page
 - [ ] Delete concept with confirmation
-- [ ] Deleting concept may cascade to categories (verify behavior)
+- [ ] Deleting concept may cascade to categories
 
 ### Create Category (`/admin/concepts/[id]/categories/new`)
 - [ ] Name required
@@ -167,15 +225,12 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Order persists in database
 - [ ] 8px activation distance
 
-**Common issues:**
-- Category slug collision if same name used across concepts
-
 ---
 
 ## Logos
 
 ### Logo List (`/admin/logos`)
-- [ ] Grid layout (2-4 columns responsive)
+- [ ] Grid layout (2–4 columns responsive)
 - [ ] PNG/SVG logos show image preview
 - [ ] AI/EPS logos show format label ("Preview not available")
 - [ ] Each card shows: company name, format badge, dimensions
@@ -189,9 +244,8 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Invalid file type → inline error message
 - [ ] File too large → inline error message
 - [ ] PNG/SVG: shows live preview after file selection
-- [ ] PNG/SVG: extracts and displays dimensions (width x height px)
+- [ ] PNG/SVG: extracts and displays dimensions
 - [ ] AI/EPS: shows format label, no preview
-- [ ] "Remove" button clears selected file
 - [ ] Upload progress bar animates
 - [ ] Upload button disabled while uploading
 - [ ] Success → redirects to logos list
@@ -206,34 +260,27 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] File URL link opens in new tab
 - [ ] Company name editable
 - [ ] `Cmd/Ctrl + S` triggers save
-- [ ] Save → toast: "Changes saved" + redirect
+- [ ] Save → toast: "Changes saved"
 - [ ] Delete button → confirmation dialog
 - [ ] Delete → toast: "Logo deleted" + redirect
-- [ ] Delete button shows "Deleting..." while processing
-
-**Common issues:**
-- CORS issues if Supabase Storage bucket not configured for public access
-- SVG dimension extraction fails for SVGs without explicit width/height (falls back to viewBox)
 
 ---
 
-## Customizations (Mockup Generator)
+## Mockup Generator (Customization)
 
 ### Prerequisites
-- [ ] Style must have at least one image uploaded
+- [ ] Style must have at least one image uploaded (for in-style tab)
 - [ ] At least one logo must exist in the Logo Library
 
 ### Canvas Initialization
-- [ ] Canvas loads with first product image as background
-- [ ] Canvas size: 500x600px
+- [ ] Canvas loads with product image as background (500×600 px)
 - [ ] Black background when no image loaded
-- [ ] If no images: shows "Add product images first" message
+- [ ] If no images (in-style tab): shows "Add product images first" message
 
 ### Image View Switching
 - [ ] Multiple images → tabs appear: "Front", "Back", "Detail", "View 4"...
 - [ ] Clicking tab switches background image
-- [ ] Active tab highlighted (white bg)
-- [ ] Single image → no tabs shown
+- [ ] Active tab highlighted
 
 ### Logo Selection
 - [ ] Dropdown lists all logos: "Company Name (FORMAT)"
@@ -247,94 +294,159 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] 5 placements available in dropdown
 - [ ] Changing placement repositions logo on canvas
 - [ ] Placement label shown in bottom-left corner of canvas
-- [ ] Center Front: logo at center-top
-- [ ] Center Back: logo at center-top
-- [ ] From HSP: logo at upper-right
-- [ ] Center on WRS: logo at right-center
-- [ ] Center on WLS: logo at left-center
 
 ### Technique
 - [ ] Two toggle buttons: Embroidery (blue), Print (purple)
-- [ ] Embroidery selected:
-  - [ ] Logo opacity set to 85%
-  - [ ] Shadow/stitch overlay added
-  - [ ] Blue "Embroidery texture" badge top-left
-  - [ ] Hint text below buttons
-- [ ] Print selected:
-  - [ ] Logo opacity set to 95%
-  - [ ] No overlay
-  - [ ] No badge
+- [ ] Embroidery: logo opacity 85%, shadow overlay, blue badge top-left
+- [ ] Print: logo opacity 95%, no overlay, no badge
 
 ### Size Controls
-- [ ] Width (cm) input: range 0.5-50, step 0.1
-- [ ] Height (cm) input: range 0.5-50, step 0.1
+- [ ] Width (cm) input: range 0.5–50, step 0.1
+- [ ] Height (cm) input: range 0.5–50, step 0.1
 - [ ] Changing values updates logo size on canvas in real-time
-- [ ] Default values: 5 x 5 cm
-
-### Pantone Color
-- [ ] Text input for pantone color reference
-- [ ] Optional field
-- [ ] Value saved with customization
 
 ### Canvas Interaction
 - [ ] Logo is selectable (click shows border)
 - [ ] Logo can be dragged to new position
 - [ ] Background image is NOT selectable/draggable
-- [ ] Logo has no resize handles (controlled by width/height inputs)
 
 ### Zoom
 - [ ] "+" button increases zoom (max 200%)
-- [ ] "-" button decreases zoom (min 50%)
+- [ ] "−" button decreases zoom (min 50%)
 - [ ] Percentage button resets to 100%
-- [ ] Smooth transition on zoom
-- [ ] Zoom percentage displayed
 
 ### Save Customization
 - [ ] "Save Customization" requires logo selection
 - [ ] Missing logo → error toast: "Please select a logo."
-- [ ] Button disabled while saving
-- [ ] Button text: "Saving..." during save
 - [ ] Success toast: "Customization saved"
 - [ ] Form resets after save
 - [ ] New row appears in saved customizations table
 
-### Edit Customization
-- [ ] Click "Edit" in table → form populates with saved data
-- [ ] Button changes to "Update Customization"
-- [ ] "Cancel" button appears
+### Edit / Delete Customization
+- [ ] Click "Edit" → form populates with saved data, button changes to "Update Customization"
+- [ ] "Cancel" resets the form
 - [ ] Update success → toast: "Customization updated"
-- [ ] Form resets after update
-
-### Delete Customization
-- [ ] Click "Delete" in table
-- [ ] Row removes on success
-- [ ] Toast: "Customization deleted"
-- [ ] Delete button shows "..." while deleting
+- [ ] Click "Delete" → row removes, toast: "Customization deleted"
 
 ### Export Mockup
 - [ ] "Download Mockup" button below canvas
-- [ ] Button shows "Exporting..." during export
-- [ ] PNG file downloads to computer
+- [ ] PNG file downloads (1000×1200 px, 2× resolution)
 - [ ] Filename: `mockup-{styleId}-{placement}.png`
-- [ ] Resolution: 2x (1000x1200px)
-- [ ] Mockup uploaded to Supabase Storage (`mockups/{styleId}/`)
-- [ ] If editing: mockup_url saved to customization record
+- [ ] Mockup uploaded to Supabase Storage
 - [ ] Success toast: "Mockup exported and saved"
 - [ ] Storage failure: "Download complete, but storage upload failed"
 
-### Saved Customizations Table
-- [ ] Loading state: skeleton rows with pulse animation
-- [ ] Empty state: "No customizations saved yet."
-- [ ] Columns: Logo (thumbnail + name), Placement, Technique (badge), Color, Size, Actions
-- [ ] Technique badge: blue for embroidery, purple for print
-- [ ] Size displays as "W x H cm" format
-- [ ] Hover effect on rows
+---
 
-**Common issues:**
-- Fabric.js canvas may not render in SSR (ensure 'use client')
-- CORS errors when loading product images cross-origin on canvas
-- Large logos may exceed canvas bounds (capped at 200px)
-- Embroidery overlay position may drift if logo is dragged
+## Quote Requests
+
+### List Page (`/admin/quotes`)
+- [ ] Table displays all quote requests
+- [ ] Columns: date, customer name + email, company, product, quantity, status badge, quoted price, View button
+- [ ] Search input filters by name, email, or company
+- [ ] Status dropdown filters by: All Statuses, New, Reviewed, Quoted, Accepted, Rejected, Converted
+- [ ] Results count updates based on active filters
+- [ ] "No quotes match your filters." shown when filter returns nothing
+- [ ] "New Quote Request" button links to `/admin/quotes/new`
+- [ ] Empty state shown when no quotes exist
+
+### Status Badge Colors
+- [ ] New → blue
+- [ ] Reviewed → yellow
+- [ ] Quoted → purple
+- [ ] Accepted → green
+- [ ] Rejected → red
+- [ ] Converted → emerald
+
+### Create Quote Request (`/admin/quotes/new`)
+- [ ] Customer Name required
+- [ ] Customer Email required
+- [ ] Company, Phone — optional
+- [ ] Style dropdown — optional (links to existing style)
+- [ ] Product Description — optional free text
+- [ ] Quantity — number input
+- [ ] Variant Breakdown — dynamic rows (size/color/qty); "Add line" adds rows; delete removes rows
+- [ ] Placement dropdown — 5 options (Center Front, Center Back, From HSP, Center on WRS, Center on WLS)
+- [ ] Technique dropdown — Embroidery, Print
+- [ ] Pantone Color — optional text input
+- [ ] Customer Message — optional textarea
+- [ ] Submit button shows "Creating..." while saving
+- [ ] Success → toast + redirect to quote detail
+- [ ] Back link navigates to `/admin/quotes`
+
+### Quote Detail (`/admin/quotes/[id]`)
+- [ ] Status dropdown in top-right changes status
+- [ ] Submission date shown in header
+- [ ] Converted banner (emerald) shown if status is "converted", with link to the created style
+- [ ] **Left column:** customer info, message, variant breakdown all displayed
+- [ ] **Middle column:** linked style name (link to style edit), style images, base cost, lead time, material, quantity, customization prefs, customer logo
+- [ ] **Right column:** price calculator, quote response, internal notes, action buttons
+- [ ] "Save Changes" saves quoted price, notes, status → toast: "Changes saved"
+
+### Price Calculator
+- [ ] Unit Base Cost input (EUR)
+- [ ] Customization Fee input (EUR)
+- [ ] Margin % input
+- [ ] Breakdown updates live as values change:
+  - [ ] Shows unit + cust
+  - [ ] Shows × quantity
+  - [ ] Shows subtotal
+  - [ ] Shows + margin amount
+  - [ ] Shows total in large text
+- [ ] "Apply as Quoted Price" pushes total to Quoted Price field
+
+### Email Quote Modal
+- [ ] "Send Quote Email" button is **disabled** if no quoted price is set
+- [ ] Clicking "Send Quote Email" opens the email modal
+- [ ] Recipient shown as "Name <email>" (read-only)
+- [ ] Subject pre-filled: "Quote for [Product] – [Company]" (editable)
+- [ ] Body pre-filled with template (editable textarea)
+- [ ] "Copy to Clipboard" copies body text
+- [ ] "Open in Email Client" opens mailto: link
+- [ ] Cancel closes modal
+- [ ] Escape key closes modal
+
+### Convert Quote to Style (Create Style from Quote Modal)
+- [ ] "Create Style from Quote" button visible when quote is not already converted
+- [ ] Modal opens with Style Name pre-filled
+- [ ] Concept dropdown required (empty until selected)
+- [ ] Category dropdown required (populates after concept selected)
+- [ ] Gender defaults to "Unisex"
+- [ ] "Create variants" checkbox shows variant breakdown pills
+- [ ] "Use customer logo" checkbox visible if quote has logo
+- [ ] "Create customization entry" checkbox shows placement/technique from quote
+- [ ] Logo selector dropdown appears when customization checkbox is checked
+- [ ] "Create & Link to Quote" button disabled until concept + category selected
+- [ ] On success:
+  - [ ] New style created in database
+  - [ ] Variants created (if checked)
+  - [ ] Customization created (if checked)
+  - [ ] Quote status updated to "Converted"
+  - [ ] Converted banner appears on quote detail page
+  - [ ] Banner links to the new style
+- [ ] Escape key closes modal
+
+---
+
+## Orders
+
+### List Page (`/admin/orders`)
+- [ ] Displays all orders with status badges
+- [ ] Empty state shown when no orders exist
+- [ ] "New Order" button or modal accessible
+
+### Create Order
+- [ ] Required fields validated
+- [ ] Save success → toast + redirect to list
+
+### Order Detail (`/admin/orders/[id]`)
+- [ ] Status dropdown updates order status
+- [ ] Status options: Confirmed, In Production, Shipped, Delivered
+- [ ] Save → toast: "Changes saved"
+- [ ] Delete with confirmation
+
+### Dashboard Active Orders Count
+- [ ] Dashboard shows count of orders with status: confirmed, in_production, or shipped
 
 ---
 
@@ -351,7 +463,7 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 ### Create/Edit View
 - [ ] View name required
 - [ ] Type selection: Gallery or Grid
-- [ ] Attribute selection (left/right column interface)
+- [ ] Attribute selection works
 - [ ] Filter configuration (field, operator, value)
 - [ ] Sort configuration (field, direction)
 - [ ] Group by selection
@@ -367,14 +479,11 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Grouping shows section headers
 - [ ] Pagination controls work (next/previous)
 - [ ] Checkbox selection per item
-- [ ] Select all checkbox
 
 ### Export Page
 - [ ] Export page accessible from rendered view
-- [ ] Shows export settings: page size, header text, include images, include header
-- [ ] Shows selected style count or "all styles" message
+- [ ] Shows export settings: page size, header text, include images
 - [ ] Displays "PDF export is not yet available" placeholder message
-- [ ] Back link returns to rendered view
 
 ---
 
@@ -384,10 +493,9 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Appear in top-right corner
 - [ ] Dark theme styling (neutral-900 bg, white text)
 - [ ] Auto-dismiss after 3 seconds
-- [ ] Success toasts show for: save, delete, archive, export
+- [ ] Success toasts show for: save, delete, archive, export, quote create
 - [ ] Error toasts show for: validation failures, server errors
 - [ ] Multiple toasts stack vertically
-- [ ] Toasts visible across all pages (provider in root layout)
 
 ### Loading States
 - [ ] `SkeletonCard`: matches product/logo card shape
@@ -395,7 +503,6 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] `SkeletonLogoCard`: matches logo card shape (square aspect ratio)
 - [ ] `SkeletonMetric`: matches dashboard metric card shape
 - [ ] All skeletons have `animate-pulse` effect
-- [ ] Transitions cleanly to actual content
 
 ### Empty States
 - [ ] Styles: icon + "No styles yet" + "Create First Style" CTA
@@ -404,15 +511,17 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Views: "No views created yet" message
 - [ ] Customizations: "No customizations saved yet." text
 - [ ] Customization (no images): "Add product images first" with guidance
+- [ ] Quotes: empty state when no quotes exist
 
 ### Keyboard Shortcuts
 - [ ] `Cmd/Ctrl + S` saves form on style edit (Details tab only)
 - [ ] `Cmd/Ctrl + S` saves form on logo detail page
 - [ ] `Cmd/Ctrl + S` saves form on supplier edit page
 - [ ] `Cmd/Ctrl + S` saves form on concept edit page
-- [ ] `Cmd/Ctrl + S` saves form on category edit page
 - [ ] Browser save dialog is prevented (no browser save-as popup)
 - [ ] `Escape` closes Quick Add variant modal
+- [ ] `Escape` closes Email Quote modal
+- [ ] `Escape` closes Create Style from Quote modal
 - [ ] Shortcuts work on both Mac (metaKey) and Windows/Linux (ctrlKey)
 
 ### Error Handling
@@ -420,15 +529,7 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] File too large → client-side error message (inline)
 - [ ] Server error → toast with Supabase error message
 - [ ] Missing required field → browser native validation
-- [ ] Network failure → toast error
 - [ ] Delete confirmation prevents accidental deletion
-
-### Navigation
-- [ ] All edit/new pages have BackLink component
-- [ ] BackLink shows arrow icon with hover state
-- [ ] Top nav bar shows on all admin pages
-- [ ] Nav links: Dashboard, Styles, Concepts, Suppliers, Logos, Views
-- [ ] Active page not highlighted (known limitation)
 
 ---
 
@@ -438,26 +539,23 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Dashboard loads within 2 seconds
 - [ ] Style list loads within 2 seconds
 - [ ] Logo gallery loads within 3 seconds (image-heavy)
-- [ ] Login page loads instantly (no data fetching)
+- [ ] Quotes list loads within 2 seconds
 
 ### Image Upload
 - [ ] Product image upload completes within 5 seconds (5 MB file)
 - [ ] Logo upload completes within 5 seconds (10 MB file)
 - [ ] Progress indicator updates during upload
-- [ ] Multiple sequential uploads don't cause race conditions
 
 ### Canvas Performance
 - [ ] Fabric.js canvas initializes within 1 second
-- [ ] Logo placement updates are instant (< 100ms)
+- [ ] Logo placement updates are instant (< 100 ms)
 - [ ] Switching techniques (embroidery/print) is instant
-- [ ] Zoom transitions are smooth (CSS transition)
 - [ ] Export to PNG completes within 3 seconds
 
 ### Drag-and-Drop
 - [ ] Drag activation feels responsive (8px threshold)
 - [ ] Reorder animation is smooth
 - [ ] Database save on drop completes within 1 second
-- [ ] No visual glitches during drag
 
 ---
 
@@ -484,3 +582,4 @@ Comprehensive testing checklist for all features. Use this before releases, afte
 - [ ] Supabase email auth enabled
 - [ ] Admin user exists in Supabase auth
 - [ ] All database tables created with correct schema
+- [ ] Tables required: `styles`, `concepts`, `categories`, `suppliers`, `logos`, `customizations`, `variants`, `views`, `quote_requests`, `orders`

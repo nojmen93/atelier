@@ -1,23 +1,27 @@
-# Atelier — Custom Apparel Studio
+# Atelier — Custom Apparel Management Platform
 
-A premium custom apparel website built with Next.js 14 and Sanity CMS.
+A B2B custom apparel management platform built with Next.js and Supabase. The monorepo contains two applications:
+
+- **atelier-admin** — Internal admin panel for managing styles, suppliers, quotes, orders, mockups, and more
+- **apps/web** — Customer-facing website for browsing products and submitting quote requests
 
 ## Architecture
 
 ```
 atelier/
+├── atelier-admin/    # Admin panel (Next.js 16, React 19, Tailwind CSS v4)
 ├── apps/
-│   ├── web/          # Next.js 14 (App Router)
-│   └── studio/       # Sanity Studio v3
-└── packages/
-    └── config/       # Shared configs (future)
+│   └── web/          # Public website (Next.js 14, React 18)
+├── package.json      # Root monorepo config
+├── pnpm-workspace.yaml
+└── turbo.json
 ```
 
 ## Prerequisites
 
 - Node.js 18+
 - pnpm 9+
-- Sanity account (free tier works)
+- Supabase account (free tier works)
 
 ## Quick Start
 
@@ -28,132 +32,156 @@ cd atelier
 pnpm install
 ```
 
-### 2. Create Sanity Project
+### 2. Configure Environment
 
-```bash
-# Login to Sanity
-npx sanity login
+#### Admin app (`atelier-admin/.env.local`)
 
-# Create a new project (run from apps/studio)
-cd apps/studio
-npx sanity init --env
-
-# This will create a .env file with your project ID
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-### 3. Configure Environment
+#### Web app (`apps/web/.env.local`)
 
-Copy the env examples and fill in your values:
-
-```bash
-# Web app
-cp apps/web/.env.example apps/web/.env.local
-
-# Studio (should already exist from sanity init)
-cp apps/studio/.env.example apps/studio/.env
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Edit `apps/web/.env.local`:
+### 3. Set Up Supabase
 
-```
-NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
-NEXT_PUBLIC_SANITY_DATASET=production
-NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01
-```
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Create the database tables (see `ADMIN_SYSTEM_DOCUMENTATION.md` → Database Schema)
+3. Create two Storage buckets with **public** read access:
+   - `product-images` — style photos and exported mockups
+   - `logos` — brand logo files
+4. Enable **Email/Password** auth in the Supabase dashboard
+5. Create an admin user via the Supabase dashboard → Authentication → Users
+6. Copy the project URL, anon key, and service role key into the `.env.local` files
 
 ### 4. Run Development
 
 ```bash
-# Run both web and studio
+# Run all apps in parallel
 pnpm dev
 
-# Or separately:
-pnpm dev:web    # http://localhost:3000
-pnpm dev:studio # http://localhost:3333
+# Or run individually:
+pnpm dev:admin   # http://localhost:3000 (admin panel)
+pnpm dev:web     # http://localhost:3001 (public website)
 ```
 
-### 5. Add Portfolio Content
+## Applications
 
-1. Open Sanity Studio at `http://localhost:3333`
-2. Create new Portfolio Projects
-3. Upload images, set categories, adjust order
-4. Content appears automatically on the website
+### Atelier Admin (`atelier-admin/`)
 
-## Deployment
+The internal management panel. Features include:
 
-### Vercel (Web)
+- **Authentication** — Email/password login via Supabase Auth; all `/admin/*` routes are server-side protected
+- **Dashboard** — Key metrics for styles, production, quotes, and orders; recent quote activity
+- **Style Management** — Full CRUD for apparel styles with image upload, variant management (individual + bulk), drag-and-drop ordering, and status tracking (Development / Active / Archived)
+- **Product Hierarchy** — Concepts → Categories two-level taxonomy with drag-and-drop ordering
+- **Colour Library** — Manage colourways with auto-generated colour codes and GS1 US codes
+- **Quote Requests** — Full lifecycle quote management (New → Reviewed → Quoted → Accepted/Rejected → Converted); integrated price calculator; email quote modal; convert quote to style
+- **Order Management** — Track orders with status progression (Confirmed → In Production → Shipped → Delivered)
+- **Suppliers & Factories** — CRUD for production partners with MOQ, lead time, and location
+- **Logo Library** — Upload brand logos (SVG, PNG, AI, EPS); automatic dimension extraction; gallery view
+- **Mockup Generator** — Fabric.js canvas for placing logos on product images; 5 placement positions; embroidery and print technique previews; export as 2× PNG
+- **Dynamic View Builder** — Build gallery/grid views of styles with configurable attributes, filters, sort, and group-by
 
-```bash
-cd apps/web
-vercel
-```
+### Atelier Web (`apps/web/`)
 
-Environment variables needed:
-- `NEXT_PUBLIC_SANITY_PROJECT_ID`
-- `NEXT_PUBLIC_SANITY_DATASET`
-- `NEXT_PUBLIC_SANITY_API_VERSION`
+The public-facing website. Features include:
 
-### Sanity Studio
-
-```bash
-cd apps/studio
-npx sanity deploy
-```
-
-This deploys to `your-project.sanity.studio`
-
-## Project Structure
-
-### Web (`apps/web`)
-
-| Path | Description |
-|------|-------------|
-| `app/page.tsx` | Main page component |
-| `app/components/` | All UI components |
-| `app/globals.css` | Full CSS (no Tailwind) |
-| `lib/sanity.ts` | Sanity client + queries |
-
-### Studio (`apps/studio`)
-
-| Path | Description |
-|------|-------------|
-| `schemas/project.ts` | Portfolio project schema |
-| `sanity.config.ts` | Studio configuration |
-
-## Adding More Editable Content
-
-To make services, process steps, or copy editable:
-
-1. Create new schema in `apps/studio/schemas/`
-2. Add to `schemas/index.ts`
-3. Create query in `apps/web/lib/sanity.ts`
-4. Fetch data in component
-
-Example for services:
-
-```ts
-// apps/studio/schemas/service.ts
-export default defineType({
-  name: 'service',
-  title: 'Service',
-  type: 'document',
-  fields: [
-    defineField({ name: 'number', type: 'string' }),
-    defineField({ name: 'title', type: 'string' }),
-    defineField({ name: 'description', type: 'text' }),
-    defineField({ name: 'order', type: 'number' }),
-  ],
-})
-```
+- Homepage with product showcase and hero section
+- Quote request form for customers
+- Quote detail page (`/quote/[id]`)
+- Journal/blog section (`/journal`)
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
-- **CMS**: Sanity v3
-- **Styling**: Vanilla CSS (custom properties)
-- **Fonts**: Bebas Neue + Outfit (Google Fonts)
-- **Monorepo**: pnpm + Turborepo
-- **Deployment**: Vercel + Sanity Cloud
+### Admin (`atelier-admin`)
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16.1.6 (App Router) |
+| Language | TypeScript 5.9.3 |
+| Runtime | React 19.2.3 |
+| Styling | Tailwind CSS v4 (dark UI theme) |
+| Database/Auth | Supabase (PostgreSQL + Auth + Storage) |
+| Monorepo | Turborepo + pnpm workspaces |
+| Drag & Drop | @dnd-kit/core + @dnd-kit/sortable |
+| Canvas/Mockups | Fabric.js v7 |
+| Image Processing | sharp (server-side metadata extraction) |
+| Notifications | Sonner (toast system) |
+| Icons | lucide-react |
+
+### Web (`apps/web`)
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14.2.0 (App Router) |
+| Language | TypeScript 5.4.0 |
+| Runtime | React 18.3.0 |
+| Database | Supabase |
+
+## Project Structure
+
+### Admin (`atelier-admin/`)
+
+| Path | Description |
+|------|-------------|
+| `app/login/` | Authentication page |
+| `app/admin/` | Protected admin routes |
+| `app/admin/page.tsx` | Dashboard with metrics |
+| `app/admin/styles/` | Style CRUD |
+| `app/admin/styles/colours/` | Colour library |
+| `app/admin/styles/hierarchy/` | Hierarchy browser |
+| `app/admin/styles/specification/` | Specification view |
+| `app/admin/quotes/` | Quote request management |
+| `app/admin/orders/` | Order management |
+| `app/admin/suppliers/` | Supplier management |
+| `app/admin/factories/` | Factory management |
+| `app/admin/logos/` | Logo library |
+| `app/admin/mockup/` | Standalone mockup generator |
+| `app/admin/concepts/` | Concept & category hierarchy |
+| `app/admin/views/` | Dynamic view builder |
+| `app/admin/settings/` | Admin settings |
+| `components/` | Reusable UI components |
+| `lib/supabase/` | Supabase server/client/admin helpers |
+
+### Web (`apps/web/`)
+
+| Path | Description |
+|------|-------------|
+| `app/page.tsx` | Homepage |
+| `app/quote/[id]/` | Quote detail for customers |
+| `app/journal/` | Blog/journal pages |
+| `app/api/quote-request/` | Quote submission endpoint |
+| `app/api/quote/respond/` | Quote response endpoint |
+
+## Deployment
+
+### Vercel
+
+Both apps can be deployed to Vercel independently:
+
+```bash
+# Admin
+cd atelier-admin && vercel
+
+# Web
+cd apps/web && vercel
+```
+
+Environment variables needed for each app match the `.env.local` variables above.
+
+## Documentation
+
+- **`ADMIN_SYSTEM_DOCUMENTATION.md`** — Full feature reference, database schema, file structure, and development guidelines for the admin panel
+- **`DEMO_WALKTHROUGH.md`** — Step-by-step walkthrough of every admin feature
+- **`TESTING_CHECKLIST.md`** — QA checklist for all features
+- **`ADMIN_SCREENSHOTS.md`** — ASCII visual documentation of every admin page
 
 ## License
 

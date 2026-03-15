@@ -10,19 +10,44 @@ All pages use a dark theme (black background, white text, neutral-800 borders).
 Every admin page shares this shell:
 
 ```
-+----------------------------------------------------------+
-| Atelier Admin    Dashboard  Styles  Concepts  Suppliers  |
-|                  Logos  Quotes  Views                     |
-+----------------------------------------------------------+
-|                                                          |
-|  [page content with p-8 padding]                         |
-|                                                          |
-+----------------------------------------------------------+
++----------------+------------------------------------------+
+| Atelier        |                                          |
+|----------------|  [page content with p-8 padding]         |
+| Dashboard      |                                          |
+|                |                                          |
+| > Product      |                                          |
+|   Hierarchy    |                                          |
+|   Product      |                                          |
+|   Colour Lib   |                                          |
+|   Specification|                                          |
+|                |                                          |
+| > Production   |                                          |
+|   Quote Req.   |                                          |
+|   Orders       |                                          |
+|   Suppliers    |                                          |
+|   Factories    |                                          |
+|                |                                          |
+| > Logos        |                                          |
+|   Logo Library |                                          |
+|   Upload Logo  |                                          |
+|   Mockup Gen.  |                                          |
+|                |                                          |
+| > Views        |                                          |
+|   All Views    |                                          |
+|   New View     |                                          |
+|----------------|                                          |
+| Settings       |                                          |
+| Sign Out       |                                          |
++----------------+------------------------------------------+
 ```
 
-- Brand: "Atelier Admin" (xl bold, left)
-- Nav links: right-aligned, hover turns neutral-400
-- Auth check: redirects to /login if no session
+- **Left sidebar** (`w-56`): fixed, black background, neutral-800 right border
+- Brand: "Atelier" (lg bold) at top, links to `/admin`
+- Sections are **collapsible** — click section header to expand/collapse sub-items
+- Active page highlighted: white text + neutral-900 background
+- Active section auto-expands on page load
+- **Footer**: Settings link + Sign Out button at bottom of sidebar
+- Auth check: redirects to `/login` if no session
 
 ---
 
@@ -68,18 +93,28 @@ Every admin page shares this shell:
 +----------------------------------------------------------+
 | Dashboard                                                |
 |                                                          |
-| +------------+ +------------+ +----------+ +-----------+ |
-| |     12     | |      8     | |     3    | |     4     | |
-| |Total Styles| |Active Style| | Concepts | | Suppliers | |
-| +------------+ +------------+ +----------+ +-----------+ |
+| STYLES                                                   |
+| +------------------+ +------------------+ +----------+  |
+| |       12         | |        8         | |    3     |  |
+| |   Total Styles   | |  Active Styles   | | Concepts |  |
+| +------------------+ +------------------+ +----------+  |
+|   (clickable link)                                       |
+|                                                          |
+| PRODUCTION                                               |
+| +------------------+ +------------------+ +----------+  |
+| |        4         | |    2 (blue)      | |  5 (blue)|  |
+| |    Suppliers     | |  Active Orders   | |  Pending |  |
+| |                  | |  (clickable)     | |  Quotes  |  |
+| +------------------+ +------------------+ +----------+  |
+|                         (clickable)      (clickable)     |
 |                                                          |
 | Quote Requests                                           |
 |                                                          |
-| +------------+ +------------+ +----------+ +-----------+ |
-| |     5      | |     18     | |     7    | |    42%    | |
-| |  Pending   | |Total Quotes| |Accepted/ | |Conversion | |
-| |  Review    | |            | |Converted | |   Rate    | |
-| +------------+ +------------+ +----------+ +-----------+ |
+| +----------+ +----------+ +----------+ +-----------+    |
+| |  5(blue) | |    18    | |  7(green)| |    42%    |    |
+| | Pending  | |  Total   | |Accepted/ | |Conversion |    |
+| | Review   | |  Quotes  | |Converted | |   Rate    |    |
+| +----------+ +----------+ +----------+ +-----------+    |
 |   (clickable)                                            |
 |                                                          |
 | Recent Quotes                          View all ->       |
@@ -93,19 +128,22 @@ Every admin page shares this shell:
 ```
 
 - Heading: "Dashboard" (3xl bold)
-- **Top row:** 4 metric cards in a 4-column grid
-  - Total Styles, Active Styles, Concepts, Suppliers
+- **Styles section** (label: "STYLES", 3-column grid):
+  - Total Styles (clickable → /admin/styles), Active Styles, Concepts
   - Each card: border neutral-800, number in 4xl bold, label in neutral-400
-- **Quote Requests heading:** "Quote Requests" (xl semibold)
-- **Second row:** 4 quote metric cards
-  - Pending Review (blue-300, clickable link to /admin/quotes)
+- **Production section** (label: "PRODUCTION", 3-column grid):
+  - Suppliers
+  - Active Orders (blue-300 number, clickable → /admin/orders)
+  - Pending Quotes (blue-highlighted card border, clickable → /admin/quotes)
+- **Quote Requests heading:** "Quote Requests" (xl semibold), 4-column grid:
+  - Pending Review (blue-300, clickable → /admin/quotes)
   - Total Quotes
   - Accepted/Converted (green-300)
-  - Conversion Rate (percentage)
-- **Recent Quotes table:** last 5 quotes
-  - Columns: Date, Customer, Company, Product, Qty, Status, View link
-  - Status badges use color coding (see Quotes section)
-  - "View all" link to /admin/quotes in header
+  - Conversion Rate (accepted ÷ quoted, as %)
+- **Recent Quotes table:** last 5 quotes (hidden when no quotes exist)
+  - Columns: Date, Customer, Company, Product, Qty, Status badge, View link
+  - Status badges color-coded (see Status Badge Color Reference)
+  - "View all →" link to /admin/quotes in table header
 
 ---
 
@@ -893,6 +931,7 @@ Every admin page shares this shell:
 **Section headers:** text-sm, font-semibold, text-neutral-400, uppercase, tracking-wide
 **Empty states:** dashed border, centered icon + heading + description + CTA button
 **Modals:** fixed overlay bg-black/80, centered card bg-neutral-950, Escape to close
-**Toasts:** Sonner library, appears bottom-right
+**Toasts:** Sonner library, appears top-right
 **Keyboard shortcuts:** Cmd+S to save (forms), Escape to close (modals)
 **Loading states:** Button text changes to "Loading..."/"Saving..."/"Creating..."
+**Sidebar:** Collapsible left sidebar (`w-56`), sections expand/collapse, active route highlighted
