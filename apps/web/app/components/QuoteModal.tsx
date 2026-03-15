@@ -29,6 +29,7 @@ interface Props {
 export default function QuoteModal({ open, onClose, prefill }: Props) {
   const [form, setForm] = useState<FormState>({ ...initialState, productInterest: prefill })
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [errors, setErrors] = useState<Partial<FormState>>({})
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, productInterest: prefill }))
@@ -49,11 +50,24 @@ export default function QuoteModal({ open, onClose, prefill }: Props) {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+    if (errors[name as keyof FormState]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const newErrors: Partial<FormState> = {}
+    if (!form.name.trim()) newErrors.name = 'Required'
+    if (!form.email.trim()) newErrors.email = 'Required'
+    if (!form.message.trim()) newErrors.message = 'Required'
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+    setErrors({})
     setStatus('submitting')
     try {
       const res = await fetch('/api/quote-request', {
@@ -121,9 +135,9 @@ export default function QuoteModal({ open, onClose, prefill }: Props) {
                   value={form.name}
                   onChange={handleChange}
                   placeholder="Jane Smith"
-                  required
                   autoComplete="name"
                 />
+                {errors.name && <span className="qmodal-field-error">{errors.name}</span>}
               </div>
               <div className="qmodal-field">
                 <label htmlFor="qm-email">
@@ -136,9 +150,9 @@ export default function QuoteModal({ open, onClose, prefill }: Props) {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="jane@company.com"
-                  required
                   autoComplete="email"
                 />
+                {errors.email && <span className="qmodal-field-error">{errors.email}</span>}
               </div>
             </div>
 
@@ -196,8 +210,8 @@ export default function QuoteModal({ open, onClose, prefill }: Props) {
                 onChange={handleChange}
                 placeholder="Tell us about your project — garments, quantities, timeline, decoration style..."
                 rows={4}
-                required
               />
+              {errors.message && <span className="qmodal-field-error">{errors.message}</span>}
             </div>
 
             {status === 'error' && (
