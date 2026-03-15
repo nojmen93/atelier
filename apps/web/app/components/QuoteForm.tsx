@@ -1,6 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+interface Product {
+  id: string
+  name: string
+}
 
 interface FormState {
   name: string
@@ -25,6 +30,23 @@ const initialState: FormState = {
 export default function QuoteForm() {
   const [form, setForm] = useState<FormState>(initialState)
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [products, setProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    fetch('/api/products/public')
+      .then((r) => r.json())
+      .then((data: Product[]) => setProducts(Array.isArray(data) ? data : []))
+      .catch(() => setProducts([]))
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const name = (e as CustomEvent<string>).detail
+      setForm((prev) => ({ ...prev, productInterest: name }))
+    }
+    window.addEventListener('productinterest', handler)
+    return () => window.removeEventListener('productinterest', handler)
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -166,14 +188,19 @@ export default function QuoteForm() {
                 <div className="form-row">
                   <div className="form-field">
                     <label htmlFor="product-interest">Product Interest</label>
-                    <input
+                    <select
                       id="product-interest"
                       name="productInterest"
-                      type="text"
                       value={form.productInterest}
                       onChange={handleChange}
-                      placeholder="e.g. T-Shirt (Black), Hoodie (White)"
-                    />
+                    >
+                      <option value="">Select a product</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.name}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-field">
                     <label htmlFor="quantity">Estimated Quantity</label>

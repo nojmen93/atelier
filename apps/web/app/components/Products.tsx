@@ -51,13 +51,9 @@ function ProductCard({ product }: { product: typeof products[0] }) {
   const [activeColor, setActiveColor] = useState<Color>('white')
 
   const handleQuote = () => {
-    const form = document.getElementById('quote')
-    if (form) form.scrollIntoView({ behavior: 'smooth' })
-    const productField = document.getElementById('product-interest') as HTMLInputElement | null
-    if (productField) {
-      productField.value = `${product.name} (${colors.find(c => c.id === activeColor)?.label})`
-      productField.dispatchEvent(new Event('input', { bubbles: true }))
-    }
+    window.dispatchEvent(new CustomEvent('productinterest', { detail: product.name }))
+    const section = document.getElementById('quote')
+    if (section) section.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
