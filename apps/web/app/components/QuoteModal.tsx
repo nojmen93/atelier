@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react'
 
+interface Product {
+  id: string
+  name: string
+}
+
 interface FormState {
   name: string
   email: string
@@ -29,10 +34,22 @@ interface Props {
 export default function QuoteModal({ open, onClose, prefill }: Props) {
   const [form, setForm] = useState<FormState>({ ...initialState, productInterest: prefill })
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [products, setProducts] = useState<Product[]>([])
 
   useEffect(() => {
-    setForm((prev) => ({ ...prev, productInterest: prefill }))
-  }, [prefill])
+    fetch('/api/products/public')
+      .then((r) => r.json())
+      .then((data: Product[]) => setProducts(Array.isArray(data) ? data : []))
+      .catch(() => setProducts([]))
+  }, [])
+
+  useEffect(() => {
+    // Try to pre-select a product whose name is contained in the prefill string
+    const match = products.find((p) =>
+      prefill.toLowerCase().includes(p.name.toLowerCase())
+    )
+    setForm((prev) => ({ ...prev, productInterest: match ? match.name : '' }))
+  }, [prefill, products])
 
   useEffect(() => {
     if (open) {
@@ -100,7 +117,7 @@ export default function QuoteModal({ open, onClose, prefill }: Props) {
             <button
               className="qmodal-done-btn"
               onClick={() => {
-                setForm({ ...initialState, productInterest: prefill })
+                setForm({ ...initialState })
                 onClose()
               }}
             >
@@ -157,14 +174,19 @@ export default function QuoteModal({ open, onClose, prefill }: Props) {
               </div>
               <div className="qmodal-field">
                 <label htmlFor="qm-product">Product</label>
-                <input
+                <select
                   id="qm-product"
                   name="productInterest"
-                  type="text"
                   value={form.productInterest}
                   onChange={handleChange}
-                  placeholder="e.g. T-Shirt (Black)"
-                />
+                >
+                  <option value="">Select a product</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
