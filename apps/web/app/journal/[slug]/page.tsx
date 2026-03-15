@@ -1,19 +1,15 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Nav from '../../components/Nav'
-import Footer from '../../components/Footer'
 
 interface Post {
   _id: string
   title: string
   slug: { current: string }
   excerpt: string
-  coverImage: string
   category: string
   publishedAt: string
   readTime: number
-  featured?: boolean
   bodyHtml: string
 }
 
@@ -23,11 +19,9 @@ const posts: Record<string, Post> = {
     title: 'Why Your Merch Strategy Is Failing (And How to Fix It)',
     slug: { current: 'why-your-merch-strategy-is-failing' },
     excerpt: "Most brands treat merchandise as an afterthought. Here's why that's costing you more than revenue.",
-    coverImage: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1200&q=80',
     category: 'strategy',
     publishedAt: '2025-02-15T10:00:00Z',
     readTime: 6,
-    featured: true,
     bodyHtml: `
       <p>Walk into any company's supply closet and you'll find the graveyard of good intentions: boxes of unworn polo shirts, stacks of branded notebooks nobody wanted, and that one tragic shipment of trucker hats from 2019.</p>
 
@@ -69,11 +63,9 @@ const posts: Record<string, Post> = {
     title: 'The Psychology of Premium: Why People Pay More for Branded Apparel',
     slug: { current: 'psychology-of-premium-branded-apparel' },
     excerpt: 'Understanding the signals that transform a $15 shirt into a $75 statement piece.',
-    coverImage: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=1200&q=80',
     category: 'insights',
     publishedAt: '2025-02-08T10:00:00Z',
     readTime: 8,
-    featured: false,
     bodyHtml: `
       <p>A plain white t-shirt costs about $3 to manufacture. Gildan sells them for $5. Supreme sells them for $50. What's happening in that gap isn't just markup — it's meaning.</p>
 
@@ -113,11 +105,9 @@ const posts: Record<string, Post> = {
     title: 'Embroidery vs. Screen Print: Choosing the Right Technique',
     slug: { current: 'embroidery-vs-screen-print' },
     excerpt: 'A technical breakdown of when to use each method — and why it matters for your brand perception.',
-    coverImage: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1200&q=80',
     category: 'production',
     publishedAt: '2025-01-28T10:00:00Z',
     readTime: 5,
-    featured: false,
     bodyHtml: `
       <p>The decoration method you choose shapes how your brand is perceived before anyone reads your logo. Here's how to choose wisely.</p>
 
@@ -159,11 +149,9 @@ const posts: Record<string, Post> = {
     title: 'Building a Capsule Collection: From Concept to Drop',
     slug: { current: 'building-capsule-collection' },
     excerpt: 'The step-by-step process we use to create cohesive, sell-out worthy merchandise lines.',
-    coverImage: 'https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?w=1200&q=80',
     category: 'design',
     publishedAt: '2025-01-20T10:00:00Z',
     readTime: 7,
-    featured: false,
     bodyHtml: `
       <p>A capsule collection isn't just a group of items with matching logos. It's a story told in fabric — a cohesive vision that makes each piece stronger because of the others.</p>
 
@@ -244,66 +232,45 @@ export default async function PostPage({ params }: PageProps) {
   }
 
   return (
-    <>
+    <div className="apage">
       <Nav />
-      <main>
-        <article className="article">
-          {/* Hero */}
-          <header className="article-header">
-            <div className="container">
-              <Link href="/journal" className="article-back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-                Back to Journal
-              </Link>
-              <div className="article-meta">
-                <span className="article-category">{getCategoryLabel(post.category)}</span>
-                <span className="article-date">{formatDate(post.publishedAt)}</span>
-                <span className="article-time">{post.readTime} min read</span>
-              </div>
-              <h1 className="article-title">{post.title}</h1>
-              <p className="article-excerpt">{post.excerpt}</p>
-            </div>
-          </header>
+      <article className="apage-article">
 
-          {/* Cover Image */}
-          <div className="article-cover">
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              priority
-              className="article-cover-img"
-            />
+        <header className="apage-header">
+          <Link href="/journal" className="apage-back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Journal
+          </Link>
+          <div className="apage-meta">
+            <span className="apage-cat">{getCategoryLabel(post.category)}</span>
+            <span className="apage-date">{formatDate(post.publishedAt)}</span>
+            <span className="apage-time">{post.readTime} min read</span>
           </div>
+          <h1 className="apage-title">{post.title}</h1>
+          <p className="apage-excerpt">{post.excerpt}</p>
+        </header>
 
-          {/* Body */}
-          <div className="article-body">
-            <div className="container container--narrow">
-              <div
-                className="article-content"
-                dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
-              />
-            </div>
-          </div>
+        <div className="apage-body">
+          <div
+            className="apage-content"
+            dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
+          />
+        </div>
 
-          {/* Footer CTA */}
-          <div className="article-cta">
-            <div className="container container--narrow">
-              <div className="article-cta-box">
-                <h3>Ready to elevate your brand apparel?</h3>
-                <p>Let&apos;s create something worth wearing.</p>
-                <Link href="/#contact" className="cta-button">
-                  <span>Start a Project</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </article>
-      </main>
-      <Footer />
-    </>
+        <footer className="apage-footer">
+          <p>Ready to build something worth wearing?</p>
+          <Link href="/" className="apage-cta">
+            Start a Project
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </footer>
+
+      </article>
+    </div>
   )
 }
 
