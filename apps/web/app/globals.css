@@ -262,6 +262,7 @@ button {
   gap: 1rem;
   position: relative;
   z-index: 1;
+  pointer-events: none;
 }
 
 .site-footer-brand {
@@ -318,6 +319,7 @@ button {
   min-height: 70vh;
   display: flex;
   align-items: center;
+  pointer-events: none;
 }
 
 /* Inner layout: text left, images right */
@@ -329,11 +331,13 @@ button {
   gap: 2rem;
   padding-left: clamp(1.5rem, 4vw, 4rem);
   padding-right: clamp(1.5rem, 4vw, 4rem);
+  pointer-events: none;
 }
 
 .home-hero-text {
   flex: 0 0 auto;
   max-width: 600px;
+  pointer-events: none;
 }
 
 /* Headline passes hover events through to the grid */
@@ -380,6 +384,7 @@ button {
   border-top: 1px solid rgba(0, 0, 0, 0.07);
   flex: 1;
   background: transparent;
+  pointer-events: none;
 }
 
 .home-products-header {
@@ -389,6 +394,7 @@ button {
   margin-bottom: 2.5rem;
   flex-wrap: wrap;
   gap: 1rem;
+  pointer-events: none;
 }
 
 .home-products-title {
@@ -407,6 +413,7 @@ button {
   text-transform: uppercase;
   color: rgba(0, 0, 0, 0.4);
   transition: color 0.2s ease;
+  pointer-events: auto;
 }
 
 .home-products-link:hover {
@@ -428,6 +435,7 @@ button {
   -webkit-backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
+  pointer-events: auto;
 }
 
 .pcard-img-wrap {
