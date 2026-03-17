@@ -5,6 +5,7 @@ import Nav from './components/Nav'
 import Footer from './components/Footer'
 import ProductCard, { type Product } from './components/ProductCard'
 import QuoteModal from './components/QuoteModal'
+import ProductModal from './components/ProductModal'
 import { Boxes } from './components/ui/background-boxes'
 import { ImageReveal } from './components/ui/image-tiles'
 
@@ -13,6 +14,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [quoteOpen, setQuoteOpen] = useState(false)
   const [prefill, setPrefill] = useState('')
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     fetch('/api/products/public')
@@ -98,7 +100,7 @@ export default function Home() {
           )}
 
           {!loading && featured.map(p => (
-            <ProductCard key={p.id} product={p} onQuote={openQuote} />
+            <ProductCard key={p.id} product={p} onQuote={openQuote} onSelect={setSelectedProduct} />
           ))}
         </div>
       </section>
@@ -106,6 +108,12 @@ export default function Home() {
       <Footer />
 
       <QuoteModal open={quoteOpen} onClose={() => setQuoteOpen(false)} prefill={prefill} />
+      <ProductModal
+        open={selectedProduct !== null}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onQuote={(name) => { setSelectedProduct(null); openQuote(name) }}
+      />
     </div>
   )
 }

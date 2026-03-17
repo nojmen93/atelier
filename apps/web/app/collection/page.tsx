@@ -5,6 +5,7 @@ import Nav from '../components/Nav'
 import Footer from '../components/Footer'
 import ProductCard, { type Product } from '../components/ProductCard'
 import QuoteModal from '../components/QuoteModal'
+import ProductModal from '../components/ProductModal'
 
 export default function CollectionPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -12,6 +13,7 @@ export default function CollectionPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [quoteOpen, setQuoteOpen] = useState(false)
   const [prefill, setPrefill] = useState('')
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     fetch('/api/products/public')
@@ -86,7 +88,7 @@ export default function CollectionPage() {
           )}
 
           {!loading && filtered.map(p => (
-            <ProductCard key={p.id} product={p} onQuote={openQuote} />
+            <ProductCard key={p.id} product={p} onQuote={openQuote} onSelect={setSelectedProduct} />
           ))}
         </div>
       </div>
@@ -103,6 +105,12 @@ export default function CollectionPage() {
       <Footer />
 
       <QuoteModal open={quoteOpen} onClose={() => setQuoteOpen(false)} prefill={prefill} />
+      <ProductModal
+        open={selectedProduct !== null}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onQuote={(name) => { setSelectedProduct(null); openQuote(name) }}
+      />
     </div>
   )
 }
