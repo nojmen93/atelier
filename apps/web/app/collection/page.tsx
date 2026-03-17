@@ -1,75 +1,29 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-
-interface Product {
-  id: string
-  name: string
-  display_name: string | null
-  description: string | null
-  material: string | null
-  images: string[] | null
-  categories: { name: string } | null
-}
-
-function ProductCard({ product, onQuote }: { product: Product; onQuote: (name: string) => void }) {
-  const displayName = product.display_name || product.name
-  const image = product.images?.[0] ?? null
-  const category = product.categories?.name ?? null
-  const spec = product.material || product.description || null
-
-  return (
-    <article className="col-card">
-      <div className="col-card-img-wrap">
-        {image ? (
-          <Image
-            src={image}
-            alt={displayName}
-            fill
-            className="col-card-img"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="col-card-img-empty" />
-        )}
-        <div className="col-card-overlay">
-          <button className="col-card-quote-btn" onClick={() => onQuote(displayName)}>
-            Get a Quote
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div className="col-card-body">
-        {category && <span className="col-card-category">{category}</span>}
-        <h2 className="col-card-name">{displayName}</h2>
-        {spec && <p className="col-card-spec">{spec}</p>}
-      </div>
-    </article>
-  )
-}
+import Nav from '../components/Nav'
+import Footer from '../components/Footer'
+import ProductCard, { type Product } from '../components/ProductCard'
+import QuoteModal from '../components/QuoteModal'
 
 export default function CollectionPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [quoteOpen, setQuoteOpen] = useState(false)
+  const [prefill, setPrefill] = useState('')
 
   useEffect(() => {
     fetch('/api/products/public')
       .then(r => r.json())
-      .then((data: Product[]) => {
-        if (Array.isArray(data)) setProducts(data)
-      })
+      .then((data: Product[]) => { if (Array.isArray(data)) setProducts(data) })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
-  const handleQuote = (productName: string) => {
-    window.dispatchEvent(new CustomEvent('productinterest', { detail: productName }))
-    window.location.href = '/#quote'
+  const openQuote = (name = '') => {
+    setPrefill(name)
+    setQuoteOpen(true)
   }
 
   const categories = Array.from(
@@ -82,30 +36,24 @@ export default function CollectionPage() {
 
   return (
     <div className="col-page">
+      <Nav onOpenQuote={() => openQuote()} />
 
-      {/* Header */}
       <header className="col-header">
-        <Link href="/" className="col-back">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back
-        </Link>
-        <div className="col-header-text">
-          <p className="col-eyebrow">Premium Custom Apparel</p>
-          <h1 className="col-title">The Collection</h1>
-          <p className="col-sub">Every piece is available for custom branding. Select a product and request a quote.</p>
-        </div>
+        <p className="col-eyebrow">Premium Custom Apparel</p>
+        <h1 className="col-title">The Collection</h1>
+        <p className="col-sub">
+          Every piece is available for custom branding.
+          Select a product and request a quote.
+        </p>
       </header>
 
-      {/* Category filter */}
       {categories.length > 1 && (
         <div className="col-filters">
           <button
             className={`col-filter-btn${activeCategory === null ? ' active' : ''}`}
             onClick={() => setActiveCategory(null)}
           >
-            All <span className="col-filter-count">{products.length}</span>
+            All
           </button>
           {categories.map(cat => (
             <button
@@ -114,45 +62,47 @@ export default function CollectionPage() {
               onClick={() => setActiveCategory(cat)}
             >
               {cat}
-              <span className="col-filter-count">
-                {products.filter(p => p.categories?.name === cat).length}
-              </span>
             </button>
           ))}
+          <span className="col-filter-count">{filtered.length} products</span>
         </div>
       )}
 
-      {/* Grid */}
-      <main className="col-grid">
-        {loading && (
-          <>
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="col-card-skeleton" />
-            ))}
-          </>
-        )}
-        {!loading && filtered.length === 0 && (
-          <div className="col-empty">
-            <p>No products available yet.</p>
-          </div>
-        )}
-        {!loading && filtered.map(product => (
-          <ProductCard key={product.id} product={product} onQuote={handleQuote} />
-        ))}
-      </main>
+      <div className="col-grid-wrap">
+        <div className="products-grid">
+          {loading && Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="pcard pcard-skeleton">
+              <div className="pcard-img-wrap" />
+              <div className="pcard-body">
+                <div className="pcard-skeleton-line short" />
+                <div className="pcard-skeleton-line medium" />
+                <div className="pcard-skeleton-line short" />
+              </div>
+            </div>
+          ))}
 
-      {/* Footer CTA */}
+          {!loading && filtered.length === 0 && (
+            <p className="products-empty">No products available yet.</p>
+          )}
+
+          {!loading && filtered.map(p => (
+            <ProductCard key={p.id} product={p} onQuote={openQuote} />
+          ))}
+        </div>
+      </div>
+
       {!loading && filtered.length > 0 && (
         <div className="col-footer-cta">
           <p>Don&apos;t see what you&apos;re looking for?</p>
-          <a href="/#quote" className="col-cta-btn">
+          <button className="btn btn--outline" onClick={() => openQuote()} type="button">
             Request a Custom Product
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </a>
+          </button>
         </div>
       )}
+
+      <Footer />
+
+      <QuoteModal open={quoteOpen} onClose={() => setQuoteOpen(false)} prefill={prefill} />
     </div>
   )
 }
