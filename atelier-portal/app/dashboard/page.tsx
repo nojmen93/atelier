@@ -1,26 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { getBuyer } from '@/lib/get-buyer'
 import TopNav from '@/components/TopNav'
 
 export default async function DashboardPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  const { data: buyer } = await supabase
-    .from('buyers')
-    .select('contact_name, company_name')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!buyer) {
-    redirect('/access-pending')
-  }
+  const { buyer } = await getBuyer()
 
   return (
     <div className="min-h-screen">
