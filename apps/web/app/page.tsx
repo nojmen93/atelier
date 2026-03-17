@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import Nav from './components/Nav'
 import Footer from './components/Footer'
-import ProductCard, { type Product } from './components/ProductCard'
+import ProductCard, { type Product, type ProductColour } from './components/ProductCard'
 import QuoteModal from './components/QuoteModal'
+import ProductModal from './components/ProductModal'
 import { Boxes } from './components/ui/background-boxes'
 import { ImageReveal } from './components/ui/image-tiles'
 
@@ -13,6 +14,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [quoteOpen, setQuoteOpen] = useState(false)
   const [prefill, setPrefill] = useState('')
+  const [quoteColour, setQuoteColour] = useState<ProductColour | null>(null)
+  const [quoteSizes, setQuoteSizes] = useState<string[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     fetch('/api/products/public')
@@ -22,8 +26,10 @@ export default function Home() {
       .finally(() => setLoading(false))
   }, [])
 
-  const openQuote = (name = '') => {
+  const openQuote = (name = '', colour: ProductColour | null = null, sizes: string[] = []) => {
     setPrefill(name)
+    setQuoteColour(colour)
+    setQuoteSizes(sizes)
     setQuoteOpen(true)
   }
 
@@ -98,14 +104,29 @@ export default function Home() {
           )}
 
           {!loading && featured.map(p => (
-            <ProductCard key={p.id} product={p} onQuote={openQuote} />
+            <ProductCard key={p.id} product={p} onQuote={name => openQuote(name, null, p.sizes)} onSelect={setSelectedProduct} />
           ))}
         </div>
       </section>
 
       <Footer />
 
-      <QuoteModal open={quoteOpen} onClose={() => setQuoteOpen(false)} prefill={prefill} />
+      <QuoteModal
+        open={quoteOpen}
+        onClose={() => setQuoteOpen(false)}
+        prefill={prefill}
+        selectedColour={quoteColour}
+        availableSizes={quoteSizes}
+      />
+      <ProductModal
+        open={selectedProduct !== null}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onQuote={(name, colour) => {
+          setSelectedProduct(null)
+          openQuote(name, colour, selectedProduct?.sizes ?? [])
+        }}
+      />
     </div>
   )
 }

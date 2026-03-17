@@ -1,5 +1,10 @@
 import Image from 'next/image'
 
+export interface ProductColour {
+  colour_name: string
+  hex_value: string | null
+}
+
 export interface Product {
   id: string
   name: string
@@ -8,21 +13,24 @@ export interface Product {
   material: string | null
   images: string[] | null
   categories: { name: string } | null
+  colours: ProductColour[]
+  sizes: string[]
 }
 
 interface Props {
   product: Product
   onQuote: (name: string) => void
+  onSelect: (product: Product) => void
 }
 
-export default function ProductCard({ product, onQuote }: Props) {
+export default function ProductCard({ product, onQuote, onSelect }: Props) {
   const name = product.display_name || product.name
   const spec = product.material || product.description || ''
   const image = product.images?.[0] ?? null
 
   return (
     <div className="pcard">
-      <div className="pcard-img-wrap">
+      <div className="pcard-img-wrap" onClick={() => onSelect(product)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onSelect(product)} aria-label={`View ${name} details`}>
         {image ? (
           <Image
             src={image}
