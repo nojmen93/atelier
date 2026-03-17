@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Nav from '../components/Nav'
 import Footer from '../components/Footer'
-import ProductCard, { type Product } from '../components/ProductCard'
+import ProductCard, { type Product, type ProductColour } from '../components/ProductCard'
 import QuoteModal from '../components/QuoteModal'
 import ProductModal from '../components/ProductModal'
 
@@ -13,6 +13,8 @@ export default function CollectionPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [quoteOpen, setQuoteOpen] = useState(false)
   const [prefill, setPrefill] = useState('')
+  const [quoteColour, setQuoteColour] = useState<ProductColour | null>(null)
+  const [quoteSizes, setQuoteSizes] = useState<string[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
@@ -23,8 +25,10 @@ export default function CollectionPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const openQuote = (name = '') => {
+  const openQuote = (name = '', colour: ProductColour | null = null, sizes: string[] = []) => {
     setPrefill(name)
+    setQuoteColour(colour)
+    setQuoteSizes(sizes)
     setQuoteOpen(true)
   }
 
@@ -88,7 +92,7 @@ export default function CollectionPage() {
           )}
 
           {!loading && filtered.map(p => (
-            <ProductCard key={p.id} product={p} onQuote={openQuote} onSelect={setSelectedProduct} />
+            <ProductCard key={p.id} product={p} onQuote={name => openQuote(name, null, p.sizes)} onSelect={setSelectedProduct} />
           ))}
         </div>
       </div>
@@ -104,12 +108,21 @@ export default function CollectionPage() {
 
       <Footer />
 
-      <QuoteModal open={quoteOpen} onClose={() => setQuoteOpen(false)} prefill={prefill} />
+      <QuoteModal
+        open={quoteOpen}
+        onClose={() => setQuoteOpen(false)}
+        prefill={prefill}
+        selectedColour={quoteColour}
+        availableSizes={quoteSizes}
+      />
       <ProductModal
         open={selectedProduct !== null}
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        onQuote={(name) => { setSelectedProduct(null); openQuote(name) }}
+        onQuote={(name, colour) => {
+          setSelectedProduct(null)
+          openQuote(name, colour, selectedProduct?.sizes ?? [])
+        }}
       />
     </div>
   )

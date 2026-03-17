@@ -1,5 +1,10 @@
 import Image from 'next/image'
 
+export interface ProductColour {
+  colour_name: string
+  hex_value: string | null
+}
+
 export interface Product {
   id: string
   name: string
@@ -8,6 +13,8 @@ export interface Product {
   material: string | null
   images: string[] | null
   categories: { name: string } | null
+  colours: ProductColour[]
+  sizes: string[]
 }
 
 interface Props {

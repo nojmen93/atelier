@@ -9,7 +9,17 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('styles')
-    .select('id, name, display_name, description, material, images, categories(name)')
+    .select(`
+      id,
+      name,
+      display_name,
+      description,
+      material,
+      images,
+      categories(name),
+      style_colours(colour:colours(colour_name, hex_value)),
+      variants(size)
+    `)
     .eq('show_on_website', true)
     .order('name', { ascending: true })
 
@@ -18,5 +28,24 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
   }
 
-  return NextResponse.json(data ?? [])
+  // Shape the data: extract unique colours and sizes
+  const products = (data ?? []).map((p: any) => {
+    const colours = (p.style_colours ?? []).map((sc: any) => sc.colour).filter(Boolean)
+    const sizes = Array.from(
+      new Set((p.variants ?? []).map((v: any) => v.size).filter(Boolean) as string[])
+    )
+    return {
+      id: p.id,
+      name: p.name,
+      display_name: p.display_name,
+      description: p.description,
+      material: p.material,
+      images: p.images,
+      categories: p.categories,
+      colours,
+      sizes,
+    }
+  })
+
+  return NextResponse.json(products)
 }

@@ -2,20 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { type Product } from './ProductCard'
+import { type Product, type ProductColour } from './ProductCard'
 
 interface Props {
   open: boolean
   product: Product | null
   onClose: () => void
-  onQuote: (name: string) => void
+  onQuote: (name: string, selectedColour: ProductColour | null) => void
 }
 
 export default function ProductModal({ open, product, onClose, onQuote }: Props) {
   const [imgIndex, setImgIndex] = useState(0)
+  const [selectedColour, setSelectedColour] = useState<ProductColour | null>(null)
 
   useEffect(() => {
     setImgIndex(0)
+    setSelectedColour(null)
   }, [product])
 
   useEffect(() => {
@@ -40,14 +42,15 @@ export default function ProductModal({ open, product, onClose, onQuote }: Props)
   const images = product.images?.filter(Boolean) ?? []
   const currentImg = images[imgIndex] ?? null
   const hasMultiple = images.length > 1
+  const colours = product.colours ?? []
 
   const prev = () => setImgIndex(i => (i - 1 + images.length) % images.length)
   const next = () => setImgIndex(i => (i + 1) % images.length)
 
   return (
-    <div className="pmodal-overlay" onClick={onClose}>
+    <div className="pmodal-overlay" onClick={onClose} style={{ pointerEvents: 'auto' }}>
       <div className="pmodal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={name}>
-        <button className="pmodal-close" onClick={onClose} aria-label="Close">
+        <button className="pmodal-close" onClick={onClose} aria-label="Close" style={{ pointerEvents: 'auto' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="16" height="16">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
@@ -117,11 +120,36 @@ export default function ProductModal({ open, product, onClose, onQuote }: Props)
             </>
           )}
 
+          {colours.length > 0 && (
+            <div className="pmodal-colours">
+              <p className="pmodal-label">
+                Available Colours
+                {selectedColour && (
+                  <span className="pmodal-colour-selected-name"> — {selectedColour.colour_name}</span>
+                )}
+              </p>
+              <div className="pmodal-colour-swatches">
+                {colours.map((c) => (
+                  <button
+                    key={c.colour_name}
+                    type="button"
+                    className={`pmodal-swatch${selectedColour?.colour_name === c.colour_name ? ' selected' : ''}`}
+                    style={{ background: c.hex_value || '#888' }}
+                    onClick={() => setSelectedColour(prev => prev?.colour_name === c.colour_name ? null : c)}
+                    aria-label={c.colour_name}
+                    title={c.colour_name}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="pmodal-cta">
             <button
               className="pmodal-cta-btn"
               type="button"
-              onClick={() => { onClose(); onQuote(name) }}
+              style={{ pointerEvents: 'auto' }}
+              onClick={() => { onClose(); onQuote(name, selectedColour) }}
             >
               Get a Quote
             </button>

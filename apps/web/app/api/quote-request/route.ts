@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { name, email, company, phone, productInterest, quantity, message } = body
+  const { name, email, company, phone, productInterest, quantity, message, selectedColour, selectedSizes } = body
 
   if (!name || !email || !message) {
     return NextResponse.json({ error: 'Name, email and message are required' }, { status: 400 })
@@ -14,6 +14,11 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  const customizationPreferences: Record<string, unknown> = {}
+  if (quantity) customizationPreferences.quantity_range = quantity
+  if (selectedColour) customizationPreferences.selected_colour = selectedColour
+  if (selectedSizes && selectedSizes.length > 0) customizationPreferences.selected_sizes = selectedSizes
+
   const { error } = await supabase.from('quote_requests').insert({
     customer_name: name,
     customer_email: email,
@@ -22,7 +27,7 @@ export async function POST(request: NextRequest) {
     product_name: productInterest || null,
     quantity: quantity ? parseInt(quantity.split('-')[0]) : 1,
     message: message,
-    customization_preferences: quantity ? { quantity_range: quantity } : {},
+    customization_preferences: customizationPreferences,
     status: 'new',
   })
 

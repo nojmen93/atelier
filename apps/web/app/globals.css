@@ -679,6 +679,7 @@ button {
   z-index: 200;
   padding: 1.5rem;
   animation: fadeIn 0.2s ease;
+  pointer-events: auto;
 }
 
 @keyframes fadeIn {
@@ -836,6 +837,85 @@ button {
 }
 
 /* ========================================
+   Quote Modal — Product info & sizes
+======================================== */
+.qmodal-product-info {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.qmodal-product-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.qmodal-product-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  min-width: 60px;
+}
+
+.qmodal-product-value {
+  color: var(--off-white);
+  font-size: 0.875rem;
+}
+
+.qmodal-colour-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qmodal-colour-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.qmodal-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.qmodal-size-chip {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--light-gray);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.qmodal-size-chip:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--off-white);
+}
+
+.qmodal-size-chip.selected {
+  background: var(--accent);
+  color: var(--black);
+  border-color: var(--accent);
+}
+
+/* ========================================
    Product Detail Modal
 ======================================== */
 .pmodal-overlay {
@@ -848,6 +928,7 @@ button {
   z-index: 200;
   padding: 1.5rem;
   animation: fadeIn 0.2s ease;
+  pointer-events: auto;
 }
 
 .pmodal {
@@ -1000,6 +1081,47 @@ button {
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.65;
   margin-bottom: 1.25rem;
+}
+
+.pmodal-colours {
+  margin-bottom: 1.25rem;
+}
+
+.pmodal-colour-selected-name {
+  color: var(--accent);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+}
+
+.pmodal-colour-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pmodal-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.pmodal-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.pmodal-swatch.selected {
+  border-color: var(--off-white);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+  transform: scale(1.1);
 }
 
 .pmodal-cta {
