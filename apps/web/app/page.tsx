@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import Nav from './components/Nav'
 import Footer from './components/Footer'
 import ProductCard, { type Product } from './components/ProductCard'
 import QuoteModal from './components/QuoteModal'
 import { Boxes } from './components/ui/background-boxes'
+import { ImageReveal } from './components/ui/image-tiles'
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
@@ -28,6 +28,17 @@ export default function Home() {
   }
 
   const featured = products.slice(0, 6)
+
+  const fallbackImgs = [
+    'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400',
+    'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400',
+    'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400',
+  ]
+  const heroImgs = [
+    featured[0]?.images?.[0] ?? fallbackImgs[0],
+    featured[1]?.images?.[0] ?? fallbackImgs[1],
+    featured[2]?.images?.[0] ?? fallbackImgs[2],
+  ]
 
   return (
     <div className="page-home">
@@ -54,29 +65,11 @@ export default function Home() {
           </div>
 
           <div className="home-hero-preview">
-            {loading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="hero-preview-img hero-preview-img--skeleton" />
-                ))
-              : featured.slice(0, 3).map((p, i) => {
-                  const img = p.images?.[0] ?? null
-                  return (
-                    <div key={p.id} className={`hero-preview-img hero-preview-img--${i}`}>
-                      {img ? (
-                        <Image
-                          src={img}
-                          alt={p.display_name || p.name}
-                          fill
-                          className="hero-preview-img-inner"
-                          sizes="200px"
-                        />
-                      ) : (
-                        <div className="hero-preview-img-placeholder" />
-                      )}
-                    </div>
-                  )
-                })
-            }
+            <ImageReveal
+              leftImage={heroImgs[0]}
+              middleImage={heroImgs[1]}
+              rightImage={heroImgs[2]}
+            />
           </div>
         </div>
       </section>
