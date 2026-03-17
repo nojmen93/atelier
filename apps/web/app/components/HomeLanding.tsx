@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { GooeyText } from './ui/gooey-text-morphing'
 
 interface Product {
   id: string
@@ -160,6 +161,12 @@ export default function HomeLanding({ onOpenQuote }: Props) {
       <div className="bw-rule bw-rule-top" aria-hidden="true" />
 
       <div className="bw-main">
+        <GooeyText
+          texts={["Build", "Craft", "Brand", "Create"]}
+          morphTime={1}
+          cooldownTime={0.25}
+          className="gooey-text--landing"
+        />
 
         {/* LEFT */}
         <div className="bw-left">
