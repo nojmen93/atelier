@@ -383,6 +383,49 @@ a {
   animation: ghostPulse 8s ease-in-out infinite;
 }
 
+/* ── GooeyText morphing component ──────────────────────────── */
+.gooey-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  user-select: none;
+  opacity: 0.15;
+  animation: ghostPulse 8s ease-in-out infinite;
+}
+
+.gooey-text-filter {
+  position: absolute;
+  height: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.gooey-text-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: url(#gooey-threshold);
+  height: clamp(9rem, 22vw, 24rem);
+  min-width: clamp(20rem, 50vw, 52rem);
+}
+
+.gooey-text-span {
+  position: absolute;
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: clamp(9rem, 22vw, 24rem);
+  line-height: 0.84;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--off-white);
+}
+
 /* ── Top eyebrow ───────────────────────────────────────────── */
 .hero-top {
   position: relative;

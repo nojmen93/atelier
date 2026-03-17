@@ -2,6 +2,7 @@
 
 import { useRef, useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
+import { GooeyText } from './ui/gooey-text-morphing'
 
 interface Product {
   id: string
@@ -143,10 +144,11 @@ export default function Hero() {
         <div className="hero-orb hero-orb-3" />
       </div>
 
-      <div className="hero-ghost-text" aria-hidden="true">
-        <span>Build</span>
-        <span>Brands</span>
-      </div>
+      <GooeyText
+        texts={["Build", "Craft", "Brand", "Create"]}
+        morphTime={1}
+        cooldownTime={0.25}
+      />
 
       <div className="hero-top">
         <div className="hero-eyebrow">
