@@ -31,13 +31,13 @@
 html {
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  scrollbar-color: var(--mid-gray) var(--black);
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
 }
 
 body {
   font-family: var(--font-body);
-  background: var(--black);
-  color: var(--off-white);
+  background: #f5f3ee;
+  color: var(--black);
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -94,23 +94,23 @@ button {
 }
 
 .btn--primary {
-  background: var(--off-white);
-  color: var(--black);
+  background: var(--black);
+  color: var(--off-white);
 }
 
 .btn--primary:hover {
-  background: var(--accent);
+  background: var(--dark-gray);
 }
 
 .btn--outline {
   background: transparent;
-  color: var(--off-white);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--black);
+  border: 1px solid rgba(0, 0, 0, 0.25);
 }
 
 .btn--outline:hover {
-  border-color: var(--off-white);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--black);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 /* ========================================
@@ -126,10 +126,10 @@ button {
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem clamp(1.5rem, 4vw, 4rem);
-  background: rgba(10, 10, 10, 0.85);
+  background: rgba(245, 243, 238, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
 }
 
 .nav-logo {
@@ -157,12 +157,12 @@ button {
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.45);
   transition: color 0.2s ease;
 }
 
 .nav-links a:hover {
-  color: var(--off-white);
+  color: var(--black);
 }
 
 .nav-cta {
@@ -197,7 +197,7 @@ button {
   display: block;
   width: 22px;
   height: 1px;
-  background: var(--off-white);
+  background: var(--black);
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
@@ -211,8 +211,10 @@ button {
   top: 60px;
   left: 0;
   right: 0;
-  background: var(--off-black);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(245, 243, 238, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
   padding: 2rem clamp(1.5rem, 4vw, 4rem);
   flex-direction: column;
   gap: 1.5rem;
@@ -229,7 +231,7 @@ button {
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.45);
   background: none;
   border: none;
   text-align: left;
@@ -239,7 +241,7 @@ button {
 
 .nav-mobile-menu a:hover,
 .nav-mobile-menu button:hover {
-  color: var(--off-white);
+  color: var(--black);
 }
 
 @media (max-width: 768px) {
@@ -251,13 +253,15 @@ button {
    Footer
 ======================================== */
 .site-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   padding: 2.5rem clamp(1.5rem, 4vw, 4rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .site-footer-brand {
@@ -265,11 +269,14 @@ button {
   font-size: 1.2rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: var(--black);
+  pointer-events: none;
 }
 
 .site-footer-copy {
   font-size: 0.8rem;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
 }
 
 .site-footer-links {
@@ -282,12 +289,12 @@ button {
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.4);
   transition: color 0.2s ease;
 }
 
 .site-footer-links a:hover {
-  color: var(--off-white);
+  color: var(--black);
 }
 
 /* ========================================
@@ -297,13 +304,13 @@ button {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero */
 .home-hero {
-  position: relative;
-  overflow: hidden;
-  background: #f5f3ee;
+  background: transparent;
   padding-top: 100px;
   padding-bottom: clamp(4rem, 10vh, 8rem);
   min-height: 70vh;
@@ -311,21 +318,8 @@ button {
   align-items: center;
 }
 
-/* Radial gradient overlay that fades the grid boxes toward the left/center */
-.home-hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: #f5f3ee;
-  mask-image: radial-gradient(ellipse 80% 80% at 30% 50%, transparent 30%, #f5f3ee 75%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 30% 50%, transparent 30%, #f5f3ee 75%);
-  z-index: 1;
-  pointer-events: none;
-}
-
 /* Inner layout: text left, images right */
 .home-hero-inner {
-  position: relative;
-  z-index: 2;
   width: 100%;
   display: flex;
   align-items: center;
@@ -340,6 +334,7 @@ button {
   max-width: 600px;
 }
 
+/* Headline passes hover events through to the grid */
 .home-hero-headline {
   font-family: var(--font-display);
   font-size: clamp(4rem, 9vw, 9rem);
@@ -348,34 +343,13 @@ button {
   text-transform: uppercase;
   color: var(--black);
   margin-bottom: 2rem;
+  pointer-events: none;
 }
 
 .home-hero-actions {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-/* Override button colors for light hero background */
-.home-hero .btn--primary {
-  background: var(--black);
-  color: var(--off-white);
-  border-color: var(--black);
-}
-
-.home-hero .btn--primary:hover {
-  background: var(--dark-gray);
-  border-color: var(--dark-gray);
-}
-
-.home-hero .btn--outline {
-  color: var(--black);
-  border-color: rgba(0, 0, 0, 0.3);
-}
-
-.home-hero .btn--outline:hover {
-  background: rgba(0, 0, 0, 0.06);
-  border-color: var(--black);
 }
 
 /* Product image previews */
@@ -445,8 +419,9 @@ button {
 /* Products section */
 .home-products {
   padding: clamp(4rem, 8vh, 6rem) clamp(1.5rem, 4vw, 4rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
   flex: 1;
+  background: transparent;
 }
 
 .home-products-header {
@@ -463,6 +438,8 @@ button {
   font-size: clamp(1.5rem, 4vw, 2.5rem);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--black);
+  pointer-events: none;
 }
 
 .home-products-link {
@@ -470,12 +447,12 @@ button {
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.4);
   transition: color 0.2s ease;
 }
 
 .home-products-link:hover {
-  color: var(--off-white);
+  color: var(--black);
 }
 
 /* ========================================
@@ -488,7 +465,9 @@ button {
 }
 
 .pcard {
-  background: var(--off-black);
+  background: rgba(245, 242, 237, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
 }
@@ -497,7 +476,7 @@ button {
   position: relative;
   aspect-ratio: 4 / 5;
   overflow: hidden;
-  background: var(--dark-gray);
+  background: #dedad2;
 }
 
 .pcard-img {
@@ -512,7 +491,7 @@ button {
 .pcard-no-img {
   width: 100%;
   height: 100%;
-  background: var(--mid-gray);
+  background: #ccc8be;
 }
 
 .pcard-body {
@@ -528,7 +507,8 @@ button {
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }
 
 .pcard-name {
@@ -538,13 +518,16 @@ button {
   text-transform: uppercase;
   line-height: 1.2;
   margin-bottom: 0.5rem;
+  color: var(--black);
+  pointer-events: none;
 }
 
 .pcard-spec {
   font-size: 0.8rem;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.45);
   line-height: 1.5;
   flex: 1;
+  pointer-events: none;
 }
 
 .pcard-btn {
@@ -554,10 +537,10 @@ button {
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--off-white);
+  color: var(--black);
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   padding: 0 0 3px 0;
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease;
@@ -579,7 +562,7 @@ button {
 
 .pcard-skeleton-line {
   height: 14px;
-  background: var(--dark-gray);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 2px;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
@@ -597,8 +580,9 @@ button {
   grid-column: 1 / -1;
   padding: 5rem 2rem;
   text-align: center;
-  color: var(--light-gray);
+  color: rgba(0, 0, 0, 0.4);
   font-size: 0.95rem;
+  pointer-events: none;
 }
 
 @media (max-width: 900px) {

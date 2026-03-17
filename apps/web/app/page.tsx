@@ -31,14 +31,13 @@ export default function Home() {
 
   return (
     <div className="page-home">
+      {/* Full-page animated grid background — fixed, behind everything */}
+      <Boxes />
+
       <Nav onOpenQuote={() => openQuote()} />
 
       {/* Hero */}
       <section className="home-hero">
-        {/* Animated grid background */}
-        <Boxes />
-        {/* Radial fade overlay */}
-        <div className="home-hero-overlay" />
 
         {/* Content */}
         <div className="home-hero-inner">
