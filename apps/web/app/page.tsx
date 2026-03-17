@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Nav from './components/Nav'
 import Footer from './components/Footer'
 import ProductCard, { type Product } from './components/ProductCard'
 import QuoteModal from './components/QuoteModal'
+import { Boxes } from './components/ui/background-boxes'
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
@@ -33,19 +35,50 @@ export default function Home() {
 
       {/* Hero */}
       <section className="home-hero">
-        <p className="home-hero-eyebrow">Premium Custom Apparel</p>
-        <h1 className="home-hero-headline">
-          Clothes That<br />Build Brands.
-        </h1>
-        <p className="home-hero-sub">
-          Premium apparel for brands that refuse to blend in.
-          Embroidery, screen print, DTG — built to last.
-        </p>
-        <div className="home-hero-actions">
-          <a href="/collection" className="btn btn--primary">Enter Collection</a>
-          <button className="btn btn--outline" onClick={() => openQuote()} type="button">
-            Get a Quote
-          </button>
+        {/* Animated grid background */}
+        <Boxes />
+        {/* Radial fade overlay */}
+        <div className="home-hero-overlay" />
+
+        {/* Content */}
+        <div className="home-hero-inner">
+          <div className="home-hero-text">
+            <h1 className="home-hero-headline">
+              Clothes That<br />Build Brands.
+            </h1>
+            <div className="home-hero-actions">
+              <a href="/collection" className="btn btn--primary">Enter Collection</a>
+              <button className="btn btn--outline" onClick={() => openQuote()} type="button">
+                Get a Quote
+              </button>
+            </div>
+          </div>
+
+          <div className="home-hero-preview">
+            {loading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="hero-preview-img hero-preview-img--skeleton" />
+                ))
+              : featured.slice(0, 3).map((p, i) => {
+                  const img = p.images?.[0] ?? null
+                  return (
+                    <div key={p.id} className={`hero-preview-img hero-preview-img--${i}`}>
+                      {img ? (
+                        <Image
+                          src={img}
+                          alt={p.display_name || p.name}
+                          fill
+                          className="hero-preview-img-inner"
+                          sizes="200px"
+                        />
+                      ) : (
+                        <div className="hero-preview-img-placeholder" />
+                      )}
+                    </div>
+                  )
+                })
+            }
+          </div>
         </div>
       </section>
 
