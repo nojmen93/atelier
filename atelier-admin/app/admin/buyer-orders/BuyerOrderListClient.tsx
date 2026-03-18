@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const STATUS_BADGES: Record<string, string> = {
@@ -30,6 +31,7 @@ interface BuyerOrder {
 
 export default function BuyerOrderListClient({ orders }: { orders: BuyerOrder[] }) {
   const [statusFilter, setStatusFilter] = useState('all')
+  const router = useRouter()
 
   const filtered = statusFilter === 'all'
     ? orders
@@ -83,7 +85,7 @@ export default function BuyerOrderListClient({ orders }: { orders: BuyerOrder[] 
               </thead>
               <tbody>
                 {filtered.map((order) => (
-                  <tr key={order.id} className="border-b border-neutral-800 last:border-b-0 hover:bg-neutral-900/50">
+                  <tr key={order.id} onClick={() => router.push(`/admin/buyer-orders/${order.id}`)} className="border-b border-neutral-800 last:border-b-0 hover:bg-neutral-900/50 cursor-pointer">
                     <td className="px-4 py-3">
                       <Link href={`/admin/buyer-orders/${order.id}`} className="font-medium font-mono text-neutral-200 hover:text-white transition">
                         {order.id.slice(0, 8)}
