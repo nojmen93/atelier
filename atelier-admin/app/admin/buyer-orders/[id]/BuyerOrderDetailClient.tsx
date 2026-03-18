@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -50,22 +49,27 @@ export default function BuyerOrderDetailClient({
   const [status, setStatus] = useState(order.status)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const orderTotal = items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0)
 
   const handleSaveStatus = async () => {
     setSaving(true)
-    const { error } = await supabase
-      .from('buyer_orders')
-      .update({ status })
-      .eq('id', order.id)
+    try {
+      const res = await fetch('/api/admin/buyer-orders/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, status }),
+      })
+      const data = await res.json()
 
-    if (error) {
-      toast.error(error.message)
-    } else {
-      toast.success('Status updated')
-      router.refresh()
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to update status')
+      } else {
+        toast.success('Status updated')
+        router.refresh()
+      }
+    } catch {
+      toast.error('Network error')
     }
     setSaving(false)
   }
