@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import DraftOrderClient from './DraftOrderClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DraftOrderPage() {
   const { buyer } = await getBuyer()
   const db = createServiceClient()

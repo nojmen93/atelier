@@ -3,6 +3,8 @@ import { createServiceClient } from '@/lib/supabase/service'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-900/40 text-yellow-400',
   confirmed: 'bg-blue-900/40 text-blue-400',

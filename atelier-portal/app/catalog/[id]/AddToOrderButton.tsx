@@ -66,7 +66,9 @@ export default function AddToOrderButton({
     }
 
     setStatus('added')
-    setTimeout(() => router.push('/orders/new'), 600)
+    setTimeout(() => {
+      window.location.href = '/orders/new'
+    }, 600)
   }
 
   if (colors.length === 0) {
