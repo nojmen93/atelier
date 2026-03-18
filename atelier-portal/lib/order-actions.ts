@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
 
 async function getBuyerId() {
@@ -8,21 +9,22 @@ async function getBuyerId() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: buyer } = await supabase
+  const db = createServiceClient()
+  const { data: buyer } = await db
     .from('buyers')
     .select('id')
     .eq('user_id', user.id)
     .single()
 
   if (!buyer) redirect('/access-pending')
-  return { supabase, buyerId: buyer.id }
+  return { db, buyerId: buyer.id }
 }
 
 export async function addToOrder(styleId: string, variantId: string, unitPrice: number) {
-  const { supabase, buyerId } = await getBuyerId()
+  const { db, buyerId } = await getBuyerId()
 
   // Find or create draft order
-  let { data: draft } = await supabase
+  let { data: draft } = await db
     .from('buyer_orders')
     .select('id')
     .eq('buyer_id', buyerId)
@@ -30,7 +32,7 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
     .single()
 
   if (!draft) {
-    const { data: newOrder, error } = await supabase
+    const { data: newOrder, error } = await db
       .from('buyer_orders')
       .insert({ buyer_id: buyerId, status: 'draft' })
       .select('id')
@@ -40,7 +42,7 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
   }
 
   // Check if this variant already exists in the draft
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('buyer_order_line_items')
     .select('id, quantity')
     .eq('order_id', draft.id)
@@ -48,12 +50,12 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
     .single()
 
   if (existing) {
-    await supabase
+    await db
       .from('buyer_order_line_items')
       .update({ quantity: existing.quantity + 1 })
       .eq('id', existing.id)
   } else {
-    const { error } = await supabase
+    const { error } = await db
       .from('buyer_order_line_items')
       .insert({
         order_id: draft.id,
@@ -69,11 +71,11 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
 }
 
 export async function updateLineItemQuantity(lineItemId: string, quantity: number) {
-  const { supabase } = await getBuyerId()
+  const { db } = await getBuyerId()
 
   if (quantity < 1) return { error: 'Quantity must be at least 1' }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('buyer_order_line_items')
     .update({ quantity })
     .eq('id', lineItemId)
@@ -83,9 +85,9 @@ export async function updateLineItemQuantity(lineItemId: string, quantity: numbe
 }
 
 export async function updateLineItemNotes(lineItemId: string, placementNotes: string) {
-  const { supabase } = await getBuyerId()
+  const { db } = await getBuyerId()
 
-  const { error } = await supabase
+  const { error } = await db
     .from('buyer_order_line_items')
     .update({ placement_notes: placementNotes })
     .eq('id', lineItemId)
@@ -95,10 +97,10 @@ export async function updateLineItemNotes(lineItemId: string, placementNotes: st
 }
 
 export async function removeLineItem(lineItemId: string) {
-  const { supabase, buyerId } = await getBuyerId()
+  const { db } = await getBuyerId()
 
   // Get the order_id before deleting
-  const { data: item } = await supabase
+  const { data: item } = await db
     .from('buyer_order_line_items')
     .select('order_id')
     .eq('id', lineItemId)
@@ -106,19 +108,19 @@ export async function removeLineItem(lineItemId: string) {
 
   if (!item) return { error: 'Item not found' }
 
-  await supabase
+  await db
     .from('buyer_order_line_items')
     .delete()
     .eq('id', lineItemId)
 
   // Check if order has any remaining items
-  const { count } = await supabase
+  const { count } = await db
     .from('buyer_order_line_items')
     .select('id', { count: 'exact', head: true })
     .eq('order_id', item.order_id)
 
   if (count === 0) {
-    await supabase
+    await db
       .from('buyer_orders')
       .delete()
       .eq('id', item.order_id)
@@ -129,9 +131,9 @@ export async function removeLineItem(lineItemId: string) {
 }
 
 export async function updateOrderNotes(orderId: string, notes: string) {
-  const { supabase } = await getBuyerId()
+  const { db } = await getBuyerId()
 
-  const { error } = await supabase
+  const { error } = await db
     .from('buyer_orders')
     .update({ notes })
     .eq('id', orderId)
@@ -141,9 +143,9 @@ export async function updateOrderNotes(orderId: string, notes: string) {
 }
 
 export async function submitOrder(orderId: string) {
-  const { supabase } = await getBuyerId()
+  const { db } = await getBuyerId()
 
-  const { error } = await supabase
+  const { error } = await db
     .from('buyer_orders')
     .update({
       status: 'pending',

@@ -1,4 +1,5 @@
 import { getBuyer } from '@/lib/get-buyer'
+import { createServiceClient } from '@/lib/supabase/service'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 
@@ -17,9 +18,10 @@ const statusLabels: Record<string, string> = {
 }
 
 export default async function OrdersPage() {
-  const { supabase, buyer } = await getBuyer()
+  const { buyer } = await getBuyer()
+  const db = createServiceClient()
 
-  const { data: orders } = await supabase
+  const { data: orders } = await db
     .from('buyer_orders')
     .select('id, status, notes, submitted_at, buyer_order_line_items(quantity, unit_price)')
     .eq('buyer_id', buyer.id)

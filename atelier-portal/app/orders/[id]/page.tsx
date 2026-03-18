@@ -1,4 +1,5 @@
 import { getBuyer } from '@/lib/get-buyer'
+import { createServiceClient } from '@/lib/supabase/service'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -22,9 +23,10 @@ export default async function OrderDetailPage({
 }: {
   params: { id: string }
 }) {
-  const { supabase, buyer } = await getBuyer()
+  const { buyer } = await getBuyer()
+  const db = createServiceClient()
 
-  const { data: order } = await supabase
+  const { data: order } = await db
     .from('buyer_orders')
     .select('id, status, notes, submitted_at')
     .eq('id', params.id)
@@ -36,7 +38,7 @@ export default async function OrderDetailPage({
     notFound()
   }
 
-  const { data: lineItems } = await supabase
+  const { data: lineItems } = await db
     .from('buyer_order_line_items')
     .select('id, quantity, unit_price, placement_notes, styles(name), variants(size, color, sku)')
     .eq('order_id', order.id)

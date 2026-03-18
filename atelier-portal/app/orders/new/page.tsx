@@ -1,14 +1,16 @@
 import { getBuyer } from '@/lib/get-buyer'
+import { createServiceClient } from '@/lib/supabase/service'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import DraftOrderClient from './DraftOrderClient'
 
 export default async function DraftOrderPage() {
-  const { supabase, buyer } = await getBuyer()
+  const { buyer } = await getBuyer()
+  const db = createServiceClient()
 
   // Find the active draft
-  const { data: draft } = await supabase
+  const { data: draft } = await db
     .from('buyer_orders')
     .select('id, notes')
     .eq('buyer_id', buyer.id)
@@ -20,7 +22,7 @@ export default async function DraftOrderPage() {
   }
 
   // Fetch line items with style and variant details
-  const { data: lineItems } = await supabase
+  const { data: lineItems } = await db
     .from('buyer_order_line_items')
     .select('id, quantity, unit_price, placement_notes, style_id, variant_id, styles(name), variants(size, color, sku)')
     .eq('order_id', draft.id)
