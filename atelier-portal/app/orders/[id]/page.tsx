@@ -44,7 +44,6 @@ export default async function OrderDetailPage({
     .from('buyer_order_line_items')
     .select('id, quantity, unit_price, placement_notes, styles(name), variants(size, color, sku)')
     .eq('order_id', order.id)
-    .order('created_at')
 
   const items = (lineItems ?? []).map((item: any) => ({
     id: item.id,
