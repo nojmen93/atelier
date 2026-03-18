@@ -23,13 +23,17 @@ async function getBuyerId() {
 export async function addToOrder(styleId: string, variantId: string, unitPrice: number) {
   const { db, buyerId } = await getBuyerId()
 
+  console.log('[addToOrder] styleId:', styleId, 'variantId:', variantId, 'unitPrice:', unitPrice, 'buyerId:', buyerId)
+
   // Find or create draft order
-  let { data: draft } = await db
+  let { data: draft, error: draftErr } = await db
     .from('buyer_orders')
     .select('id')
     .eq('buyer_id', buyerId)
     .eq('status', 'draft')
     .single()
+
+  console.log('[addToOrder] existing draft:', draft, 'error:', draftErr)
 
   if (!draft) {
     const { data: newOrder, error } = await db
@@ -37,7 +41,8 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
       .insert({ buyer_id: buyerId, status: 'draft' })
       .select('id')
       .single()
-    if (error || !newOrder) return { error: 'Failed to create order' }
+    console.log('[addToOrder] created draft:', newOrder, 'error:', error)
+    if (error || !newOrder) return { error: 'Failed to create order: ' + error?.message }
     draft = newOrder
   }
 
@@ -50,10 +55,11 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
     .single()
 
   if (existing) {
-    await db
+    const { error: updErr } = await db
       .from('buyer_order_line_items')
       .update({ quantity: existing.quantity + 1 })
       .eq('id', existing.id)
+    console.log('[addToOrder] incremented qty, error:', updErr)
   } else {
     const { error } = await db
       .from('buyer_order_line_items')
@@ -64,7 +70,8 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
         quantity: 1,
         unit_price: unitPrice,
       })
-    if (error) return { error: 'Failed to add item' }
+    console.log('[addToOrder] inserted line item, error:', error)
+    if (error) return { error: 'Failed to add item: ' + error.message }
   }
 
   return { success: true }

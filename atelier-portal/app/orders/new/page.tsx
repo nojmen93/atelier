@@ -12,23 +12,26 @@ export default async function DraftOrderPage() {
   const db = createServiceClient()
 
   // Find the active draft
-  const { data: draft } = await db
+  const { data: draft, error: draftError } = await db
     .from('buyer_orders')
     .select('id, notes')
     .eq('buyer_id', buyer.id)
     .eq('status', 'draft')
     .single()
 
+  console.log('[orders/new] buyer:', buyer.id, 'draft:', draft, 'draftError:', draftError)
+
   if (!draft) {
     redirect('/catalog')
   }
 
   // Fetch line items with style and variant details
-  const { data: lineItems } = await db
+  const { data: lineItems, error: itemsError } = await db
     .from('buyer_order_line_items')
     .select('id, quantity, unit_price, placement_notes, style_id, variant_id, styles(name), variants(size, color, sku)')
     .eq('order_id', draft.id)
-    .order('created_at')
+
+  console.log('[orders/new] lineItems:', lineItems, 'itemsError:', itemsError)
 
   const items = (lineItems ?? []).map((item: any) => ({
     id: item.id,
