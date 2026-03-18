@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { addToOrder } from '@/lib/order-actions'
 
 type Variant = {
@@ -28,6 +27,17 @@ const colorMap: Record<string, string> = {
   Yellow: '#F1C40F',
   Orange: '#E67E22',
   Purple: '#8E44AD',
+  Cream: '#F5F0E1',
+  Charcoal: '#36454F',
+  Olive: '#556B2F',
+  Burgundy: '#800020',
+  Teal: '#008080',
+  Coral: '#FF7F50',
+  Khaki: '#C3B091',
+  Tan: '#D2B48C',
+  Ivory: '#FFFFF0',
+  Sand: '#C2B280',
+  Stone: '#928E85',
 }
 
 export default function AddToOrderButton({
@@ -39,16 +49,27 @@ export default function AddToOrderButton({
   unitPrice: number
   variantsByColor: Record<string, Variant[]>
 }) {
-  const router = useRouter()
   const colors = Object.keys(variantsByColor)
-  const [selectedColor, setSelectedColor] = useState(colors[0] ?? '')
+  const hasMultipleColors = colors.length > 1
+  // Auto-select only if there's exactly 1 color
+  const [selectedColor, setSelectedColor] = useState(colors.length === 1 ? colors[0] : '')
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [error, setError] = useState('')
   const [status, setStatus] = useState<'idle' | 'adding' | 'added'>('idle')
 
-  const currentVariants = variantsByColor[selectedColor] ?? []
+  const currentVariants = selectedColor ? (variantsByColor[selectedColor] ?? []) : []
+  const selectedVariant = currentVariants.find((v) => v.id === selectedVariantId)
+  const canAdd = !!selectedColor && !!selectedVariantId
 
   const handleAdd = async () => {
+    if (!selectedColor && !selectedVariantId) {
+      setError('Please select a color and size')
+      return
+    }
+    if (!selectedColor) {
+      setError('Please select a color')
+      return
+    }
     if (!selectedVariantId) {
       setError('Please select a size')
       return
@@ -57,7 +78,8 @@ export default function AddToOrderButton({
     setError('')
     setStatus('adding')
 
-    const result = await addToOrder(styleId, selectedVariantId, unitPrice)
+    const finalPrice = unitPrice + (selectedVariant?.price_modifier ?? 0)
+    const result = await addToOrder(styleId, selectedVariantId, finalPrice)
 
     if (result.error) {
       setError(result.error)
@@ -79,17 +101,18 @@ export default function AddToOrderButton({
 
   return (
     <div className="space-y-5">
-      <h2 className="text-xs text-neutral-500 uppercase tracking-wider">
-        Select variant
-      </h2>
+      {/* Color selection — always shown first */}
+      <div>
+        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-2">
+          Color{selectedColor ? ` — ${selectedColor}` : ''}
+        </p>
+        <div className="flex flex-wrap gap-2 items-center">
+          {colors.map((color) => {
+            const hex = colorMap[color]
+            const isSelected = selectedColor === color
 
-      {/* Color picker */}
-      {colors.length > 1 && (
-        <div>
-          <p className="text-xs text-neutral-500 mb-2">Color</p>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((color) => {
-              const hex = colorMap[color]
+            if (hex) {
+              // Swatch circle (24px) for colors with known hex
               return (
                 <button
                   key={color}
@@ -98,19 +121,65 @@ export default function AddToOrderButton({
                     setSelectedVariantId('')
                     setError('')
                   }}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border transition ${
-                    selectedColor === color
-                      ? 'border-foreground text-foreground'
-                      : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                  title={color}
+                  className={`w-6 h-6 rounded-full transition-all ${
+                    isSelected
+                      ? 'ring-2 ring-foreground ring-offset-2 ring-offset-black scale-110'
+                      : 'ring-1 ring-neutral-600 hover:ring-neutral-400'
+                  }`}
+                  style={{ backgroundColor: hex }}
+                />
+              )
+            }
+
+            // Labeled chip for colors without known hex
+            return (
+              <button
+                key={color}
+                onClick={() => {
+                  setSelectedColor(color)
+                  setSelectedVariantId('')
+                  setError('')
+                }}
+                className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                  isSelected
+                    ? 'border-foreground text-foreground bg-neutral-800'
+                    : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                }`}
+              >
+                {color}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Size selection — shown after color is selected */}
+      {selectedColor && (
+        <div>
+          <p className="text-xs text-neutral-500 uppercase tracking-wider mb-2">Size</p>
+          <div className="flex flex-wrap gap-2">
+            {currentVariants.map((v) => {
+              const inStock = v.stock > 0
+              const isSelected = selectedVariantId === v.id
+
+              return (
+                <button
+                  key={v.id}
+                  disabled={!inStock}
+                  onClick={() => {
+                    setSelectedVariantId(v.id)
+                    setError('')
+                  }}
+                  className={`text-xs px-3.5 py-1.5 rounded border transition font-medium ${
+                    !inStock
+                      ? 'border-neutral-800 text-neutral-700 line-through cursor-not-allowed opacity-40'
+                      : isSelected
+                        ? 'border-foreground text-foreground bg-foreground/10'
+                        : 'border-neutral-700 text-neutral-300 hover:border-neutral-500 hover:text-foreground'
                   }`}
                 >
-                  {hex && (
-                    <span
-                      className="w-2.5 h-2.5 rounded-full border border-neutral-600 inline-block"
-                      style={{ backgroundColor: hex }}
-                    />
-                  )}
-                  {color}
+                  {v.size || 'One Size'}
                 </button>
               )
             })}
@@ -118,46 +187,21 @@ export default function AddToOrderButton({
         </div>
       )}
 
-      {/* Size picker */}
-      <div>
-        <p className="text-xs text-neutral-500 mb-2">Size</p>
-        <div className="flex flex-wrap gap-2">
-          {currentVariants.map((v) => {
-            const inStock = v.stock > 0
-            return (
-              <button
-                key={v.id}
-                disabled={!inStock}
-                onClick={() => {
-                  setSelectedVariantId(v.id)
-                  setError('')
-                }}
-                className={`text-xs px-3 py-1.5 rounded border transition ${
-                  !inStock
-                    ? 'border-neutral-800 text-neutral-600 line-through cursor-not-allowed'
-                    : selectedVariantId === v.id
-                      ? 'border-foreground text-foreground'
-                      : 'border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                }`}
-              >
-                {v.size || 'One Size'}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
+      {/* Validation error */}
       {error && (
         <p className="text-xs text-red-400">{error}</p>
       )}
 
+      {/* Add to Order button */}
       <button
         onClick={handleAdd}
         disabled={status !== 'idle'}
         className={`w-full sm:w-auto px-8 py-2.5 rounded-md text-sm font-medium transition ${
           status === 'added'
             ? 'bg-green-600 text-white'
-            : 'bg-foreground text-background hover:bg-neutral-200'
+            : canAdd
+              ? 'bg-foreground text-background hover:bg-neutral-200'
+              : 'bg-neutral-800 text-neutral-500 hover:bg-neutral-700'
         } disabled:opacity-60`}
       >
         {status === 'adding' ? 'Adding...' : status === 'added' ? 'Added!' : 'Add to Order'}
