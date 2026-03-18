@@ -23,6 +23,9 @@ export default async function BuyerOrderDetailPage({
       .eq('order_id', id),
   ])
 
+  console.log('[buyer-order detail] order:', orderRes.data, 'error:', orderRes.error)
+  console.log('[buyer-order detail] items:', itemsRes.data, 'error:', itemsRes.error)
+
   if (!orderRes.data) {
     notFound()
   }

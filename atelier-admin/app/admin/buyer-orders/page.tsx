@@ -4,11 +4,13 @@ import BuyerOrderListClient from './BuyerOrderListClient'
 export default async function BuyerOrdersPage() {
   const supabase = createAdminClient()
 
-  const { data: orders } = await supabase
+  const { data: orders, error } = await supabase
     .from('buyer_orders')
     .select('id, status, submitted_at, notes, buyer_id, buyers(company_name), buyer_order_line_items(id, quantity, unit_price)')
     .neq('status', 'draft')
     .order('submitted_at', { ascending: false })
+
+  console.log('[buyer-orders] orders:', orders, 'error:', error)
 
   const mapped = (orders ?? []).map((o: any) => {
     const items = o.buyer_order_line_items ?? []
