@@ -409,6 +409,53 @@ All tables are managed in Supabase (PostgreSQL). UUIDs are used for primary keys
 | stock          | integer | Default 0           |
 | price_modifier | numeric | Default 0           |
 
+### `buyers` (Buyer Portal)
+
+| Field         | Type      | Notes                    |
+|---------------|-----------|--------------------------|
+| id            | uuid      | Primary key              |
+| user_id       | uuid      | FK → auth.users.id       |
+| company_name  | text      | Required                 |
+| contact_name  | text      | Required                 |
+| email         | text      | Required                 |
+| created_at    | timestamp | Auto-generated           |
+
+### `buyer_product_access` (Buyer Portal)
+
+| Field          | Type    | Notes                              |
+|----------------|---------|-------------------------------------|
+| id             | uuid    | Primary key                         |
+| buyer_id       | uuid    | FK → buyers.id                      |
+| style_id       | uuid    | FK → styles.id                      |
+| active         | boolean | Gates catalog visibility            |
+| price_override | numeric | Nullable (overrides style base_cost)|
+| created_at     | timestamp | Auto-generated                    |
+
+### `buyer_orders` (Buyer Portal)
+
+| Field        | Type      | Notes                                                    |
+|--------------|-----------|----------------------------------------------------------|
+| id           | uuid      | Primary key                                              |
+| buyer_id     | uuid      | FK → buyers.id                                           |
+| status       | text      | draft, pending, confirmed, in_production, shipped        |
+| notes        | text      | Nullable                                                 |
+| submitted_at | timestamp | Nullable (set on submission)                             |
+| created_at   | timestamp | Auto-generated                                           |
+| updated_at   | timestamp | Auto-generated                                           |
+
+### `buyer_order_line_items` (Buyer Portal)
+
+| Field           | Type    | Notes                    |
+|-----------------|---------|--------------------------|
+| id              | uuid    | Primary key              |
+| order_id        | uuid    | FK → buyer_orders.id     |
+| style_id        | uuid    | FK → styles.id           |
+| variant_id      | uuid    | FK → variants.id         |
+| quantity        | integer | Required                 |
+| unit_price      | numeric | Price at time of order   |
+| placement_notes | text    | Nullable                 |
+| created_at      | timestamp | Auto-generated         |
+
 ### Relationships
 
 - `styles.concept_id` → `concepts.id`
@@ -421,6 +468,13 @@ All tables are managed in Supabase (PostgreSQL). UUIDs are used for primary keys
 - `logos.uploaded_by` → `auth.users.id`
 - Deleting a concept may cascade to its categories
 - Styles use soft delete (status = 'archived')
+- `buyers.user_id` → `auth.users.id`
+- `buyer_product_access.buyer_id` → `buyers.id`
+- `buyer_product_access.style_id` → `styles.id`
+- `buyer_orders.buyer_id` → `buyers.id`
+- `buyer_order_line_items.order_id` → `buyer_orders.id`
+- `buyer_order_line_items.style_id` → `styles.id`
+- `buyer_order_line_items.variant_id` → `variants.id`
 
 ---
 
@@ -516,6 +570,45 @@ atelier/
 │   │   └── supabase/
 │   │       ├── server.ts             # Server-side Supabase client
 │   │       └── client.ts             # Browser-side Supabase client
+│   ├── package.json
+│   └── tsconfig.json
+├── atelier-portal/                   # B2B Buyer Portal
+│   ├── app/
+│   │   ├── layout.tsx                # Root layout (HTML, metadata)
+│   │   ├── page.tsx                  # Landing / redirect
+│   │   ├── login/
+│   │   │   └── page.tsx              # Buyer login page
+│   │   ├── access-pending/
+│   │   │   └── page.tsx              # Pending approval screen
+│   │   ├── auth/
+│   │   │   └── callback/
+│   │   │       └── route.ts          # Auth callback handler
+│   │   ├── dashboard/
+│   │   │   └── page.tsx              # Buyer dashboard (recent orders, quick stats)
+│   │   ├── catalog/
+│   │   │   ├── page.tsx              # Catalog grid (buyer-specific access)
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx          # Style detail (variants, pricing)
+│   │   │       └── AddToOrderButton.tsx  # Variant picker + add to draft
+│   │   └── orders/
+│   │       ├── page.tsx              # Orders list (all statuses)
+│   │       ├── new/
+│   │       │   ├── page.tsx          # Draft order page (server)
+│   │       │   └── DraftOrderClient.tsx  # Draft editor (client)
+│   │       └── [id]/
+│   │           └── page.tsx          # Order detail (line items, status)
+│   ├── components/
+│   │   ├── TopNav.tsx                # Navigation bar
+│   │   └── LogoutButton.tsx          # Logout button
+│   ├── lib/
+│   │   ├── get-buyer.ts              # Auth helper (getBuyer)
+│   │   ├── order-actions.ts          # Server actions (addToOrder, submitOrder, etc.)
+│   │   └── supabase/
+│   │       ├── server.ts             # Server-side Supabase client
+│   │       ├── client.ts             # Browser-side Supabase client
+│   │       ├── service.ts            # Service role client
+│   │       └── middleware.ts         # Auth middleware helper
+│   ├── middleware.ts                 # Next.js middleware (session refresh)
 │   ├── package.json
 │   └── tsconfig.json
 ├── apps/
@@ -642,7 +735,7 @@ When fixing bugs:
 
 ### Planned Features
 
-- **B2B Customer Portal** — Customer-facing portal for browsing catalog and placing orders
+- ~~B2B Customer Portal~~ — Buyer portal implemented (`atelier-portal/`) with catalog browsing, per-buyer pricing, draft orders, and order submission
 - **Frontend Website Integration** — Connect admin data to public-facing website
 - **Advanced Mockup Features** — Multiple product views per mockup, batch export, mockup templates
 - **Search & Filter Functionality** — Search/filter on style and supplier lists

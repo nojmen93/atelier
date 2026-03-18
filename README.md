@@ -1,159 +1,177 @@
-# Atelier — Custom Apparel Studio
+# Atelier — Custom Apparel Platform
 
-A premium custom apparel website built with Next.js 14 and Sanity CMS.
+A full-stack platform for managing a custom apparel brand, built as a monorepo with three applications: an internal admin panel, a B2B buyer portal, and a public-facing website.
 
 ## Architecture
 
 ```
 atelier/
+├── atelier-admin/       # Admin panel (Next.js 16) — internal CRUD, mockup generator, view builder
+├── atelier-portal/      # Buyer portal (Next.js 14) — B2B catalog browsing & ordering
 ├── apps/
-│   ├── web/          # Next.js 14 (App Router)
-│   └── studio/       # Sanity Studio v3
-└── packages/
-    └── config/       # Shared configs (future)
+│   └── web/             # Public website (Next.js 14) — customer-facing site
+├── turbo.json           # Turborepo build config
+├── pnpm-workspace.yaml  # Workspace definitions
+└── package.json         # Root monorepo scripts
 ```
+
+## Apps
+
+### Admin Panel (`atelier-admin/`)
+
+Internal dashboard for managing the entire product catalog.
+
+- **Framework**: Next.js 16 (App Router), TypeScript, React 19
+- **Styling**: Tailwind CSS v4 (dark theme)
+- **Database & Auth**: Supabase (PostgreSQL + Auth + Storage)
+- **Key features**: Style CRUD, supplier management, concept/category hierarchy, logo library, Fabric.js mockup generator, dynamic view builder, drag-and-drop reordering, variant management
+- **Port**: `http://localhost:3000`
+
+### Buyer Portal (`atelier-portal/`)
+
+B2B portal where approved buyers can browse their assigned catalog and place orders.
+
+- **Framework**: Next.js 14 (App Router), TypeScript, React 18
+- **Styling**: Tailwind CSS v3 (dark theme)
+- **Database & Auth**: Supabase (PostgreSQL + Auth)
+- **Key features**: Buyer authentication, catalog browsing (with per-buyer product access & pricing), draft order management, order submission & tracking
+- **Port**: `http://localhost:3001`
+
+### Public Website (`apps/web/`)
+
+Public-facing marketing website, content managed through the admin panel.
+
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Vanilla CSS (custom properties, no Tailwind)
+- **Fonts**: Bebas Neue + Outfit (Google Fonts)
+- **Deployment**: Vercel
+- **Port**: `http://localhost:3000`
 
 ## Prerequisites
 
 - Node.js 18+
 - pnpm 9+
-- Sanity account (free tier works)
+- Supabase project (free tier works)
 
 ## Quick Start
 
 ### 1. Clone and Install
 
-```bash
-cd atelier
+```cmd
+cd C:\Users\Acer Nordics\Desktop\atelier
 pnpm install
 ```
 
-### 2. Create Sanity Project
+### 2. Configure Environment
 
-```bash
-# Login to Sanity
-npx sanity login
+Create environment files for each app that connects to Supabase:
 
-# Create a new project (run from apps/studio)
-cd apps/studio
-npx sanity init --env
-
-# This will create a .env file with your project ID
+**`atelier-admin/.env.local`**
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-### 3. Configure Environment
-
-Copy the env examples and fill in your values:
-
-```bash
-# Web app
-cp apps/web/.env.example apps/web/.env.local
-
-# Studio (should already exist from sanity init)
-cp apps/studio/.env.example apps/studio/.env
+**`atelier-portal/.env.local`**
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Edit `apps/web/.env.local`:
+### 3. Supabase Setup
 
-```
-NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
-NEXT_PUBLIC_SANITY_DATASET=production
-NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01
-```
+1. Create a Supabase project
+2. Create the required database tables (see `ADMIN_SYSTEM_DOCUMENTATION.md` for full schema)
+3. Create Storage buckets with public access: `product-images`, `logos`
+4. Enable email/password authentication
+5. Create admin and buyer users via the Supabase dashboard
 
 ### 4. Run Development
 
-```bash
-# Run both web and studio
+```cmd
+cd C:\Users\Acer Nordics\Desktop\atelier
 pnpm dev
-
-# Or separately:
-pnpm dev:web    # http://localhost:3000
-pnpm dev:studio # http://localhost:3333
 ```
 
-### 5. Add Portfolio Content
+Or run individual apps:
 
-1. Open Sanity Studio at `http://localhost:3333`
-2. Create new Portfolio Projects
-3. Upload images, set categories, adjust order
-4. Content appears automatically on the website
+```cmd
+cd C:\Users\Acer Nordics\Desktop\atelier
+pnpm dev:admin
+```
+
+```cmd
+cd C:\Users\Acer Nordics\Desktop\atelier
+pnpm dev:portal
+```
+
+```cmd
+cd C:\Users\Acer Nordics\Desktop\atelier
+pnpm dev:web
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Monorepo** | Turborepo + pnpm workspaces |
+| **Framework** | Next.js 14 / 16 (App Router) |
+| **Language** | TypeScript |
+| **Database** | Supabase (PostgreSQL) |
+| **Auth** | Supabase Auth (email/password) |
+| **Storage** | Supabase Storage (product images, logos, mockups) |
+| **Styling** | Tailwind CSS v3/v4 (admin + portal), Vanilla CSS (web) |
+| **Drag & Drop** | @dnd-kit/core + @dnd-kit/sortable |
+| **Canvas** | Fabric.js v7 (mockup generator) |
+| **Notifications** | Sonner (toast system) |
+| **Deployment** | Vercel |
+
+## Database Tables
+
+### Core (Admin)
+
+| Table | Purpose |
+|-------|---------|
+| `styles` | Product catalog (name, images, pricing, status, variants) |
+| `concepts` | Top-level grouping for styles |
+| `categories` | Sub-grouping under concepts |
+| `suppliers` | Supplier directory (MOQ, lead time, location) |
+| `logos` | Brand logo library with metadata |
+| `customizations` | Mockup configurations (logo placement, technique) |
+| `variants` | Size/color/SKU variants per style |
+| `views` | Saved view configurations for filtering/display |
+
+### Buyer Portal
+
+| Table | Purpose |
+|-------|---------|
+| `buyers` | Registered buyer accounts (company, contact info) |
+| `buyer_product_access` | Per-buyer style access with optional price overrides |
+| `buyer_orders` | Orders with status tracking (draft, pending, confirmed, in_production, shipped) |
+| `buyer_order_line_items` | Order line items (variant, quantity, unit price, placement notes) |
+
+## Documentation
+
+| File | Purpose |
+|------|---------|
+| `CLAUDE.md` | Project context & code conventions for AI assistance |
+| `ADMIN_SYSTEM_DOCUMENTATION.md` | Full admin feature specs, DB schema, component index |
+| `DEMO_WALKTHROUGH.md` | Step-by-step demo guide for every admin feature |
+| `TESTING_CHECKLIST.md` | Comprehensive QA checklist |
+| `ADMIN_SCREENSHOTS.md` | Visual reference with ASCII layouts |
 
 ## Deployment
 
 ### Vercel (Web)
 
-```bash
-cd apps/web
+```cmd
+cd C:\Users\Acer Nordics\Desktop\atelier\apps\web
 vercel
 ```
 
-Environment variables needed:
-- `NEXT_PUBLIC_SANITY_PROJECT_ID`
-- `NEXT_PUBLIC_SANITY_DATASET`
-- `NEXT_PUBLIC_SANITY_API_VERSION`
-
-### Sanity Studio
-
-```bash
-cd apps/studio
-npx sanity deploy
-```
-
-This deploys to `your-project.sanity.studio`
-
-## Project Structure
-
-### Web (`apps/web`)
-
-| Path | Description |
-|------|-------------|
-| `app/page.tsx` | Main page component |
-| `app/components/` | All UI components |
-| `app/globals.css` | Full CSS (no Tailwind) |
-| `lib/sanity.ts` | Sanity client + queries |
-
-### Studio (`apps/studio`)
-
-| Path | Description |
-|------|-------------|
-| `schemas/project.ts` | Portfolio project schema |
-| `sanity.config.ts` | Studio configuration |
-
-## Adding More Editable Content
-
-To make services, process steps, or copy editable:
-
-1. Create new schema in `apps/studio/schemas/`
-2. Add to `schemas/index.ts`
-3. Create query in `apps/web/lib/sanity.ts`
-4. Fetch data in component
-
-Example for services:
-
-```ts
-// apps/studio/schemas/service.ts
-export default defineType({
-  name: 'service',
-  title: 'Service',
-  type: 'document',
-  fields: [
-    defineField({ name: 'number', type: 'string' }),
-    defineField({ name: 'title', type: 'string' }),
-    defineField({ name: 'description', type: 'text' }),
-    defineField({ name: 'order', type: 'number' }),
-  ],
-})
-```
-
-## Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **CMS**: Sanity v3
-- **Styling**: Vanilla CSS (custom properties)
-- **Fonts**: Bebas Neue + Outfit (Google Fonts)
-- **Monorepo**: pnpm + Turborepo
-- **Deployment**: Vercel + Sanity Cloud
+Required environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## License
 

@@ -31,11 +31,12 @@ This rule applies to every single interaction, no exceptions.
 
 ## Project Overview
 
-Atelier is a **monorepo** with two main apps:
+Atelier is a **monorepo** with three apps:
 
 | App | Path | Purpose |
 |-----|------|---------|
 | Admin panel | `atelier-admin/` | Internal CRUD interface for managing styles, suppliers, concepts, logos, mockups |
+| Buyer portal | `atelier-portal/` | B2B portal for approved buyers to browse catalog and place orders |
 | Public web | `apps/web/` | Public-facing website (Next.js 14, content managed via admin panel) |
 
 ---
@@ -53,6 +54,14 @@ Atelier is a **monorepo** with two main apps:
 - **Image Processing**: `sharp` (server-side metadata extraction)
 - **Notifications**: Sonner (toast system)
 - **Runtime**: React 19
+
+### Buyer Portal (`atelier-portal/`)
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v3 — dark theme (same palette as admin)
+- **Database / Auth**: Supabase (PostgreSQL + Auth)
+- **Runtime**: React 18
+- **Key features**: Buyer auth, catalog browsing (per-buyer access & pricing), draft orders, order submission & tracking
 
 ### Public Web (`apps/web/`)
 - **Framework**: Next.js 14 (App Router)
@@ -74,6 +83,15 @@ pnpm dev
 ```
 Runs on: `http://localhost:3000`
 
+### Buyer Portal
+
+```cmd
+cd C:\Users\Acer Nordics\Desktop\atelier\atelier-portal
+pnpm install
+pnpm dev
+```
+Runs on: `http://localhost:3001`
+
 ### Public Web
 
 ```cmd
@@ -88,6 +106,13 @@ Runs on: `http://localhost:3000`
 ## Environment Variables
 
 ### Admin (`atelier-admin/.env.local`)
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+### Buyer Portal (`atelier-portal/.env.local`)
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -130,6 +155,33 @@ atelier-admin/
         └── client.ts          # Browser-side Supabase client
 ```
 
+## File Structure (Buyer Portal)
+
+```
+atelier-portal/
+├── app/
+│   ├── login/                 # Buyer login page
+│   ├── access-pending/        # Pending approval screen
+│   ├── auth/callback/         # Auth callback handler
+│   ├── dashboard/             # Buyer dashboard
+│   ├── catalog/               # Catalog grid (buyer-specific)
+│   │   └── [id]/              # Style detail + AddToOrderButton
+│   └── orders/                # Order list, draft editor, detail
+│       ├── new/               # Draft order (DraftOrderClient)
+│       └── [id]/              # Order detail
+├── components/
+│   ├── TopNav.tsx             # Navigation bar
+│   └── LogoutButton.tsx       # Logout button
+└── lib/
+    ├── get-buyer.ts           # Auth helper (getBuyer)
+    ├── order-actions.ts       # Server actions (addToOrder, submitOrder, etc.)
+    └── supabase/
+        ├── server.ts          # Server-side Supabase client
+        ├── client.ts          # Browser-side Supabase client
+        ├── service.ts         # Service role client
+        └── middleware.ts      # Auth middleware helper
+```
+
 ---
 
 ## Code Conventions
@@ -158,6 +210,19 @@ atelier-admin/
 | `/admin/logos` | Logo library gallery |
 | `/admin/views` | View builder list |
 | `/admin/views/[id]/render` | Live view renderer |
+
+## Key Routes (Buyer Portal)
+
+| Route | Purpose |
+|-------|---------|
+| `/login` | Buyer login |
+| `/access-pending` | Waiting for admin approval |
+| `/dashboard` | Buyer dashboard |
+| `/catalog` | Product catalog (filtered by buyer access) |
+| `/catalog/[id]` | Style detail with variant picker |
+| `/orders` | Order history |
+| `/orders/new` | Draft order editor |
+| `/orders/[id]` | Order detail |
 
 ---
 
