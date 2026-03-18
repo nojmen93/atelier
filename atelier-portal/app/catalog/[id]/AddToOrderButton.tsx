@@ -78,8 +78,7 @@ export default function AddToOrderButton({
     setError('')
     setStatus('adding')
 
-    const finalPrice = unitPrice + (selectedVariant?.price_modifier ?? 0)
-    const result = await addToOrder(styleId, selectedVariantId, finalPrice)
+    const result = await addToOrder(styleId, selectedVariantId)
 
     if (result.error) {
       setError(result.error)

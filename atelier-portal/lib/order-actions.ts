@@ -20,20 +20,73 @@ async function getBuyerId() {
   return { db, buyerId: buyer.id }
 }
 
-export async function addToOrder(styleId: string, variantId: string, unitPrice: number) {
+/** Verify that an order belongs to this buyer. Returns order ID or null. */
+async function verifyOrderOwnership(db: ReturnType<typeof createServiceClient>, orderId: string, buyerId: string) {
+  const { data } = await db
+    .from('buyer_orders')
+    .select('id')
+    .eq('id', orderId)
+    .eq('buyer_id', buyerId)
+    .single()
+  return data
+}
+
+/** Verify that a line item belongs to one of the buyer's orders. Returns order_id or null. */
+async function verifyLineItemOwnership(db: ReturnType<typeof createServiceClient>, lineItemId: string, buyerId: string) {
+  const { data: item } = await db
+    .from('buyer_order_line_items')
+    .select('order_id')
+    .eq('id', lineItemId)
+    .single()
+
+  if (!item) return null
+
+  const order = await verifyOrderOwnership(db, item.order_id, buyerId)
+  return order ? item.order_id : null
+}
+
+export async function addToOrder(styleId: string, variantId: string) {
   const { db, buyerId } = await getBuyerId()
 
-  console.log('[addToOrder] styleId:', styleId, 'variantId:', variantId, 'unitPrice:', unitPrice, 'buyerId:', buyerId)
+  // Server-side price calculation — never trust client
+  const { data: variant } = await db
+    .from('variants')
+    .select('id, price_modifier, stock, style_id')
+    .eq('id', variantId)
+    .eq('style_id', styleId)
+    .single()
+
+  if (!variant) return { error: 'Invalid variant' }
+  if (variant.stock <= 0) return { error: 'This variant is out of stock' }
+
+  const { data: style } = await db
+    .from('styles')
+    .select('base_cost')
+    .eq('id', styleId)
+    .single()
+
+  if (!style) return { error: 'Style not found' }
+
+  const { data: access } = await db
+    .from('buyer_product_access')
+    .select('price_override')
+    .eq('buyer_id', buyerId)
+    .eq('style_id', styleId)
+    .eq('active', true)
+    .single()
+
+  if (!access) return { error: 'You do not have access to this product' }
+
+  const basePrice = access.price_override ?? style.base_cost ?? 0
+  const unitPrice = Number(basePrice) + Number(variant.price_modifier ?? 0)
 
   // Find or create draft order
-  let { data: draft, error: draftErr } = await db
+  let { data: draft } = await db
     .from('buyer_orders')
     .select('id')
     .eq('buyer_id', buyerId)
     .eq('status', 'draft')
     .single()
-
-  console.log('[addToOrder] existing draft:', draft, 'error:', draftErr)
 
   if (!draft) {
     const { data: newOrder, error } = await db
@@ -41,7 +94,6 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
       .insert({ buyer_id: buyerId, status: 'draft' })
       .select('id')
       .single()
-    console.log('[addToOrder] created draft:', newOrder, 'error:', error)
     if (error || !newOrder) return { error: 'Failed to create order: ' + error?.message }
     draft = newOrder
   }
@@ -59,7 +111,7 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
       .from('buyer_order_line_items')
       .update({ quantity: existing.quantity + 1 })
       .eq('id', existing.id)
-    console.log('[addToOrder] incremented qty, error:', updErr)
+    if (updErr) return { error: 'Failed to update quantity' }
   } else {
     const { error } = await db
       .from('buyer_order_line_items')
@@ -70,7 +122,6 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
         quantity: 1,
         unit_price: unitPrice,
       })
-    console.log('[addToOrder] inserted line item, error:', error)
     if (error) return { error: 'Failed to add item: ' + error.message }
   }
 
@@ -78,9 +129,12 @@ export async function addToOrder(styleId: string, variantId: string, unitPrice: 
 }
 
 export async function updateLineItemQuantity(lineItemId: string, quantity: number) {
-  const { db } = await getBuyerId()
+  const { db, buyerId } = await getBuyerId()
 
   if (quantity < 1) return { error: 'Quantity must be at least 1' }
+
+  const orderId = await verifyLineItemOwnership(db, lineItemId, buyerId)
+  if (!orderId) return { error: 'Item not found' }
 
   const { error } = await db
     .from('buyer_order_line_items')
@@ -92,7 +146,10 @@ export async function updateLineItemQuantity(lineItemId: string, quantity: numbe
 }
 
 export async function updateLineItemNotes(lineItemId: string, placementNotes: string) {
-  const { db } = await getBuyerId()
+  const { db, buyerId } = await getBuyerId()
+
+  const orderId = await verifyLineItemOwnership(db, lineItemId, buyerId)
+  if (!orderId) return { error: 'Item not found' }
 
   const { error } = await db
     .from('buyer_order_line_items')
@@ -104,33 +161,29 @@ export async function updateLineItemNotes(lineItemId: string, placementNotes: st
 }
 
 export async function removeLineItem(lineItemId: string) {
-  const { db } = await getBuyerId()
+  const { db, buyerId } = await getBuyerId()
 
-  // Get the order_id before deleting
-  const { data: item } = await db
-    .from('buyer_order_line_items')
-    .select('order_id')
-    .eq('id', lineItemId)
-    .single()
+  const orderId = await verifyLineItemOwnership(db, lineItemId, buyerId)
+  if (!orderId) return { error: 'Item not found' }
 
-  if (!item) return { error: 'Item not found' }
-
-  await db
+  const { error: delErr } = await db
     .from('buyer_order_line_items')
     .delete()
     .eq('id', lineItemId)
+
+  if (delErr) return { error: 'Failed to remove item' }
 
   // Check if order has any remaining items
   const { count } = await db
     .from('buyer_order_line_items')
     .select('id', { count: 'exact', head: true })
-    .eq('order_id', item.order_id)
+    .eq('order_id', orderId)
 
   if (count === 0) {
     await db
       .from('buyer_orders')
       .delete()
-      .eq('id', item.order_id)
+      .eq('id', orderId)
     return { success: true, orderDeleted: true }
   }
 
@@ -138,7 +191,10 @@ export async function removeLineItem(lineItemId: string) {
 }
 
 export async function updateOrderNotes(orderId: string, notes: string) {
-  const { db } = await getBuyerId()
+  const { db, buyerId } = await getBuyerId()
+
+  const order = await verifyOrderOwnership(db, orderId, buyerId)
+  if (!order) return { error: 'Order not found' }
 
   const { error } = await db
     .from('buyer_orders')
@@ -150,12 +206,15 @@ export async function updateOrderNotes(orderId: string, notes: string) {
 }
 
 export async function submitOrder(orderId: string) {
-  const { db } = await getBuyerId()
+  const { db, buyerId } = await getBuyerId()
+
+  const order = await verifyOrderOwnership(db, orderId, buyerId)
+  if (!order) return { error: 'Order not found' }
 
   const { error } = await db
     .from('buyer_orders')
     .update({
-      status: 'pending',
+      status: 'confirmed',
       submitted_at: new Date().toISOString(),
     })
     .eq('id', orderId)

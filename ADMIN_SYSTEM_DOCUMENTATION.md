@@ -402,7 +402,7 @@ All tables are managed in Supabase (PostgreSQL). UUIDs are used for primary keys
 | Field          | Type    | Notes              |
 |----------------|---------|---------------------|
 | id             | uuid    | Primary key         |
-| product_id     | uuid    | FK → styles.id      |
+| style_id       | uuid    | FK → styles.id      |
 | size           | text    | Nullable            |
 | color          | text    | Nullable            |
 | sku            | text    | Nullable, unique    |
@@ -464,7 +464,7 @@ All tables are managed in Supabase (PostgreSQL). UUIDs are used for primary keys
 - `categories.concept_id` → `concepts.id`
 - `customizations.style_id` → `styles.id`
 - `customizations.logo_id` → `logos.id`
-- `variants.product_id` → `styles.id`
+- `variants.style_id` → `styles.id`
 - `logos.uploaded_by` → `auth.users.id`
 - Deleting a concept may cascade to its categories
 - Styles use soft delete (status = 'archived')
