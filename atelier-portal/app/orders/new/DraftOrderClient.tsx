@@ -73,7 +73,16 @@ export default function DraftOrderClient({
 
   const handleSubmit = async () => {
     setSubmitting(true)
-    await submitOrder(orderId)
+    try {
+      const result = await submitOrder(orderId)
+      if (result?.error) {
+        setSubmitting(false)
+      }
+    } catch (e: any) {
+      // Next.js redirect throws NEXT_REDIRECT — let it propagate
+      if (e?.digest?.includes('NEXT_REDIRECT')) throw e
+      setSubmitting(false)
+    }
   }
 
   if (items.length === 0) {

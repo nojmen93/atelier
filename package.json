@@ -8,6 +8,7 @@
     "build": "turbo build",
     "dev:web": "pnpm --filter web dev",
     "dev:admin": "pnpm --filter atelier-admin dev",
+    "dev:portal": "pnpm --filter atelier-portal dev",
     "lint": "turbo lint"
   },
   "devDependencies": {
