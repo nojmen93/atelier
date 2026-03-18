@@ -17,6 +17,7 @@ export default function TopNav({ companyName }: { companyName?: string }) {
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/catalog', label: 'Catalog' },
+    { href: '/orders', label: 'Orders' },
   ]
 
   return (

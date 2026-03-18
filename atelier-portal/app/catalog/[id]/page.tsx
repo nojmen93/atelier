@@ -110,73 +110,16 @@ export default async function StyleDetailPage({
               </p>
             )}
 
-            {/* Variants by color */}
-            {Object.keys(variantsByColor).length > 0 && (
-              <div className="mt-8 space-y-5">
-                <h2 className="text-xs text-neutral-500 uppercase tracking-wider">
-                  Available variants
-                </h2>
-                {Object.entries(variantsByColor).map(([color, colorVariants]) => (
-                  <div key={color}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <ColorSwatch color={color} />
-                      <span className="text-sm font-medium">{color}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {colorVariants!.map((v) => (
-                        <span
-                          key={v.id}
-                          className={`text-xs px-3 py-1.5 rounded border ${
-                            v.stock > 0
-                              ? 'border-neutral-700 text-neutral-300'
-                              : 'border-neutral-800 text-neutral-600 line-through'
-                          }`}
-                        >
-                          {v.size || 'One Size'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-10">
-              <AddToOrderButton />
+            <div className="mt-8">
+              <AddToOrderButton
+                styleId={style.id}
+                unitPrice={price != null ? Number(price) : 0}
+                variantsByColor={variantsByColor as any}
+              />
             </div>
           </div>
         </div>
       </main>
     </div>
-  )
-}
-
-function ColorSwatch({ color }: { color: string }) {
-  const colorMap: Record<string, string> = {
-    Black: '#000000',
-    White: '#FFFFFF',
-    Navy: '#1B2A4A',
-    Red: '#C0392B',
-    Blue: '#2980B9',
-    Green: '#27AE60',
-    Grey: '#7F8C8D',
-    Gray: '#7F8C8D',
-    Beige: '#D4C5A9',
-    Brown: '#6D4C41',
-    Pink: '#E91E8C',
-    Yellow: '#F1C40F',
-    Orange: '#E67E22',
-    Purple: '#8E44AD',
-  }
-
-  const hex = colorMap[color]
-
-  if (!hex) return null
-
-  return (
-    <span
-      className="w-3 h-3 rounded-full border border-neutral-700 inline-block"
-      style={{ backgroundColor: hex }}
-    />
   )
 }
