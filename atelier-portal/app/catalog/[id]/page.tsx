@@ -4,6 +4,13 @@ import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import AddToOrderButton from './AddToOrderButton'
+import { createClient } from '@/lib/supabase/server'
+
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const supabase = createClient()
+  const { data } = await supabase.from('styles').select('name').eq('id', params.id).single()
+  return { title: data?.name ?? 'Style' }
+}
 
 export default async function StyleDetailPage({
   params,

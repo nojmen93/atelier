@@ -8,6 +8,10 @@ import OrderStatusBadge from './OrderStatusBadge'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  return { title: `Order ${params.id.slice(0, 8)}` }
+}
+
 export default async function OrderDetailPage({
   params,
 }: {
@@ -30,7 +34,7 @@ export default async function OrderDetailPage({
 
   const { data: lineItems } = await db
     .from('buyer_order_line_items')
-    .select('id, quantity, unit_price, placement_notes, styles(name), variants(size, color, sku)')
+    .select('id, quantity, unit_price, placement_notes, styles(name, images), variants(size, color, sku)')
     .eq('order_id', order.id)
 
   const pendingOrderCount = await getPendingOrderCount(buyer.id)
@@ -38,6 +42,7 @@ export default async function OrderDetailPage({
   const items = (lineItems ?? []).map((item: any) => ({
     id: item.id,
     styleName: item.styles?.name ?? 'Unknown',
+    image: item.styles?.images?.[0] ?? null,
     color: item.variants?.color ?? '',
     size: item.variants?.size ?? '',
     sku: item.variants?.sku ?? '',
@@ -104,12 +109,21 @@ export default async function OrderDetailPage({
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-neutral-800/50">
                   <td className="py-3 pr-4">
-                    <span className="text-foreground">{item.styleName}</span>
-                    {item.placementNotes && (
-                      <p className="text-[10px] text-neutral-500 mt-0.5">
-                        {item.placementNotes}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {item.image ? (
+                        <img src={item.image} alt="" className="w-8 h-10 rounded bg-neutral-800 object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-8 h-10 rounded bg-neutral-800 flex-shrink-0" />
+                      )}
+                      <div>
+                        <span className="text-foreground">{item.styleName}</span>
+                        {item.placementNotes && (
+                          <p className="text-[10px] text-neutral-500 mt-0.5">
+                            {item.placementNotes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="py-3 pr-4 text-neutral-400">{item.color || '—'}</td>
                   <td className="py-3 pr-4 text-neutral-400">{item.size || '—'}</td>

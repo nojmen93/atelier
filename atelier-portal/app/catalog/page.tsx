@@ -2,6 +2,9 @@ import { getBuyer } from '@/lib/get-buyer'
 import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Catalog' }
 
 export default async function CatalogPage() {
   const { supabase, buyer } = await getBuyer()
@@ -67,6 +70,9 @@ export default async function CatalogPage() {
                   </p>
                   {style.category && (
                     <p className="text-xs text-neutral-500 mt-0.5">{style.category}</p>
+                  )}
+                  {style.price != null && (
+                    <p className="text-xs text-neutral-400 mt-0.5">€{Number(style.price).toFixed(2)}</p>
                   )}
                 </div>
               </Link>

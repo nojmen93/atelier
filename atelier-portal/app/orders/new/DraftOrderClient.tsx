@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   updateLineItemQuantity,
   updateLineItemNotes,
@@ -13,6 +14,7 @@ import {
 type LineItem = {
   id: string
   styleName: string
+  image: string | null
   color: string
   size: string
   sku: string
@@ -36,6 +38,7 @@ export default function DraftOrderClient({
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
   const [submitting, setSubmitting] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
 
@@ -74,12 +77,12 @@ export default function DraftOrderClient({
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
+      toast.success('Order submitted')
       const result = await submitOrder(orderId)
       if (result?.error) {
         setSubmitting(false)
       }
     } catch (e: any) {
-      // Next.js redirect throws NEXT_REDIRECT — let it propagate
       if (e?.digest?.includes('NEXT_REDIRECT')) throw e
       setSubmitting(false)
     }
@@ -114,9 +117,14 @@ export default function DraftOrderClient({
             {items.map((item) => (
               <tr key={item.id} className="border-b border-neutral-800/50">
                 <td className="py-3 pr-4">
-                  <div>
+                  <div className="flex items-center gap-2">
+                    {item.image ? (
+                      <img src={item.image} alt="" className="w-8 h-10 rounded bg-neutral-800 object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-8 h-10 rounded bg-neutral-800 flex-shrink-0" />
+                    )}
+                    <div>
                     <span className="text-foreground">{item.styleName}</span>
-                    {/* Expandable placement notes */}
                     <button
                       onClick={() => {
                         setExpandedNotes((prev) => {
@@ -138,6 +146,7 @@ export default function DraftOrderClient({
                         className="mt-1 block w-full text-xs bg-neutral-900 border border-neutral-800 rounded px-2 py-1 text-neutral-300 placeholder:text-neutral-700"
                       />
                     )}
+                    </div>
                   </div>
                 </td>
                 <td className="py-3 pr-4 text-neutral-400">{item.color || '—'}</td>
@@ -206,14 +215,38 @@ export default function DraftOrderClient({
       </div>
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="px-8 py-2.5 rounded-md bg-foreground text-background text-sm font-medium hover:bg-neutral-200 transition disabled:opacity-60"
-        >
-          {submitting ? 'Submitting...' : 'Submit Order'}
-        </button>
+      <div className="pt-2">
+        {showConfirm ? (
+          <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 px-5 py-4">
+            <p className="text-sm text-foreground">
+              Submit this order with {items.length} {items.length === 1 ? 'item' : 'items'} totalling{' '}
+              <span className="font-semibold">€{total.toFixed(2)}</span>?
+            </p>
+            <div className="flex gap-3 mt-3">
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="px-6 py-2 rounded-md bg-foreground text-background text-sm font-medium hover:bg-neutral-200 transition disabled:opacity-60"
+              >
+                {submitting ? 'Submitting...' : 'Confirm'}
+              </button>
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={submitting}
+                className="px-4 py-2 rounded-md text-sm text-neutral-400 hover:text-foreground transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="px-8 py-2.5 rounded-md bg-foreground text-background text-sm font-medium hover:bg-neutral-200 transition"
+          >
+            Submit Order
+          </button>
+        )}
       </div>
     </div>
   )

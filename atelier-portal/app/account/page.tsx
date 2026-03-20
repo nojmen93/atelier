@@ -1,6 +1,9 @@
 import { getBuyer } from '@/lib/get-buyer'
 import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Account' }
 
 export default async function AccountPage() {
   const { buyer } = await getBuyer()

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { addToOrder } from '@/lib/order-actions'
 
 type Variant = {
@@ -81,11 +82,13 @@ export default function AddToOrderButton({
     const result = await addToOrder(styleId, selectedVariantId)
 
     if (result.error) {
+      toast.error(result.error)
       setError(result.error)
       setStatus('idle')
       return
     }
 
+    toast.success('Added to order')
     setStatus('added')
     setTimeout(() => {
       window.location.href = '/orders/new'

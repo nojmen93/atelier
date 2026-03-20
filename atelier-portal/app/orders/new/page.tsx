@@ -5,7 +5,9 @@ import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import DraftOrderClient from './DraftOrderClient'
+import type { Metadata } from 'next'
 
+export const metadata: Metadata = { title: 'Draft Order' }
 export const dynamic = 'force-dynamic'
 
 export default async function DraftOrderPage() {
@@ -27,7 +29,7 @@ export default async function DraftOrderPage() {
   // Fetch line items with style and variant details
   const { data: lineItems } = await db
     .from('buyer_order_line_items')
-    .select('id, quantity, unit_price, placement_notes, style_id, variant_id, styles(name), variants(size, color, sku)')
+    .select('id, quantity, unit_price, placement_notes, style_id, variant_id, styles(name, images), variants(size, color, sku)')
     .eq('order_id', draft.id)
 
   const pendingOrderCount = await getPendingOrderCount(buyer.id)
@@ -35,6 +37,7 @@ export default async function DraftOrderPage() {
   const items = (lineItems ?? []).map((item: any) => ({
     id: item.id,
     styleName: item.styles?.name ?? 'Unknown',
+    image: item.styles?.images?.[0] ?? null,
     color: item.variants?.color ?? '',
     size: item.variants?.size ?? '',
     sku: item.variants?.sku ?? '',
