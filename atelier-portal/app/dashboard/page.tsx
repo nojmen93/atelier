@@ -1,12 +1,14 @@
 import { getBuyer } from '@/lib/get-buyer'
+import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
 
 export default async function DashboardPage() {
   const { buyer } = await getBuyer()
+  const pendingOrderCount = await getPendingOrderCount(buyer.id)
 
   return (
     <div className="min-h-screen">
-      <TopNav companyName={buyer.company_name} />
+      <TopNav companyName={buyer.company_name} pendingOrderCount={pendingOrderCount} />
       <main className="max-w-5xl mx-auto px-6 py-12">
         <h1 className="text-2xl font-semibold">
           Welcome back, {buyer.contact_name}

@@ -13,7 +13,7 @@ export async function getBuyer() {
 
   const { data: buyer } = await supabase
     .from('buyers')
-    .select('id, contact_name, company_name')
+    .select('id, contact_name, company_name, email, created_at')
     .eq('user_id', user.id)
     .single()
 

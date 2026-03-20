@@ -1,10 +1,11 @@
 import { getBuyer } from '@/lib/get-buyer'
+import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default async function CatalogPage() {
   const { supabase, buyer } = await getBuyer()
+  const pendingOrderCount = await getPendingOrderCount(buyer.id)
 
   const { data: accessRows } = await supabase
     .from('buyer_product_access')
@@ -24,15 +25,15 @@ export default async function CatalogPage() {
 
   return (
     <div className="min-h-screen">
-      <TopNav companyName={buyer.company_name} />
+      <TopNav companyName={buyer.company_name} pendingOrderCount={pendingOrderCount} />
       <main className="max-w-6xl mx-auto px-6 py-10">
         <h1 className="text-xl font-semibold mb-8">Catalog</h1>
 
         {styles.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <p className="text-lg text-neutral-300">Your catalog is being prepared</p>
-            <p className="mt-2 text-sm text-neutral-500">
-              Products will appear here once your account is set up.
+            <p className="mt-2 text-sm text-neutral-500 max-w-sm">
+              You&apos;ll be notified when styles are available.
             </p>
           </div>
         ) : (

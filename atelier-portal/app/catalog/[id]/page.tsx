@@ -1,4 +1,5 @@
 import { getBuyer } from '@/lib/get-buyer'
+import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -57,10 +58,11 @@ export default async function StyleDetailPage({
 
   const heroImage = style.images?.[0] ?? null
   const category = (style as any).categories?.name ?? null
+  const pendingOrderCount = await getPendingOrderCount(buyer.id)
 
   return (
     <div className="min-h-screen">
-      <TopNav companyName={buyer.company_name} />
+      <TopNav companyName={buyer.company_name} pendingOrderCount={pendingOrderCount} />
       <main className="max-w-6xl mx-auto px-6 py-10">
         <Link
           href="/catalog"

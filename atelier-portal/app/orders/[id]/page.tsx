@@ -1,26 +1,12 @@
 import { getBuyer } from '@/lib/get-buyer'
 import { createServiceClient } from '@/lib/supabase/service'
+import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import OrderStatusBadge from './OrderStatusBadge'
 
 export const dynamic = 'force-dynamic'
-
-const statusColors: Record<string, string> = {
-  confirmed: 'bg-blue-900/40 text-blue-400',
-  in_production: 'bg-orange-900/40 text-orange-400',
-  shipped: 'bg-green-900/40 text-green-400',
-  delivered: 'bg-emerald-900/40 text-emerald-400',
-  cancelled: 'bg-red-900/40 text-red-400',
-}
-
-const statusLabels: Record<string, string> = {
-  confirmed: 'Confirmed',
-  in_production: 'In Production',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-}
 
 export default async function OrderDetailPage({
   params,
@@ -47,6 +33,8 @@ export default async function OrderDetailPage({
     .select('id, quantity, unit_price, placement_notes, styles(name), variants(size, color, sku)')
     .eq('order_id', order.id)
 
+  const pendingOrderCount = await getPendingOrderCount(buyer.id)
+
   const items = (lineItems ?? []).map((item: any) => ({
     id: item.id,
     styleName: item.styles?.name ?? 'Unknown',
@@ -62,7 +50,7 @@ export default async function OrderDetailPage({
 
   return (
     <div className="min-h-screen">
-      <TopNav companyName={buyer.company_name} />
+      <TopNav companyName={buyer.company_name} pendingOrderCount={pendingOrderCount} />
       <main className="max-w-4xl mx-auto px-6 py-10">
         <Link
           href="/orders"
@@ -88,13 +76,7 @@ export default async function OrderDetailPage({
               </p>
             )}
           </div>
-          <span
-            className={`text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider self-start ${
-              statusColors[order.status] ?? 'bg-neutral-800 text-neutral-400'
-            }`}
-          >
-            {statusLabels[order.status] ?? order.status}
-          </span>
+          <OrderStatusBadge orderId={order.id} initialStatus={order.status} />
         </div>
 
         {/* Buyer info */}

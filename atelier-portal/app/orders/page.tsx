@@ -1,5 +1,6 @@
 import { getBuyer } from '@/lib/get-buyer'
 import { createServiceClient } from '@/lib/supabase/service'
+import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 
@@ -32,6 +33,8 @@ export default async function OrdersPage() {
     .neq('status', 'draft')
     .order('submitted_at', { ascending: false })
 
+  const pendingOrderCount = await getPendingOrderCount(buyer.id)
+
   const orderRows = (orders ?? []).map((order: any) => {
     const items = order.buyer_order_line_items ?? []
     const itemCount = items.reduce((sum: number, li: any) => sum + (li.quantity ?? 0), 0)
@@ -50,16 +53,22 @@ export default async function OrdersPage() {
 
   return (
     <div className="min-h-screen">
-      <TopNav companyName={buyer.company_name} />
+      <TopNav companyName={buyer.company_name} pendingOrderCount={pendingOrderCount} />
       <main className="max-w-4xl mx-auto px-6 py-10">
         <h1 className="text-xl font-semibold mb-8">Orders</h1>
 
         {orderRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <p className="text-lg text-neutral-300">No orders submitted yet</p>
+            <p className="text-lg text-neutral-300">No orders yet</p>
             <p className="mt-2 text-sm text-neutral-500">
-              Orders will appear here after you submit them from the catalog.
+              Browse your catalog to get started.
             </p>
+            <Link
+              href="/catalog"
+              className="mt-4 inline-block text-sm text-foreground hover:text-neutral-300 transition underline underline-offset-4"
+            >
+              Go to catalog
+            </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">

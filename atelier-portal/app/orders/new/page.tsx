@@ -1,5 +1,6 @@
 import { getBuyer } from '@/lib/get-buyer'
 import { createServiceClient } from '@/lib/supabase/service'
+import { getPendingOrderCount } from '@/lib/get-pending-order-count'
 import TopNav from '@/components/TopNav'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -12,26 +13,24 @@ export default async function DraftOrderPage() {
   const db = createServiceClient()
 
   // Find the active draft
-  const { data: draft, error: draftError } = await db
+  const { data: draft } = await db
     .from('buyer_orders')
     .select('id, notes')
     .eq('buyer_id', buyer.id)
     .eq('status', 'draft')
     .single()
 
-  console.log('[orders/new] buyer:', buyer.id, 'draft:', draft, 'draftError:', draftError)
-
   if (!draft) {
     redirect('/catalog')
   }
 
   // Fetch line items with style and variant details
-  const { data: lineItems, error: itemsError } = await db
+  const { data: lineItems } = await db
     .from('buyer_order_line_items')
     .select('id, quantity, unit_price, placement_notes, style_id, variant_id, styles(name), variants(size, color, sku)')
     .eq('order_id', draft.id)
 
-  console.log('[orders/new] lineItems:', lineItems, 'itemsError:', itemsError)
+  const pendingOrderCount = await getPendingOrderCount(buyer.id)
 
   const items = (lineItems ?? []).map((item: any) => ({
     id: item.id,
@@ -46,7 +45,7 @@ export default async function DraftOrderPage() {
 
   return (
     <div className="min-h-screen">
-      <TopNav companyName={buyer.company_name} />
+      <TopNav companyName={buyer.company_name} pendingOrderCount={pendingOrderCount} />
       <main className="max-w-4xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-xl font-semibold">Draft Order</h1>
