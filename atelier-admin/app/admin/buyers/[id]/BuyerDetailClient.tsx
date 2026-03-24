@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -138,18 +137,18 @@ export default function BuyerDetailClient({
 }) {
   const [showAssign, setShowAssign] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const assignedIds = new Set(access.map((a) => a.style_id))
 
   const handleToggleActive = async (accessId: string, currentActive: boolean) => {
-    const { error } = await supabase
-      .from('buyer_product_access')
-      .update({ active: !currentActive })
-      .eq('id', accessId)
-
-    if (error) {
-      toast.error(error.message)
+    const res = await fetch('/api/admin/buyers/access', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle', accessId, active: !currentActive }),
+    })
+    const data = await res.json()
+    if (data.error) {
+      toast.error(data.error)
     } else {
       toast.success(currentActive ? 'Style deactivated' : 'Style activated')
       router.refresh()
@@ -157,30 +156,28 @@ export default function BuyerDetailClient({
   }
 
   const handlePriceOverride = async (accessId: string, value: string) => {
-    const price = value ? parseFloat(value) : null
-    const { error } = await supabase
-      .from('buyer_product_access')
-      .update({ price_override: price })
-      .eq('id', accessId)
-
-    if (error) {
-      toast.error(error.message)
+    const res = await fetch('/api/admin/buyers/access', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'price', accessId, price: value }),
+    })
+    const data = await res.json()
+    if (data.error) {
+      toast.error(data.error)
     } else {
       toast.success('Price updated')
     }
   }
 
   const handleAssign = async (styleIds: string[]) => {
-    const rows = styleIds.map((style_id) => ({
-      buyer_id: buyer.id,
-      style_id,
-      active: true,
-    }))
-
-    const { error } = await supabase.from('buyer_product_access').insert(rows)
-
-    if (error) {
-      toast.error(error.message)
+    const res = await fetch('/api/admin/buyers/access', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'assign', buyerId: buyer.id, styleIds }),
+    })
+    const data = await res.json()
+    if (data.error) {
+      toast.error(data.error)
     } else {
       toast.success(`${styleIds.length} style(s) assigned`)
       setShowAssign(false)
