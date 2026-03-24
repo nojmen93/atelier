@@ -99,7 +99,7 @@ export default function BuyerOrderListClient({ orders }: { orders: BuyerOrder[] 
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-neutral-400">{order.item_count}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-neutral-400">
-                      {order.total_value > 0 ? `$${order.total_value.toFixed(2)}` : '—'}
+                      {order.total_value > 0 ? `€${order.total_value.toFixed(2)}` : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded border ${STATUS_BADGES[order.status] || 'bg-neutral-800 border-neutral-700 text-neutral-300'}`}>

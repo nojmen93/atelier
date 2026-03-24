@@ -9,6 +9,8 @@ const STATUS_OPTIONS = [
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'in_production', label: 'In Production' },
   { value: 'shipped', label: 'Shipped' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]
 
 const STATUS_COLORS: Record<string, string> = {
@@ -16,6 +18,8 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: 'bg-blue-900/50 text-blue-200',
   in_production: 'bg-purple-900/50 text-purple-200',
   shipped: 'bg-green-900/50 text-green-200',
+  delivered: 'bg-emerald-900/50 text-emerald-200',
+  cancelled: 'bg-red-900/50 text-red-200',
 }
 
 interface Order {
@@ -134,10 +138,10 @@ export default function BuyerOrderDetailClient({
                   <td className="px-4 py-3 text-neutral-400 font-mono text-xs">{item.sku || '—'}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-neutral-300">{item.quantity}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-neutral-400">
-                    ${item.unitPrice.toFixed(2)}
+                    €{item.unitPrice.toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-neutral-300">
-                    ${(item.quantity * item.unitPrice).toFixed(2)}
+                    €{(item.quantity * item.unitPrice).toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-neutral-500 text-xs truncate max-w-[180px]">
                     {item.placementNotes || '—'}
@@ -151,7 +155,7 @@ export default function BuyerOrderDetailClient({
                   Order Total
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-white font-semibold">
-                  ${orderTotal.toFixed(2)}
+                  €{orderTotal.toFixed(2)}
                 </td>
                 <td></td>
               </tr>
