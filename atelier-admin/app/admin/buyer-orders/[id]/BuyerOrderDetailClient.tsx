@@ -9,6 +9,8 @@ const STATUS_OPTIONS = [
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'in_production', label: 'In Production' },
   { value: 'shipped', label: 'Shipped' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]
 
 const STATUS_COLORS: Record<string, string> = {
@@ -16,6 +18,8 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: 'bg-blue-900/50 text-blue-200',
   in_production: 'bg-purple-900/50 text-purple-200',
   shipped: 'bg-green-900/50 text-green-200',
+  delivered: 'bg-emerald-900/50 text-emerald-200',
+  cancelled: 'bg-red-900/50 text-red-200',
 }
 
 interface Order {
