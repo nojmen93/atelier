@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logAudit } from '@/lib/audit'
 
-const VALID_STATUSES = ['pending', 'confirmed', 'in_production', 'shipped']
+const VALID_STATUSES = ['pending', 'confirmed', 'in_production', 'shipped', 'delivered', 'cancelled']
 
 export async function PATCH(req: NextRequest) {
   // Verify admin is authenticated
@@ -21,6 +22,14 @@ export async function PATCH(req: NextRequest) {
   }
 
   const admin = createAdminClient()
+
+  // Fetch current status before updating
+  const { data: existing } = await admin
+    .from('buyer_orders')
+    .select('status')
+    .eq('id', orderId)
+    .single()
+
   const { error } = await admin
     .from('buyer_orders')
     .update({ status })
@@ -29,6 +38,14 @@ export async function PATCH(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  await logAudit({
+    action: 'buyer_order_status_changed',
+    entityType: 'buyer_order',
+    entityId: orderId,
+    userId: user.id,
+    metadata: { old_status: existing?.status ?? null, new_status: status },
+  })
 
   return NextResponse.json({ success: true })
 }

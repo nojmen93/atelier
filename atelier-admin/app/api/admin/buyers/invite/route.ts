@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { logAudit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   // Verify admin is authenticated
@@ -38,6 +39,14 @@ export async function POST(req: NextRequest) {
   if (buyerError) {
     return NextResponse.json({ error: buyerError.message }, { status: 500 })
   }
+
+  await logAudit({
+    action: 'buyer_invited',
+    entityType: 'buyer',
+    entityName: company_name,
+    userId: user.id,
+    metadata: { email },
+  })
 
   return NextResponse.json({ success: true })
 }
