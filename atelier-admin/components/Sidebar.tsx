@@ -202,10 +202,10 @@ export default function Sidebar({ logoutAction }: { logoutAction?: () => Promise
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`block py-1.5 text-sm transition ${
+                      className={`block py-1.5 px-2 rounded text-sm transition ${
                         isActive(item.href)
-                          ? 'text-white'
-                          : 'text-neutral-500 hover:text-neutral-300'
+                          ? 'text-white bg-neutral-800'
+                          : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/50'
                       }`}
                     >
                       {item.label}
