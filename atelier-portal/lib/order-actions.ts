@@ -214,7 +214,7 @@ export async function submitOrder(orderId: string) {
   const { error } = await db
     .from('buyer_orders')
     .update({
-      status: 'confirmed',
+      status: 'pending',
       submitted_at: new Date().toISOString(),
     })
     .eq('id', orderId)
