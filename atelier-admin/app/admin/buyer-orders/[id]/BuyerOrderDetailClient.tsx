@@ -134,10 +134,10 @@ export default function BuyerOrderDetailClient({
                   <td className="px-4 py-3 text-neutral-400 font-mono text-xs">{item.sku || '—'}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-neutral-300">{item.quantity}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-neutral-400">
-                    ${item.unitPrice.toFixed(2)}
+                    €{item.unitPrice.toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-neutral-300">
-                    ${(item.quantity * item.unitPrice).toFixed(2)}
+                    €{(item.quantity * item.unitPrice).toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-neutral-500 text-xs truncate max-w-[180px]">
                     {item.placementNotes || '—'}
@@ -151,7 +151,7 @@ export default function BuyerOrderDetailClient({
                   Order Total
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-white font-semibold">
-                  ${orderTotal.toFixed(2)}
+                  €{orderTotal.toFixed(2)}
                 </td>
                 <td></td>
               </tr>
