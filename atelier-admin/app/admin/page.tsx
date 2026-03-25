@@ -14,6 +14,7 @@ export default async function AdminDashboard() {
     { count: acceptedQuotes },
     { count: quotedQuotes },
     { count: activeOrders },
+    { count: pendingBuyerOrders },
     { data: recentQuotes },
   ] = await Promise.all([
     supabase.from('styles').select('*', { count: 'exact', head: true }),
@@ -25,6 +26,7 @@ export default async function AdminDashboard() {
     supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['accepted', 'converted']),
     supabase.from('quote_requests').select('*', { count: 'exact', head: true }).in('status', ['quoted', 'accepted', 'converted']),
     supabase.from('orders').select('*', { count: 'exact', head: true }).in('status', ['confirmed', 'in_production', 'shipped']),
+    supabase.from('buyer_orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('quote_requests').select('id, customer_name, customer_company, product_name, status, quantity, created_at, styles!style_id(name)').order('created_at', { ascending: false }).limit(5),
   ])
 
@@ -81,6 +83,15 @@ export default async function AdminDashboard() {
         <Link href="/admin/quotes" className="border border-blue-900/50 rounded-lg p-6 hover:border-blue-700 transition">
           <div className="text-4xl font-bold mb-2 text-blue-300">{pendingQuotes || 0}</div>
           <div className="text-neutral-400">Pending Quotes</div>
+        </Link>
+      </div>
+
+      {/* Buyer Portal */}
+      <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mt-10 mb-4">Buyer Portal</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link href="/admin/buyer-orders" className="border border-yellow-900/50 rounded-lg p-6 hover:border-yellow-700 transition">
+          <div className="text-4xl font-bold mb-2 text-yellow-300">{pendingBuyerOrders || 0}</div>
+          <div className="text-neutral-400">Pending Buyer Orders</div>
         </Link>
       </div>
 
