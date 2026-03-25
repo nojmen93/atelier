@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { logAudit } from '@/lib/audit'
 
 export async function POST(req: NextRequest) {
   // Verify admin is authenticated
@@ -13,10 +14,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
   }
 
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = createAdminClient()
 
   // Invite user via Supabase Auth
   const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email)
@@ -38,6 +36,14 @@ export async function POST(req: NextRequest) {
   if (buyerError) {
     return NextResponse.json({ error: buyerError.message }, { status: 500 })
   }
+
+  await logAudit({
+    action: 'buyer_invited',
+    entityType: 'buyer',
+    entityName: company_name,
+    userId: user.id,
+    metadata: { email },
+  })
 
   return NextResponse.json({ success: true })
 }
